@@ -1,6 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
-class LJ_potental():
+import pandas as pd
+from tabulate import tabulate
+from tqdm import tqdm
+import os
+"""
+=============================
+Directory Setup
+=============================
+"""
+os.makedirs("results/tables", exist_ok=True)
+os.makedirs("results/figures", exist_ok=True)
+
+class LJ_potential:
     r"""
     Lennard–Jones potential energy calculator for a system of particles
     under periodic boundary conditions.
@@ -60,6 +72,7 @@ class LJ_potental():
         self.U_long_list = []
         self.U_total_list = []
         self.U_per_particle = []
+        self.results = []
     
     def LJ_pot(self, r):
         r"""
@@ -74,7 +87,6 @@ class LJ_potental():
         -------
         float
             Lennard–Jones potential energy at distance r.
-
         Equation
         --------
         .. math::
@@ -143,7 +155,7 @@ class LJ_potental():
             \right]
         """
         n = self.positions.shape[0]
-        for r_cut in self.r_cuts:
+        for r_cut in tqdm(self.r_cuts):
             u_short = 0.0
             for i in range(n):
                 for j in range(i+1, n):
@@ -158,7 +170,23 @@ class LJ_potental():
             self.U_short_list.append(u_short)
             self.U_long_list.append(u_long)
             self.U_total_list.append(u_total)
-            self.U_per_particle = np.array(self.U_total_list) / n
+        self.U_per_particle = np.array(self.U_total_list) / n
+        df = pd.DataFrame({r"$r_c$": self.r_cuts,
+                        r"$U_lr$": self.U_long_list,
+                        r"$U_sr$": self.U_short_list,
+                        r"$U_total$": self.U_total_list,
+                        r"$U/N$": self.U_per_particle,
+                          })
+        filename = f"results/tables/{self.__class__.__name__}_stats.csv"
+        df.to_csv(filename, float_format="%.6f")
+        latex_file = filename.replace(".csv", ".tex")
+        df.to_latex(
+        latex_file,
+        float_format="%.6f",
+        caption="Lennard–Jones energy components as a function of cut-off radius",
+        label="tab:lj_cutoff_convergence"
+        )
+
 
     def plotting(self):    
         r"""
@@ -178,6 +206,9 @@ class LJ_potental():
         - decay of long-range attractive contributions
         - convergence of total energy for r_c ≳ 2.5σ
         """
+        N = self.positions.shape[0]
+        filename1 = f"results/figures/LJ_energy_components_N{N}.pdf"
+        filename2 = f"results/figures/LJ_energy_per_particle_N{N}.pdf"
         plt.figure(figsize=(7, 5))   
         plt.xlim(0.9, 4.1)
         plt.ylim(-800, 1700)
@@ -194,7 +225,9 @@ class LJ_potental():
         ax.spines["right"].set_visible(False)
         plt.legend(frameon=False)
         plt.tight_layout()
+        plt.savefig(filename1.replace(".pdf", ".png"), dpi=600, bbox_inches="tight")
         plt.show()
+        plt.figure(figsize=(7, 5))
         plt.plot(self.r_cuts, self.U_per_particle, linewidth=2.5, color='steelblue', marker='o', markersize=4)
         plt.xlabel("Cut-off radius $r_c \\rightarrow$", fontsize=13)
         plt.ylabel("Energy per particle $(U/N) \\rightarrow$", fontsize=13)
@@ -204,14 +237,15 @@ class LJ_potental():
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         plt.tight_layout()
+        plt.savefig(filename2.replace(".pdf", ".png"), dpi=600, bbox_inches="tight")
         plt.show()
 
 def main():
-    positions = np.loadtxt("/home/kelvin/Downloads/coords_LJ.dat", skiprows=2)
+    positions = np.loadtxt("coords_LJ.dat", skiprows=2)
     epsilon = 1.0
     sigma = 1.0
     box_len = 8.0
-    lj_system = LJ_potental(
+    lj_system = LJ_potential(
         positions=positions,
         epsilon=epsilon,
         sigma=sigma,

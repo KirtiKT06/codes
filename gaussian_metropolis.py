@@ -17,6 +17,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from tabulate import tabulate
+from tqdm import tqdm
+from config import TABLES_DIR, FIGURES_DIR
+import os
+
 class GaussianMetropolisSampler():
     """
     A class implementing Metropolis Monte Carlo sampling for a
@@ -79,7 +83,7 @@ class GaussianMetropolisSampler():
         g_bar = 0.0
         x = 0.0
         theta_samples = []
-        for n in range(1, n_rounds + 1):                                # Dual averaging loop
+        for n in tqdm(range(1, n_rounds + 1)):                                # Dual averaging loop
             delta_xm = np.exp(theta)
             accepted = 0
             # Metropolis sub-chain
@@ -139,11 +143,11 @@ class GaussianMetropolisSampler():
         """
         xx = np.linspace(-4*self.sigma, 4*self.sigma, 400)
         gaussian = np.exp(-xx**2 / (2*self.sigma**2)) / ((np.sqrt(2*np.pi)*self.sigma))
-        plt.figure(figsize=(7, 4.5))
+        plt.figure(figsize=(7, 5))
         plt.hist(samples, bins=100, density=True, color="steelblue",alpha=0.6, edgecolor="white", label="Metropolis samples")
         plt.plot(xx, gaussian, color="black", lw=2.5, label="Theory")                        # Analytical gaussian
-        plt.xlabel("RANDOM VARIABLE X", fontsize=13)
-        plt.ylabel("PROBABILITY DENSITY", fontsize=13)
+        plt.xlabel("RANDOM VARIABLE X $\\rightarrow$", fontsize=13)
+        plt.ylabel("PROBABILITY DENSITY $\\rightarrow$", fontsize=13)
         plt.tick_params(axis='both', labelsize=11)
         plt.grid(alpha=0.2)
         plt.legend(frameon=False)
@@ -162,6 +166,13 @@ class GaussianMetropolisSampler():
         ax.spines["right"].set_visible(False)
         plt.title(rf"Gaussian Metropolis sampling ($\sigma={self.sigma}$)", fontsize=14)
         plt.tight_layout()
+        plt.savefig(
+        os.path.join(
+        FIGURES_DIR,
+        f"Gaussian_Metropolis_sigma_{self.sigma}.png"
+          ),
+        dpi=600,
+        bbox_inches="tight")
         plt.show()
 
     def autocorrelation_time(self, samples, max_lag=None):
@@ -261,9 +272,12 @@ def main():
         sampler.plot(samples)                                                                       # Plot from same data
     df = pd.DataFrame(results)
     print(tabulate(df, headers="keys", tablefmt="github", floatfmt=".4f"))                          # Print data in table form
-    # To export results
-    # df.to_csv("metropolis_results.csv", index=False)
-    # print(df.to_latex(index=False, float_format="%.4f"))
+    df.to_csv(
+    os.path.join(TABLES_DIR, "Gaussian_Metropolis_summary.csv"),
+    float_format="%.6f",
+    index=False
+    )
+
 
 if __name__ == "__main__":
     main()

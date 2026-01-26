@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate
+from config import TABLES_DIR, FIGURES_DIR
+import os
+
 class ProbabilityDistribution:
     # ============================================================
     # BASE CLASS: ProbabilityDistribution
@@ -36,8 +39,9 @@ class LinearPDF(ProbabilityDistribution):
     # DISTRIBUTION 1: Linear PDF f(x) = 2x on [0, 1]
     # ============================================================
     def __init__(self):
-        self.name = "Linear Probabilty Distribution of function f(x)=2x on [0, 1]"
-    
+        self.name = "Linear Probability Distribution of function f(x)=2x on [0, 1]"
+        self.tag = "LinearPDF"
+
     def pdf(self, x):
         if 0 <= x <= 1:
             return 2 * x
@@ -50,9 +54,7 @@ class LinearPDF(ProbabilityDistribution):
         return (0.0, 1.0)
     
     def theoretical_moments(self):
-        mean = 2 / 3
-        variance = 1 / 18
-        return mean, variance
+        return 2/3, 1/18
 
 class TriangularPDF(ProbabilityDistribution):
     # ============================================================
@@ -60,7 +62,8 @@ class TriangularPDF(ProbabilityDistribution):
     # ============================================================
     def __init__(self):
         self.name = "Triangular Probability distribution for given function on [-1, 1]"
-    
+        self.tag = "TriangularPDF"
+
     def pdf(self, x):
         if -1 <= x < 0:
             return 1 + x
@@ -79,9 +82,7 @@ class TriangularPDF(ProbabilityDistribution):
         return (-1.0, 1.0)
     
     def theoretical_moments(self):
-        mean = 0
-        variance = 1 / 6
-        return mean, variance
+        return 0.0, 1/6
 
 class InversionSampler:
     # ============================================================
@@ -92,7 +93,7 @@ class InversionSampler:
     # an inverse_cdf(u) method.
     # ============================================================
     def __init__(self, distribution, rng=None):
-        self.name1 = "Inversion Sampling"
+        self.name1 = "InversionSampling"
         self.distribution = distribution
         self.rng = rng if rng is not None else np.random.default_rng(seed=42)
     
@@ -112,7 +113,7 @@ class RejectionSampler:
     # a uniform proposal distribution over the support.
     # ============================================================
     def __init__(self, distribution, M, rng=None):
-        self.name1 = "Acceptance-Rejection Sampling"
+        self.name1 = "Acceptance-RejectionSampling"
         self.distribution = distribution
         self.M = M
         self.rng = rng if rng is not None else np.random.default_rng(seed=42)
@@ -121,8 +122,7 @@ class RejectionSampler:
     
     def sample(self, n):
         """Generate n samples using rejection sampling."""
-        self.trials = 0
-        self.accepted = 0
+        self.trials = self.accepted = 0
         samples = []
         xmin, xmax = self.distribution.support()
         while len(samples) < n:
@@ -162,12 +162,7 @@ class Experiment:
         mean_mc = np.mean(self.samples)
         var_mc = np.var(self.samples)
         mean_th, var_th = self.distribution.theoretical_moments()
-        return {
-            "mean_mc": mean_mc,
-            "var_mc": var_mc,
-            "mean_th": mean_th,
-            "var_th": var_th,
-        }
+        return mean_mc, var_mc, mean_th, var_th
     
     def estimate_pdf(self, bins=100):
         hist, bin_edges = np.histogram(self.samples, bins=bins, density=True)
@@ -180,30 +175,30 @@ class Experiment:
         return mae, mse, ise  
     
     def report(self):
-        # Distribution statistics
-        mean_mc = np.mean(self.samples)
-        var_mc = np.var(self.samples)
-        # Theoretical statistics
-        mean_th, var_th = self.distribution.theoretical_moments()
-        # PDF comparison errors
+        mean_mc, var_mc, mean_th, var_th = self.compute_statistics()
         mae, mse, ise = self.estimate_pdf()
-        # Create table
-        data1 = {
+        # Moments table
+        df = pd.DataFrame(
+            {
             "Obtained from distribution": [mean_mc, var_mc],
             "Analytical":  [mean_th, var_th],
-            "Absolute Error": [abs(mean_mc - mean_th), abs(var_mc - var_th)]}
-        index = ["Mean", "Variance"]
-        df = pd.DataFrame(data1, index=index)
+            "Absolute Error": [abs(mean_mc - mean_th), abs(var_mc - var_th)]}, 
+            index=["Mean", "Variance"])
+        df.to_csv(
+        os.path.join(TABLES_DIR, f"{self.distribution.__class__.__name__}_{self.sampler.name1}.csv"),
+        float_format="%.6f", index=True)
+        # PDF error table
+        df_err = pd.DataFrame({
+            "MAE": [mae], "MSE": [mse], "ISE": [ise]})
+        df_err.to_csv(os.path.join(
+        TABLES_DIR,
+        f"{self.distribution.__class__.__name__}_{self.sampler.name1}_PDF_errors.csv"))
         print(f"\nDistribution: {self.distribution.name}")
         print(f"Sampling Technique:{self.sampler.name1}")
         print(f"Number of samples: {self.n}\n")
         if hasattr(self.sampler, "acceptance_rate"):
             print(f"Acceptance rate is: {self.sampler.acceptance_rate()}\n")
         print(tabulate(df, headers="keys", tablefmt="github", floatfmt=".6f"))
-        data2 = {"Mean Average Error": [mae],
-                 "Mean Squared Error": [mse],
-                 "Integrated Squared error": [ise]}
-        df = pd.DataFrame(data2, index=["value"])
         print("\nComparison of Probability Densities from Generated histogram vs. True function\n")
         print(tabulate(df, headers="keys", tablefmt="github", floatfmt=".6f"))       
     
@@ -225,6 +220,11 @@ class Experiment:
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         plt.tight_layout()
+        plt.savefig(os.path.join(
+        FIGURES_DIR,
+        f"{self.distribution.__class__.__name__}_{self.sampler.name1}.png"),
+        dpi=600,
+        bbox_inches="tight")
         plt.show()
 
 def main():
