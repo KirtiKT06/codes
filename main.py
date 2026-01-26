@@ -88,7 +88,7 @@ with torch.no_grad():
 accuracy = correct / total
 print(f"Accuracy: {accuracy:.4f}")
 
-experiment_results["sigmoid_30"] = {
+experiment_results["relu_30"] = {
     "train_loss": train_losses,
     "test_loss": test_losses,
     "accuracy": accuracy

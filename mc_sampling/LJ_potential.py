@@ -241,7 +241,9 @@ class LJ_potential:
         plt.show()
 
 def main():
-    positions = np.loadtxt("coords_LJ.dat", skiprows=2)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_PATH = os.path.join(BASE_DIR, "coords_LJ.dat")
+    positions = np.loadtxt(DATA_PATH, skiprows=2)
     epsilon = 1.0
     sigma = 1.0
     box_len = 8.0
