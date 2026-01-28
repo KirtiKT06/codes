@@ -1,0 +1,24 @@
+Distribution: Triangular Probability distribution for given function on [-1, 1]
+Sampling Technique: Acceptance-RejectionSampling
+Number of samples: 1000000
+Acceptance rate is: 0.49953543204819517
+==================================================
+Distribution: Triangular Probability distribution for given function on [-1, 1]
+Sampling Technique: Acceptance-RejectionSampling
+Number of samples: 1000000
+Acceptance rate is: 0.49953543204819517
+==================================================
+Distribution: Triangular Probability distribution for given function on [-1, 1]
+Sampling Technique: InversionSampling
+Number of samples: 1000000
+
+==================================================
+Distribution: Linear Probability Distribution of function f(x)=2x on [0, 1]
+Sampling Technique: InversionSampling
+Number of samples: 1000000
+
+==================================================
+Distribution: Linear Probability Distribution of function f(x)=2x on [0, 1]
+Sampling Technique: Acceptance-RejectionSampling
+Number of samples: 1000000
+Acceptance rate is: 0.49975836682963787

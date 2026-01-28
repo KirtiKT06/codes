@@ -193,6 +193,14 @@ class Experiment:
         df_err.to_csv(os.path.join(
         TABLES_DIR,
         f"{self.distribution.__class__.__name__}_{self.sampler.name1}_PDF_errors.csv"))
+        summary_path = os.path.join(TABLES_DIR, "run_summary.txt")
+        with open(summary_path, "a") as f:
+            f.write("\n" + "=" * 50 + "\n")
+            f.write(f"Distribution: {self.distribution.name}\n")
+            f.write(f"Sampling Technique: {self.sampler.name1}\n")
+            f.write(f"Number of samples: {self.n}\n")
+            if hasattr(self.sampler, "acceptance_rate"):
+                f.write(f"Acceptance rate is: {self.sampler.acceptance_rate()}")
         print(f"\nDistribution: {self.distribution.name}")
         print(f"Sampling Technique:{self.sampler.name1}")
         print(f"Number of samples: {self.n}\n")
@@ -236,11 +244,11 @@ def main():
     # ============================================================
     n = 1000000
     # Choose distribution by uncommenting
-    dist = TriangularPDF()
-    # dist = LinearPDF()   # <- switch here if needed
+    # dist = TriangularPDF()
+    dist = LinearPDF()   # <- switch here if needed
     # Choose sampler bu uncommenting
-    sampler = InversionSampler(dist)
-    # sampler = RejectionSampler(dist, M=2)
+    # sampler = InversionSampler(dist)
+    sampler = RejectionSampler(dist, M=2)
     # Run experiment
     exp = Experiment(dist, sampler, n)
     exp.run()
