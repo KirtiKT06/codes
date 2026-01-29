@@ -15,7 +15,7 @@ for educational and coursework purposes.
 ## Implemented Distributions
 
 - Linear probability density function  
-  f(x) = 2x, x \in [0,1]
+  f(x) = 2x, x $\in$ [0,1]
 - Symmetric triangular distribution on \([-1,1]\)
 - Gaussian distribution
 
@@ -40,7 +40,7 @@ distribution that satisfies the required interface.
 ## Problems 
 
 The LJ (12-6) potential has been calculated for a system of 
-256 particles taking into account different values of \r_c
+256 particles taking into account different values of $r_c$
 and finding the most fitting value.
 
 ---
