@@ -15,8 +15,8 @@ for educational and coursework purposes.
 ## Implemented Distributions
 
 - Linear probability density function  
-  f(x) = 2x, x $\in$ [0,1]
-- Symmetric triangular distribution on \([-1,1]\)
+  f(x) = 2x, x $\in$ $[0,1]$
+- Symmetric triangular distribution on $[-1,1]$
 - Gaussian distribution
 
 Each distribution provides:
