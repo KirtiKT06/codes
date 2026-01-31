@@ -1,7 +1,5 @@
 import yaml
 from pathlib import Path
-
-
 def load_config(name: str):
     cfg_path = Path("ml/configs") / name
     if not cfg_path.exists():

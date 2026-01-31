@@ -1,0 +1,17 @@
+experiment:
+  name: mnist_baseline
+  seed: 42
+
+model:
+  type: network8
+  layers: [784, 100, 10]
+
+training:
+  epochs: 5
+  batch_size: 10
+  eta: 0.01
+  lmbda: 0.0
+  gamma: 0.9
+
+data:
+  dataset: mnist

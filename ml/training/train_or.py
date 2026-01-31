@@ -1,5 +1,5 @@
 import numpy as np
-from network import network
+from ml.models.network import network
 # 1. training the neural netwok to learn the OR gate
 training_data = [(np.array([[0],[0]]), np.array([[0]])),
                  (np.array([[0],[1]]), np.array([[1]])), 

@@ -154,7 +154,8 @@ class network():
             lmbda = 0.0,
             gamma = 0.0, 
             test_data = None, 
-            monitor_evaluation_accuracy = False):
+            monitor_evaluation_accuracy = False,
+            logger=None):
         if test_data is not None:
             n_data = len(test_data)
         n = len(training_data)
@@ -169,6 +170,8 @@ class network():
             if monitor_evaluation_accuracy:
                 accuracy = self.evaluate(test_data)
                 print("Epoch{0}:{1}/{2}".format(j, accuracy, n_data))
+                if logger is not None:
+                    logger.log_metric(f"epoch_{j}_accuracy", float(accuracy))
             else:
                 print("Epoch {0} complete".format(j))
     
