@@ -5,22 +5,27 @@ It is organized to support reproducible experiments, modular development, and cl
 
 ## **Repository Structure**
 
-codes/
-├── ml/ — Machine learning framework
-│ ├── models/ — Neural network architectures
-│ ├── training/ — Training entry scripts
-│ ├── datasets/ — Dataset loaders
-│ ├── evaluation/ — Evaluation code
-│ ├── utils/ — Logging, config loaders, helpers
-│ ├── configs/ — YAML experiment configs
-│ └── experiments/ — Experiment scripts
+## Repository Structure
 
-├── simulations/ — Monte Carlo & physics simulations
-├── c_cpp/ — C/C++ implementations
-├── notebooks/ — Jupyter notebooks
-├── theory/ — Notes and theoretical work
-├── results/ — Generated outputs (ignored by git)
+```
+codes/
+├── ml/                — Machine learning framework
+│   ├── models/        — Neural network architectures
+│   ├── training/      — Training entry scripts
+│   ├── datasets/      — Dataset loaders
+│   ├── evaluation/    — Evaluation code
+│   ├── utils/         — Logging, config loaders, helpers
+│   ├── configs/       — YAML experiment configs
+│   └── experiments/   — Experiment scripts
+
+├── simulations/       — Monte Carlo & physics simulations
+├── c_cpp/             — C/C++ implementations
+├── notebooks/         — Jupyter notebooks
+├── theory/            — Notes and theoretical work
+├── results/           — Generated outputs (ignored by git)
 └── requirements.txt
+```
+
 
 ## **Machine Learning Module (ml/)**
 
