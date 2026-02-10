@@ -22,6 +22,10 @@ import matplotlib.pyplot as plt
 # Base directory where this script is located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Output directory: simulations/data
+OUT_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(OUT_DIR, exist_ok=True)
+
 # ============================================================
 # Q1: Block averaging utilities
 # ============================================================
@@ -124,7 +128,7 @@ def analyze_widom(filename):
         rows,
         columns=["T*", "rho*", "N_rep", "<βμ_ex>", "err(βμ_ex)"]
     )
-    df_final.to_csv("Q2_FINAL_TABLE.csv", index=False)
+    df_final.to_csv(os.path.join(OUT_DIR, "Q2_FINAL_TABLE.csv"), index=False)
 
     print("\nQ2 FINAL RESULTS (Widom)")
     print(tabulate(df_final, headers="keys", tablefmt="github", showindex=False, floatfmt=".6f"))
@@ -185,7 +189,7 @@ def analyze_eos(filename, widom_df=None):
                 tablefmt="github",
                 floatfmt=".6f"
             ))
-    df.to_csv("Q3_TI_results.csv", index=False)
+    df.to_csv(os.path.join(OUT_DIR, "Q3_TI_results.csv"), index=False)
 
     # -----------------------------
     # Plot 1: Isotherm P* vs rho*
@@ -199,7 +203,7 @@ def analyze_eos(filename, widom_df=None):
     plt.legend()
     plt.tight_layout()
     plt.tick_params(axis='both', labelsize=11)
-    plt.savefig("Q3_isotherm_P_vs_rho.png", dpi=600)
+    plt.savefig(os.path.join(OUT_DIR, "Q3_isotherm_P_vs_rho.png"), dpi=600)
     plt.close()
 
     # -----------------------------
@@ -215,7 +219,7 @@ def analyze_eos(filename, widom_df=None):
     plt.legend()
     plt.tight_layout()
     plt.tick_params(axis='both', labelsize=11)
-    plt.savefig("Q3_Z_vs_rho.png", dpi=600)
+    plt.savefig(os.path.join(OUT_DIR, "Q3_Z_vs_rho.png"), dpi=600)
     plt.close()
 
     # -----------------------------
@@ -247,7 +251,7 @@ def analyze_eos(filename, widom_df=None):
             plt.legend()
             plt.tight_layout()
             plt.tick_params(axis='both', labelsize=11)
-            plt.savefig("Q3_mu_comparison.png", dpi=600)
+            plt.savefig(os.path.join(OUT_DIR, "Q3_Z_vs_rho.png"), dpi=600)
             plt.close()
 
 # ============================================================
@@ -314,7 +318,7 @@ def main():
         ]
     )
     df_q1_final = df_q1_final.round(6)
-    df_q1_final.to_csv("Q1_FINAL_TABLE.csv", index=False)
+    df_q1_final.to_csv(os.path.join(OUT_DIR, "Q1_FINAL_TABLE.csv"), index=False)
 
     print("\nQ1 FINAL RESULTS (Pressure & Energy)")
     print(tabulate(df_q1_final, headers="keys", tablefmt="github", showindex=False, floatfmt=".6f"))
