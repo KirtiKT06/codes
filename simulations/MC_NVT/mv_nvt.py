@@ -159,37 +159,62 @@ def analyze_eos(filename, widom_df=None):
     beta_mu_TI = Z - 1 + cumulative_trapezoid(integrand, rho, initial=0.0)
 
     # Save numerical results
-    df = pd.DataFrame({
+    df_ti = pd.DataFrame({
         "rho*": rho,
         "Z": Z,
         "beta_mu_TI": beta_mu_TI
     })
-    # -------------------------------------------------
-    # Print numerical comparison: TI vs Widom
-    # -------------------------------------------------
+    df_ti.to_csv(os.path.join(OUT_DIR, "Q3_TI_results.csv"), index=False)
+
+    # -----------------------------------------
+    # Save Widom vs TI comparison table
+    # -----------------------------------------
     if widom_df is not None:
         widom_T = widom_df[widom_df["T*"] == T]
 
         if not widom_T.empty:
+            rows = []
+
+            for _, row in widom_T.iterrows():
+                rho_w = row["rho*"]
+
+                # Find nearest rho index in EOS data
+                idx = np.argmin(np.abs(rho - rho_w))
+
+                rows.append([
+                    T,
+                    rho_w,
+                    beta_mu_TI[idx],
+                    row["<βμ_ex>"],
+                    row["err(βμ_ex)"]
+                ])
+
+            df_compare = pd.DataFrame(
+                rows,
+                columns=[
+                    "T*",
+                    "rho*",
+                    "beta_mu_TI",
+                    "beta_mu_Widom",
+                    "err_beta_mu_Widom"
+                ]
+            )
+
+            df_compare = df_compare.round(6)
+
+            df_compare.to_csv(
+                os.path.join(OUT_DIR, "Q3_mu_TI_vs_Widom.csv"),
+                index=False
+            )
+
             print("\nQ3: μ_ex comparison (TI vs Widom)")
-            print("T* =", T)
             print(tabulate(
-                [
-                    [
-                        r,
-                        beta_mu_TI[i],
-                        (
-                            widom_T.loc[widom_T["rho*"] == r, "<βμ_ex>"].values[0]
-                            if r in widom_T["rho*"].values else np.nan
-                        )
-                    ]
-                    for i, r in enumerate(rho)
-                ],
-                headers=["rho*", "βμ_ex (TI)", "βμ_ex (Widom)"],
+                df_compare,
+                headers="keys",
                 tablefmt="github",
+                showindex=False,
                 floatfmt=".6f"
             ))
-    df.to_csv(os.path.join(OUT_DIR, "Q3_TI_results.csv"), index=False)
 
     # -----------------------------
     # Plot 1: Isotherm P* vs rho*
@@ -251,7 +276,7 @@ def analyze_eos(filename, widom_df=None):
             plt.legend()
             plt.tight_layout()
             plt.tick_params(axis='both', labelsize=11)
-            plt.savefig(os.path.join(OUT_DIR, "Q3_Z_vs_rho.png"), dpi=600)
+            plt.savefig(os.path.join(OUT_DIR, "Q3_mu_comparison.png"), dpi=600)
             plt.close()
 
 # ============================================================
