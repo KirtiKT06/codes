@@ -111,9 +111,9 @@ class gcmc
         r_cut_shift = 4.0 * (sr12_rc - sr6_rc);
 
         // MC control
-        p_insert = (f < 0.5 ? 0.30 : 0.40);
-        p_delete = (f < 0.5 ? 0.20 : 0.40);
-        p_move   = (f < 0.5 ? 0.50 : 0.20);   
+        p_insert = 0.4;
+        p_delete = 0.4;
+        p_move   = 0.2;   
         delta    = 0.10;
 
         // Dynamic state

@@ -149,4 +149,4 @@ for (T, f), flist in groups.items():
     )
     print("--------------------------------")
     print(f"T* = {T}, f = {f}")
-    print(f"$<rho>$ = {rho_mean:.6f} ± {rho_err:.6f}")
+    print(f"<rho> = {rho_mean:.6f} ± {rho_err:.6f}")
