@@ -17,7 +17,7 @@ class LennardJones:
         pos = system.positions
         box = system.box
 
-        mask = neighbour_list.neighbors         # (N, N)
+        mask = torch.triu(neighbour_list.neighbors, diagonal=1)         # (N, N)
         i, j = torch.where(mask)                # get neighbour pairs
 
         rij = pos[i] - pos[j]
@@ -45,7 +45,7 @@ class LennardJones:
         forces.index_add_(0, j, -fij)
 
         total_energy = torch.sum(pair_energy) * 0.5
-        virial = torch.sum(rij * fij) * 0.5
+        virial = torch.sum(torch.sum(rij * fij, dim=1)) * 0.5
 
         return total_energy, forces, virial
     

@@ -29,8 +29,8 @@ thermo = ThermoPrinter(interval=50)                             # calls MD_core/
 # System parameters
 N = 256                                                         # number of particles       
 box = 6.8                                                       # box length
-T = 1.0                                                         # reduced temperature in LJ units
-
+T = 1.5                                                         # reduced temperature in LJ units
+dt = 5e-4
 # creating result directory
 RESULTS_ROOT = Path("/home3/kelvin/md_simulations")
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -55,12 +55,12 @@ velocities = rescale_temperature(velocities, masses, T)         # readjusts velo
 system = System(positions, velocities, masses, box, device)     # create system objects; calls MD_core/system.py
 
 potential = LennardJones()                                      # create potentials; calls MD_core/potentials.py
-integrator = VelocityVerlet(dt=0.0005)                          # create integrator; calls MD_core/integrator.py
+integrator = VelocityVerlet(dt=dt)                          # create integrator; calls MD_core/integrator.py
 
 thermostat = LangevinThermostat(                                # creates a thermostat; valls MD_core/thermostats.py
-    temperature=1.0,
+    temperature=T,
     gamma=1.0,
-    dt=0.0005)
+    dt=dt)
 
 traj = TrajectoryWriter(run_dir, interval=50)                   # creates trajectory writer; calls MD_core/trajectory.py
 log_file = run_dir / "thermo.csv"
@@ -79,7 +79,7 @@ sim = Simulation(system,                                        # create simulat
 # Equilibration phase
 # -------------------------
 
-equil_steps = 2000
+equil_steps = 10000
 for step in range(equil_steps):
     sim.step()
 print("Equilibration complete")
@@ -91,4 +91,4 @@ print("Switching to NVE ensemble")
 # Production run
 # -------------------------
 
-sim.run(steps=20000)
+sim.run(steps=25000)

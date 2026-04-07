@@ -28,5 +28,6 @@ def radial_distribution(system, bins=100, r_max=None):
     rho = N / V.cpu().item()
     shell_volume = 4*np.pi*(r_centers**2)*dr
     g_r = hist / (rho * N * shell_volume)
+    g_r /= g_r[-1]
 
     return r_centers, g_r
