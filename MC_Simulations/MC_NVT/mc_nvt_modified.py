@@ -6,6 +6,8 @@ from scipy.optimize import brentq
 import glob
 import os
 import re
+from johnson_lj_eos import jhonson_lj_eos
+from eos_coexistence import compute_eos_psat
 
 # ============================================================
 # PARAMETERS
@@ -41,18 +43,23 @@ def process_vapor():
     rho = np.array(rho_list)
     Z = np.array(Z_list)
 
+    rho = np.insert(rho, 0, 1e-6)
+    Z = np.insert(Z, 0, 1.0)
+
     idx = np.argsort(rho)
     rho = rho[idx]
     Z = Z[idx]
 
     # ---- Thermodynamic integration ----
-    integrand = (Z - 1.0) / rho
+    integrand = (Z - 1.0) / np.maximum(rho, 1e-8)
     integral = cumulative_trapezoid(integrand, rho, initial=0.0)
 
     beta_mu_v = np.log(rho) + integral + (Z - 1.0)
 
     # Pressure
     P_v = Z * rho * T
+
+    print("Vapor μ range:", np.min(beta_mu_v), np.max(beta_mu_v))
 
     return P_v, beta_mu_v
 
@@ -121,18 +128,23 @@ def process_liquid(log_dir):
 def compute_mu_liquid(P, rho, P0, rho0, beta_mu0):
 
     beta = 1.0 / T
+    
+    rho_interp = interp1d(P, rho, fill_value="extrapolate")
 
+    # Evaluate rho at P0 (density at reference point)
+    rho_P0 = rho_interp(P0)
+    
     integrand = 1.0 / rho
     integral_full = cumulative_trapezoid(integrand, P, initial=0.0)
 
-    # shift relative to reference state
-    idx0 = np.argmin(np.abs(P - P0))
-    integral = integral_full - integral_full[idx0]
+    # Interpolate integral at P0
+    integral_interp = interp1d(P, integral_full, fill_value="extrapolate")
+    integral_shift = integral_full - integral_interp(P0)
 
     beta_mu_l = (
         beta_mu0
         + beta * (P0 / rho0 - P / rho)
-        + beta * integral
+        + beta * integral_shift
     )
 
     return beta_mu_l
@@ -147,11 +159,11 @@ def main():
     P_v, mu_v = process_vapor()
 
     # ---------------- Liquid ----------------
-    log_dir = "/home3/kelvin/lammps_logs"
+    log_dir = "/data/lammps_log"
     P_l, rho_l = process_liquid(log_dir)
 
     # ---- Reference state from EOS ----
-    from johnson_lj_eos import jhonson_lj_eos
+  
 
     gamma = 3.0
     x = np.array([
@@ -178,32 +190,31 @@ def main():
 
     mu_l = compute_mu_liquid(P_l, rho_l, P0, rho0, beta_mu0)
 
-   
     # ============================================================
-    # OVERLAP REGION (define FIRST)
+    # ALIGN LIQUID μ (REFERENCE CORRECTION)
     # ============================================================
+
+    # Define overlap region
     P_min = max(min(P_v), min(P_l))
     P_max = min(max(P_v), max(P_l))
 
     if P_min >= P_max:
         raise ValueError("No overlapping pressure region!")
 
-    # ============================================================
-    # INTERPOLATION
-    # ============================================================
+
     f_v = interp1d(P_v, mu_v, fill_value="extrapolate")
     f_l = interp1d(P_l, mu_l, fill_value="extrapolate")
 
-    # ============================================================
-    # SHIFT (average over overlap)
-    # ============================================================
+    # Compute average shift (liquid → vapor reference)
     P_overlap = np.linspace(P_min, P_max, 100)
+    shift_liquid = np.mean(f_v(P_overlap) - f_l(P_overlap))
 
-    shift = np.mean(f_l(P_overlap) - f_v(P_overlap))
-    mu_v = mu_v + shift
+    print("Applying liquid μ shift:", shift_liquid)
 
-    # Recreate interpolation after shift
-    f_v = interp1d(P_v, mu_v, fill_value="extrapolate")
+    # Apply shift
+    mu_l = mu_l + shift_liquid
+
+    f_l = interp1d(P_l, mu_l, fill_value="extrapolate")
 
     def diff(P):
         return f_v(P) - f_l(P)
@@ -215,61 +226,17 @@ def main():
 
     print(f"\nP_sat = {P_sat:.5f}")
 
-    # ============================================================
-    # 🔵 EOS COEXISTENCE (CORRECT VERSION)
-    # ============================================================
-    rho_v_range = np.linspace(0.01, 0.15, 300)
-    rho_l_range = np.linspace(0.5, 0.9, 300)
-
-    P_v_eos, mu_v_eos = [], []
-    P_l_eos, mu_l_eos = [], []
-
-    for rho in rho_v_range:
-        P, Z, mu_ex, mu = eos.lj_eos(T, rho)
-        P_v_eos.append(P)
-        mu_v_eos.append(mu)
-
-    for rho in rho_l_range:
-        P, Z, mu_ex, mu = eos.lj_eos(T, rho)
-        P_l_eos.append(P)
-        mu_l_eos.append(mu)
-    
-    idx_v = np.argsort(P_v_eos)
-    idx_l = np.argsort(P_l_eos)
-
-    P_v_eos = np.array(P_v_eos)[idx_v]
-    mu_v_eos = np.array(mu_v_eos)[idx_v]
-
-    P_l_eos = np.array(P_l_eos)[idx_l]
-    mu_l_eos = np.array(mu_l_eos)[idx_l]
-
-    f_v = interp1d(P_v_eos, mu_v_eos, fill_value="extrapolate")
-    f_l = interp1d(P_l_eos, mu_l_eos, fill_value="extrapolate")
-
-    P_min = max(min(P_v_eos), min(P_l_eos))
-    P_max = min(max(P_v_eos), max(P_l_eos))
-
-    def diff(P):
-        return f_v(P) - f_l(P)
-
-    P_sat_eos = brentq(diff, P_min, P_max)
-
+    P_sat_eos, rho_v_eos, rho_l_eos= compute_eos_psat(T)
     print(f"EOS P_sat ≈ {P_sat_eos:.5f}")
-            
-    # Plot EOS curve with your data
-    
+
+    P_test = np.linspace(P_min, P_max, 200)
+
     plt.figure()
-    mask = (P_sat_eos >= P_min - 0.02) & (P_sat_eos <= P_max + 0.1)
-    plt.plot(P_sat_eos[mask], mu_v_eos[mask], '--', label="EOS (shifted)")
-    plt.plot(P_sat_eos[mask], mu_l_eos[mask], '--', label="EOS (shifted)")
-    plt.plot(P_v, mu_v, 'o-', label="Vapor (MC)")
-    plt.plot(P_l, mu_l, 'o-', label="Liquid (MD)")
-    plt.xlabel("Pressure")
-    plt.ylabel(r"$\beta \mu$")
-    plt.title("EOS Validation vs Simulation")
+    plt.plot(P_test, f_v(P_test), label="mu_v (vapor)")
+    plt.plot(P_test, f_l(P_test), label="mu_l (liquid)")
     plt.legend()
     plt.grid()
-
+    plt.title("Check intersection before solving")
     plt.show()
 
     # ============================================================
@@ -286,8 +253,13 @@ def main():
     plt.grid()
 
     plt.figure()
-    plt.plot(P_v, mu_v, 'o-', label="Vapor")
-    plt.plot(P_l, mu_l, 'o-', label="Liquid")
+    plt.plot(P_v[5:12], mu_v[5:12], 'o-', label="Vapor")
+    plt.plot(P_l[:5], mu_l[:5], 'o-', label="Liquid")
+    plt.axvline(x=P_sat, linestyle=':', linewidth=1.5, color='black', label="P_sat")
+    mu_sat = f_v(P_sat)
+    plt.scatter(P_sat, mu_sat, color='black', zorder=5, label="Coexistence")
+    ymin = plt.ylim()[0]    
+    plt.text(P_sat, mu_sat+0.03, f"{P_sat:.3f}", ha='center')
     plt.xlabel("Pressure")
     plt.ylabel("βμ")
     plt.legend()
