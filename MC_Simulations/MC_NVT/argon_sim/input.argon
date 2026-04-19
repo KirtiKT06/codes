@@ -1,51 +1,56 @@
-# Lammps Input File for Argon runs
+# ==========================================
+# LAMMPS Input File for Argon (NVT)
+# ==========================================
+
+# ---------- VARIABLES ----------
 variable        output_freq string 1000
 variable        input string Argon 
+variable        T equal 94.4
+variable        seed equal 4928459
 
+# ---------- UNITS & SYSTEM ----------
 units          real
 atom_style     atomic #full
-
 boundary        p p p
 
-read_data       data.Argon 
-include         forcefield.Argon
+#----------Read System----------
+read_data       /home/feynman/projects/codes/MC_Simulations/MC_NVT/argon_sim/data.Argon 
+include         /home/feynman/projects/codes/MC_Simulations/MC_NVT/argon_sim/forcefield.Argon
 
-velocity all create 94.4 4928459 rot yes dist gaussian
+#----------Energy Minimization----------
+minimize 1e-12 1.0e-10 1000 10000
 
+#----------Initialization----------
+velocity all create ${T} ${seed} mom yes rot yes dist gaussian
+
+# ---------- NEIGHBORS ----------
 neighbor        2.0    bin
 neigh_modify    every 1 delay 1 check yes
 
-thermo_style    custom step temp pe ke etotal lx ly lz
-thermo          100
+# ---------- THERMO ----------
+thermo_style    custom step temp pe ke etotal press density
+thermo          1000
 
-minimize 1e-12 1.0e-10 1000 10000
+# ---------- TIMESTEP ----------
+timestep  1.0       # fs
 
+# ==========================================
+# EQUILIBRATION
+# ==========================================
+
+fix        nvt1 all nvt temp ${T} ${T} 100
+run        500000
+unfix      nvt1
+
+# ==========================================
+# PRODUCTION RUN (RDF + MSD)
+# ==========================================
+
+#----------Dumps----------
 dump            1 all atom 5000 ${input}.lammpstrj
 dump_modify     1 sort id scale no
 
-dump            2 all custom 1000 dump.Restart id type x y z
-dump_modify     2 sort id
-
-#fix myLangevin all langevin 94.4 94.4 1000 69994 
-
-timestep  1.0
-
-#fix       argon_nve1 all nve #1.00 1.00 1000.0 #y 1.0 1.0 1000.0 couple xy
-fix nvt1   all nvt temp 94.4 94.4 100
-run       100000
-unfix nvt1
-
-#unfix argon_nve1
-
-
-dump        3 all atom 1000 prod.lammpstrj
-dump_modify 3 sort id scale no
-
-# ===============================
-# PRODUCTION RUN (with analysis)
-# ===============================
-
-fix nvt2 all nvt temp 94.4 94.4 100
+fix nvt2 all nvt temp ${T} ${T} 100
 
 # ---------- RDF ----------
 compute myRDF all rdf 200
@@ -55,16 +60,32 @@ fix rdf_out all ave/time 100 10 1000 c_myRDF[*] file rdf.dat mode vector
 compute myMSD all msd com yes
 fix msd_out all ave/time 100 10 1000 c_myMSD[4] file msd.dat
 
-
-# ---------- VACF ----------
-compute myVACF all vacf
-fix vacf_out all ave/time 1 1000 1000 c_myVACF[4] file vacf.dat
-
 # ---------- Run ----------
-run 50000000   # 50 ns
+run 50000000        # 50 ns
 
 # Cleanup
 unfix nvt2
 unfix rdf_out
 unfix msd_out
+
+# ==========================================
+# VACF (NVE)
+# ==========================================
+
+# Stop all dumps
+undump 1
+
+# reset time origin
+reset_timestep 0
+
+# Switch to NVE
+fix         nve all nve
+
+# VACF (no over-averaging, correct sampling)
+compute     myVACF all vacf
+fix         vacf_out all ave/correlate 1 5000 50000 c_myVACF[4] file vacf.dat
+run         1000000   # ~1 ns
+
+# Cleanup
+unfix nve
 unfix vacf_out
