@@ -102,6 +102,11 @@ def process_vapor():
 
     # Plot Z vs rho
     plt.figure(figsize=FIG_SIZE)
+
+
+
+
+    
     plt.plot(rho, Z, 'o-')
     plt.errorbar(rho, Z,
                 yerr=Z_err, 
