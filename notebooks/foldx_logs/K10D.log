@@ -1,0 +1,80 @@
+   ********************************************
+   ***                                      ***
+   ***             FoldX 5.1 (c)            ***
+   ***                                      ***
+   ***     code by the FoldX Consortium     ***
+   ***                                      ***
+   ***     Jesper Borg, Frederic Rousseau   ***
+   ***    Joost Schymkowitz, Luis Serrano   ***
+   ***    Peter Vanhee, Erik Verschueren    ***
+   ***     Lies Baeten, Javier Delgado      ***
+   ***       and Francois Stricher          ***
+   *** and any other of the 9! permutations ***
+   ***   based on an original concept by    ***
+   ***   Raphael Guerois and Luis Serrano   ***
+   ********************************************
+
+ *** THIS IS AN IMPORTANT MESSAGE: 
+ >> External parametrized molecules were detected...
+ >> Final energetic values will depend of the correct parametrization of this molecules. 
+
+
+1 models read: 1PGA_Repair.pdb
+1 models read: 1PGA_Repair.pdb
+
+BackHbond       =               -43.87
+SideHbond       =               -16.68
+Energy_VdW      =               -53.26
+Electro         =               -2.27
+Energy_SolvP    =               75.95
+Energy_SolvH    =               -68.66
+Energy_vdwclash =               1.24
+energy_torsion  =               1.60
+backbone_vdwclash=              29.85
+Entropy_sidec   =               27.85
+Entropy_mainc   =               78.06
+water bonds     =               0.00
+helix dipole    =               -0.36
+loop_entropy    =               0.00
+cis_bond        =               0.00
+disulfide       =               0.00
+kn electrostatic=               0.00
+partial covalent interactions = 0.00
+Energy_Ionisation =             0.00
+Entropy Complex =               0.00
+-----------------------------------------------------------
+Total          = 				  -0.40
+
+
+BackHbond       =               -43.87
+SideHbond       =               -16.68
+Energy_VdW      =               -53.26
+Electro         =               -2.27
+Energy_SolvP    =               75.95
+Energy_SolvH    =               -68.66
+Energy_vdwclash =               1.24
+energy_torsion  =               1.60
+backbone_vdwclash=              29.85
+Entropy_sidec   =               27.85
+Entropy_mainc   =               78.06
+water bonds     =               0.00
+helix dipole    =               -0.36
+loop_entropy    =               0.00
+cis_bond        =               0.00
+disulfide       =               0.00
+kn electrostatic=               0.00
+partial covalent interactions = 0.00
+Energy_Ionisation =             0.00
+Entropy Complex =               0.00
+-----------------------------------------------------------
+Total          = 				  -0.40
+
+Starting BuildModel
+Reading KA10D;
+Residue to Mutate LYSA10 has residue index 9
+Mutating residue = LYSA10 into ASP
+Your file run OK
+End time of FoldX: Tue May 19 17:57:25 2026
+Total time spend: 3.54 seconds.
+validated file "1PGA_Repair_1.pdb" => successfully finished
+Cleaning BuildModel...DONE
