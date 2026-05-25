@@ -1,0 +1,76 @@
+{
+  "aa_pdb_prefix"   : "./1UBQ",
+  "cg_pdb_prefix"   : "cg",
+  "pdb_prefix"      : "/data/cg_dna_histone/sop_sc/trial_1/cg_ion",
+
+  "dcd_prefix"      : "/data/cg_dna_histone/sop_sc/trial_1/anim",
+  "data_name"       : "/data/cg_dna_histone/sop_sc/trial_1/data.out",
+  "energy_name"     : "/data/cg_dna_histone/sop_sc/trial_1/energy.dat",
+  "checkpoint_name" : "/data/cg_dna_histone/sop_sc/trial_1/chkout.chk",
+
+  "sequence"        : "MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG",
+
+  "auto_ions"       : true,
+  "KCl_mM"          : 0.0,
+  "MgCl2_mM"        : 0.0,
+  "neutralize"      : true,
+
+  "nK"              : 0,
+  "nMg"             : 0,
+  "nCl"             : 0,
+
+  "rK"              : 1.590,
+  "rMg"             : 1.353,
+  "rCl"             : 2.760,
+
+  "mK"              : 39.0983,
+  "mMg"             : 24.305,
+  "mCl"             : 35.453,
+
+  "epsMg"           : 0.00941798,
+  "epsK"            : 0.27946510,
+  "epsCl"           : 0.01166150,
+
+  "qK"              : 1.0,
+  "qMg"             : 2.0,
+  "qCl"             : -1.0,
+
+  "mProtein"        : 108.4,
+
+  "box_length"      : 100.0,
+  "Temp"            : 298.0,
+  "Boltz_Const"     : 0.0019872041,
+
+  "dielectric"      : 20.0,
+  "pme_cutoff"      : 12.0,
+  "LJ_cutoff"       : 12.0,
+
+  "friction_coeff"  : 0.1,
+  "numsteps"        : 500000000,
+  "data_interval"   : 5000,
+  "snap_interval"   : 5000,
+  "time_step"       : 0.002,
+
+  "platform_type"   : "CUDA",
+  "final_state"     : true,
+  "minimization"    : true,
+  "restart"         : false,
+
+  "ComMotionRemover": true,
+  "CMMR_frequency"  : 100,
+
+  "fene_k"          : 20.0,
+  "fene_R0"         : 4.0,
+  "eps_local"       : 1.0,
+  "eps_protein_ion" : 0.05,
+
+  "omega"           : 0.03,  
+  "bt_offset"       : 0.7,
+
+  "nonlocal_cutoff" : 30.0,
+
+  "ion_min_dist"    : 4.5,
+  "fallback_sc_offset": 1.0,
+  "histidine_charge": 0.0,
+  "random_seed"     : 100
+}
