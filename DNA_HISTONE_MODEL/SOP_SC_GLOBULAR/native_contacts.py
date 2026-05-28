@@ -5,7 +5,9 @@ config = json.load(open("input.json"))
 
 cg_pdb_file = config["cg_pdb_prefix"] + ".pdb"
 
-native_cutoff = float(config.get("native_cutoff", 8.0))
+cutoff_bb = float(config.get("native_cutoff_bb", 7.5))
+cutoff_bs = float(config.get("native_cutoff_bs", 7.5))
+cutoff_ss = float(config.get("native_cutoff_ss", 8.0))
 
 min_seq_sep = int(config.get("min_seq_sep", 3))
 
@@ -42,9 +44,19 @@ for i in range(len(xyz)):
     for j in range(i+1, len(xyz)):
         if abs(resids[i] - resids[j]) <= min_seq_sep:
             continue
-        
+
+        kind_i = names[i]   # "BB" or "SC"
+        kind_j = names[j]
+
+        if kind_i == "BB" and kind_j == "BB":
+            cutoff = cutoff_bb
+        elif kind_i == "SC" and kind_j == "SC":
+            cutoff = cutoff_ss
+        else:
+            cutoff = cutoff_bs
+
         dist = np.linalg.norm(xyz[i] - xyz[j])
-        if dist < native_cutoff:
+        if dist < cutoff:
             native_contacts.append((i, j, dist))
 
 print("Total beads:", len(xyz))
@@ -59,7 +71,6 @@ print("Max native distance:", max(distances))
 print("Average native distance:", np.mean(distances))
 
 with open("native_contacts.dat", "w") as f:
-    f.write("# i j r0_A\n")
-
+    f.write("# i j r0_A kind_i kind_j\n")
     for i, j, dist in native_contacts:
-        f.write(f"{i} {j} {dist:.3f}\n")
+        f.write(f"{i} {j} {dist:.3f} {names[i]} {names[j]}\n")

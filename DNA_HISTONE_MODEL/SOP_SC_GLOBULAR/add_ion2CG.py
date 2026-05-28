@@ -246,7 +246,12 @@ def write_pdb(names, resnames, chains, resids, xyz, ion_names, ion_xyz, out_pdb)
 
         serial = 1
 
-        shifted_xyz = xyz + box_length_A / 2.0
+        # shifted_xyz = xyz + box_length_A / 2.0
+        # Fix (center COM at box center):
+        com = xyz.mean(axis=0)
+        shifted_xyz = xyz - com + np.array([box_length_A/2.0, 
+                                            box_length_A/2.0, 
+                                            box_length_A/2.0])
 
         for i in range(len(names)):
             f.write(

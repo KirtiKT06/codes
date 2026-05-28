@@ -63,8 +63,12 @@ ev_cutoff = float(config["LJ_cutoff"]) * u.angstrom
 
 fene_k = float(config.get("fene_k", 20.0)) * u.kilocalorie_per_mole / (u.angstrom ** 2)
 fene_R0 = float(config.get("fene_R0", 2.0)) * u.angstrom
+# fene_R0 = 5.0 * u.angstrom
 eps_local = float(config.get("eps_local", 1.0)) * u.kilocalorie_per_mole
 eps_protein_ion = float(config.get("eps_protein_ion", 0.2)) * u.kilocalorie_per_mole
+
+eps_h_bb = float(config.get("eps_h_bb", 2.0))
+eps_h_bs = float(config.get("eps_h_bs", 2.0))
 
 omega = float(config.get("omega", 0.12))
 bt_offset = float(config.get("bt_offset", 0.7))
@@ -235,6 +239,68 @@ pdb = app.PDBFile(pdb_file)
 positions = pdb.positions
 pos_A = np.array([p.value_in_unit(u.angstrom) for p in positions])
 
+
+
+# Add this right after computing pos_A, before any force setup
+print("\nChecking for broken bonds in PDB:")
+for r in range(len(residue_to_beads) - 1):
+    i = residue_to_beads[r][0]
+    j = residue_to_beads[r+1][0]
+    d = np.linalg.norm(pos_A[i] - pos_A[j])
+    if d > 20.0:  # anything over 20 A is definitely wrong
+        print(f"  BB-BB bond ({i},{j}): distance = {d:.3f} A  [BROKEN]")
+
+for bb, sc in residue_to_beads:
+    if sc is not None:
+        d = np.linalg.norm(pos_A[bb] - pos_A[sc])
+        if d > 15.0:
+            print(f"  BB-SC bond ({bb},{sc}): distance = {d:.3f} A  [BROKEN]")
+
+
+# Unwrap protein coordinates to remove periodic boundary artefacts
+# Walk the backbone chain and apply minimum image convention
+# to ensure all bonded beads are within one box length of each other
+
+def unwrap_chain(pos, residue_to_beads, box_L):
+    pos = pos.copy()
+    # Walk BB chain in order and unwrap each bead relative to previous
+    bb_indices = [r[0] for r in residue_to_beads]
+    for k in range(1, len(bb_indices)):
+        i = bb_indices[k-1]
+        j = bb_indices[k]
+        delta = pos[j] - pos[i]
+        # Apply minimum image
+        delta -= box_L * np.round(delta / box_L)
+        pos[j] = pos[i] + delta
+    # Now unwrap each SC relative to its BB
+    for bb, sc in residue_to_beads:
+        if sc is not None:
+            delta = pos[sc] - pos[bb]
+            delta -= box_L * np.round(delta / box_L)
+            pos[sc] = pos[bb] + delta
+    return pos
+
+pos_A = unwrap_chain(pos_A, residue_to_beads, box_length_A)
+
+# Verify fix
+print("Post-unwrap bond check:")
+max_bond = 0.0
+for r in range(len(residue_to_beads) - 1):
+    i = residue_to_beads[r][0]
+    j = residue_to_beads[r+1][0]
+    d = np.linalg.norm(pos_A[i] - pos_A[j])
+    max_bond = max(max_bond, d)
+print(f"  Max BB-BB bond length: {max_bond:.3f} A  (should be <6 A)")
+
+# Update OpenMM positions from unwrapped coordinates
+from openmm.unit import angstrom as _ang
+positions_unwrapped = [
+    mm.Vec3(pos_A[i,0], pos_A[i,1], pos_A[i,2]) * u.angstrom
+    for i in range(len(pos_A))
+]
+
+
+
 if len(pos_A) != n_total:
     raise RuntimeError(
         "Particle count mismatch: PDB has %d positions, reconstructed system has %d "
@@ -242,7 +308,15 @@ if len(pos_A) != n_total:
         % (len(pos_A), n_total, n_protein_beads, n_ions)
     )
 
+pos_protein = pos_A[:n_protein_beads]
+cm = pos_protein.mean(axis=0)
+rg_init = np.sqrt(np.mean(np.sum((pos_protein - cm)**2, axis=1)))
+print("Initial structure Rg:", rg_init, "A")
 BT_INDEX = {aa: i for i, aa in enumerate(BT_ORDER)}
+
+
+
+
 
 def bt_score(aa1, aa2):
     i = BT_INDEX[aa1.upper()]
@@ -251,7 +325,6 @@ def bt_score(aa1, aa2):
 
 def bt_prefactor(aa1, aa2):
     return omega * kBT_kcal * abs(bt_score(aa1, aa2) - bt_offset) * u.kilocalorie_per_mole
-
 def sigma_A(i, j):
     return float(beads[i]["radius_A"]) + float(beads[j]["radius_A"])
 
@@ -325,9 +398,12 @@ system.addForce(FENEForce)
 #==========================================================================================================
 # LocalRepForce = mm.CustomBondForce("eps*(sig/r)^6") #idp
 # LocalRepForce = mm.CustomBondForce("eps*(sig/r)^12") #globular
-LocalRepForce = mm.CustomBondForce("step(sig-r)*(4*eps*((sig/r)^12 - (sig/r)^6) + eps)") #globular
-LocalRepForce.addPerBondParameter("eps")
-LocalRepForce.addPerBondParameter("sig")
+# LocalRepForce = mm.CustomBondForce("step(sig-r)*(4*eps*((sig/r)^12 - (sig/r)^6) + eps)") #globular
+
+# LocalRepForce = mm.CustomBondForce("eps*(sig/r)^6")
+
+# LocalRepForce.addPerBondParameter("eps")
+# LocalRepForce.addPerBondParameter("sig")
 
 local_pairs = set()
 
@@ -339,49 +415,86 @@ for i in range(n_protein_beads):
             continue
 
         if residue_separation(i, j) <= 2:
-            LocalRepForce.addBond(i, j, [eps_local, sigma_A(i, j) * u.angstrom])
+            # rref_local = np.linalg.norm(pos_A[i] - pos_A[j])
+            # LocalRepForce.addBond(i, j, [eps_local, rref_local * u.angstrom])
             local_pairs.add(pair)
 
-system.addForce(LocalRepForce)
+# system.addForce(LocalRepForce)
 
 # ============================================================
 # 3. Native-contact interactions for globular SOP-SC model
 # ============================================================
 
-NativeForce = mm.CustomBondForce(
-    "eps*((r0/r)^12 - 2*(r0/r)^6)"
-)
+# eps_h_bb = 1.5    # backbone–backbone native strength
+# eps_h_bs = 1.5    # backbone–sidechain native strength
 
-NativeForce.addGlobalParameter(
-    "eps",
-    1.0 * u.kilocalorie_per_mole
-)
+NativeBBForce = mm.CustomBondForce("eps_bb*((r0/r)^12 - 2*(r0/r)^6)")
+NativeBBForce.addGlobalParameter("eps_bb", eps_h_bb)
+NativeBBForce.addPerBondParameter("r0")
 
-NativeForce.addPerBondParameter("r0")
+NativeBSForce = mm.CustomBondForce("eps_bs*((r0/r)^12 - 2*(r0/r)^6)")
+NativeBSForce.addGlobalParameter("eps_bs", eps_h_bs)
+NativeBSForce.addPerBondParameter("r0")
+
+NativeSSForce = mm.CustomBondForce("eps_ss*((r0/r)^12 - 2*(r0/r)^6)")
+NativeSSForce.addPerBondParameter("r0")
+NativeSSForce.addPerBondParameter("eps_ss")
 
 native_pairs = set()
 
 with open("native_contacts.dat") as f:
     for line in f:
-
         if line.startswith("#"):
             continue
-
         fields = line.split()
-
         i = int(fields[0])
         j = int(fields[1])
         r0 = float(fields[2])
+        ki = fields[3]   # "BB" or "SC"
+        kj = fields[4]
+        pair = tuple(sorted((i, j)))
+        sep = residue_separation(i, j)
 
-        NativeForce.addBond(
-            i,
-            j,
-            [r0 * u.angstrom]
-        )
+        # ------------------------------------------------
+        # Exclude local topology/native-contact artifacts
+        # ------------------------------------------------
 
-        native_pairs.add(tuple(sorted((i, j))))
+        # BB-BB local neighbors
+        if ki == "BB" and kj == "BB" and sep <= 2:
+            continue
+
+        # BB-SC local neighbors
+        if ((ki == "BB" and kj == "SC") or
+            (ki == "SC" and kj == "BB")) and sep == 0:
+            continue
+
+        # SC-SC local neighbors
+        if ki == "SC" and kj == "SC" and sep == 0:
+            continue
+
+        # ki = beads[i]["kind"]
+        # kj = beads[j]["kind"]
+
+        if ki == "BB" and kj == "BB":
+            NativeBBForce.addBond(i, j, [r0 * u.angstrom])
+        elif ki == "SC" and kj == "SC":
+            aa_i = beads[i]["aa"]
+            aa_j = beads[j]["aa"]
+            # BT potential: 0.5*(eps_ij^ss - bt_offset) * 300*kB
+            # following Eq. 3 of Reddy & Thirumalai 2015
+            raw = abs(0.5 * (bt_score(aa_i, aa_j) - bt_offset) * 300.0 * Boltz_Const)
+            NativeSSForce.addBond(i, j, [r0 * u.angstrom, raw])
+        else:
+            # BB–SC
+            NativeBSForce.addBond(i, j, [r0 * u.angstrom])
+
+        native_pairs.add(pair)
 
 print("Native contacts loaded:", len(native_pairs))
+
+# system.addForce(NativeBBForce)
+# system.addForce(NativeBSForce)
+# system.addForce(NativeSSForce)
 
 # ------------------------------------------------------------
 # Global exclusion list
@@ -399,26 +512,39 @@ for i, j in local_pairs:
 for i, j in native_pairs:
     all_exclusions.add(tuple(sorted((int(i), int(j)))))
 
-system.addForce(NativeForce)
+system.addForce(NativeBBForce)
+system.addForce(NativeBSForce)
+system.addForce(NativeSSForce)
 
 # ============================================================
 # 4. Non-native excluded volume interactions
 # ============================================================
 
+# NonNativeRepForce = mm.CustomNonbondedForce(
+#     "step(sig-r)*(4*eps*((sig/r)^12 - (sig/r)^6) + eps);"
+#     "sig = 0.5*(sig1 + sig2)"
+# )
+
+# NonNativeRepForce = mm.CustomNonbondedForce(
+#     "eps*(sig/r)^12;"
+#     "sig = 0.5*(sig1 + sig2)"
+# )
+
 NonNativeRepForce = mm.CustomNonbondedForce(
-    "step(rc-r)*(4*eps*((sig/r)^12 - (sig/r)^6) + eps);"
+    "eps*step(sig-r)*(sig-r)^2/sig^2;"
     "sig = 0.5*(sig1 + sig2)"
 )
 
 NonNativeRepForce.addGlobalParameter(
     "eps",
-    1.0 * u.kilocalorie_per_mole
+    1.0
+    # 0.05 
 )
 
-NonNativeRepForce.addGlobalParameter(
-    "rc",
-    0.5612310241546865
-)
+# NonNativeRepForce.addGlobalParameter(
+#     "rc",
+#     0.5612310241546865
+# )
 
 NonNativeRepForce.addPerParticleParameter("sig")
 
@@ -427,7 +553,7 @@ NonNativeRepForce.setNonbondedMethod(
 )
 
 NonNativeRepForce.setCutoffDistance(
-    20.0 * u.angstrom
+    10.0 * u.angstrom
 )
 
 # ------------------------------------------------------------
@@ -555,6 +681,7 @@ NonlocalPPForce = mm.CustomNonbondedForce(
     ")"
     ")"
 )
+
 NonlocalPPForce.addPerParticleParameter("type")
 NonlocalPPForce.addPerParticleParameter("isSC")
 NonlocalPPForce.addGlobalParameter("rc_bt", rc_nm)
@@ -588,7 +715,31 @@ NonlocalPPForce.setCutoffDistance(rc_nm * u.nanometer)
 # Ions get dummy type but are excluded by interaction group.
 # ------------------------------------------------------------
 
+# for bead in beads:
+#     if bead["kind"] == "BB":
+#         # Generic backbone bead
+#         t = BB_TYPE
+#     else:
+#         # SC beads and single-bead Gly use residue-specific type
+#         t = AA_TO_TYPE[bead["aa"]]
+
+# #     NonlocalPPForce.addParticle([float(t)])
+
+#     is_sc = 1.0 if bead["kind"] == "SC" else 0.0
+
+#     NonlocalPPForce.addParticle([
+#         float(t),
+#         is_sc
+#     ])
+
+# ------------------------------------------------------------
+# Add particles
+# ------------------------------------------------------------
+
+bead_types = []
+
 for bead in beads:
+
     if bead["kind"] == "BB":
         # Generic backbone bead
         t = BB_TYPE
@@ -596,9 +747,9 @@ for bead in beads:
         # SC beads and single-bead Gly use residue-specific type
         t = AA_TO_TYPE[bead["aa"]]
 
-#     NonlocalPPForce.addParticle([float(t)])
+    bead_types.append(int(t))
 
-    is_sc = 1.0 if bead["kind"] == "SC" else 0.0
+    is_sc = 1.0 if bead["kind"] in ["SC", "SINGLE"] else 0.0
 
     NonlocalPPForce.addParticle([
         float(t),
@@ -651,17 +802,36 @@ for bead in beads:
     q = float(bead["charge"]) * charge_scale
     ESForce.addParticle(
         q * u.elementary_charge,
-        0.0 * u.angstrom,
-        0.0 * u.kilocalorie_per_mole
+        1.0 * u.angstrom,
+        0.001 * u.kilocalorie_per_mole
     )
 
 for ion in ions:
     q = float(ion["charge"]) * charge_scale
     ESForce.addParticle(
         q * u.elementary_charge,
-        0.0 * u.angstrom,
-        0.0 * u.kilocalorie_per_mole
+        1.0 * u.angstrom,
+        0.001 * u.kilocalorie_per_mole
     )
+
+total_q = 0.0
+
+for bead in beads:
+    total_q += bead["charge"]
+
+for ion in ions:
+    total_q += ion["charge"]
+
+print("Raw total charge:", total_q)
+
+nonzero = 0
+
+for bead in beads:
+    if bead["charge"] != 0:
+        nonzero += 1
+        print(bead["aa"], bead["kind"], bead["charge"])
+
+print("Charged protein beads:", nonzero)
 
 # for i, j in bonded_pairs:
 #     ESForce.addException(
@@ -700,8 +870,15 @@ system.addForce(ESForce)
 # 5. Excluded Volume / Ion Interactions: LJ interactions between Ions, and between Ions and the Protein. 
 # The variable factor = 1 - isProtein1*isProtein2 ensures this force ignores protein-protein pairs (since NonlocalPPForce already handles them).
 #===============================================================================================================================================
+# EVForce = mm.CustomNonbondedForce(
+#     "factor*select(step(sig-r), eps*((sig/r)^12 - 2*(sig/r)^6 + 1), 0);"
+#     "sig = radius1 + radius2;"
+#     "eps = sqrt(epsilon1*epsilon2);"
+#     "factor = 1 - isProtein1*isProtein2"
+# )
+
 EVForce = mm.CustomNonbondedForce(
-    "factor*select(step(sig-r), eps*((sig/r)^12 - 2*(sig/r)^6 + 1), 0);"
+    "factor*eps*(sig/r)^12;"
     "sig = radius1 + radius2;"
     "eps = sqrt(epsilon1*epsilon2);"
     "factor = 1 - isProtein1*isProtein2"
@@ -716,15 +893,15 @@ EVForce.setCutoffDistance(ev_cutoff)
 
 for bead in beads:
     EVForce.addParticle([
-        float(bead["radius_A"]) * u.angstrom,
-        eps_protein_ion,
+        float(bead["radius_A"]) * 0.1,          # Angstrom → nm, plain float
+        float(eps_protein_ion.value_in_unit(u.kilojoule_per_mole)),  # kcal→kJ, plain float
         1.0
     ])
 
 for ion in ions:
     EVForce.addParticle([
-        float(ion["radius_A"]) * u.angstrom,
-        float(ion["epsilon_kcal"]) * u.kilocalorie_per_mole,
+        float(ion["radius_A"]) * 0.1,           # Angstrom → nm
+        float(ion["epsilon_kcal"]) * 4.184,     # kcal → kJ
         0.0
     ])
 
@@ -744,6 +921,41 @@ if ComMotionRemover:
     cmm = mm.CMMotionRemover()
     cmm.setFrequency(CMMR_frequency)
     system.addForce(cmm)
+
+print("\n===== FORCE EXPRESSIONS =====\n")
+
+print("FENE:")
+print(FENEForce.getEnergyFunction())
+
+print("\nNativeBB:")
+print(NativeBBForce.getEnergyFunction())
+
+print("\nNativeBS:")
+print(NativeBSForce.getEnergyFunction())
+
+print("\nNativeSS:")
+print(NativeSSForce.getEnergyFunction())
+
+print("\nNonNativeRep:")
+print(NonNativeRepForce.getEnergyFunction())
+
+print("\nNonlocalPP:")
+print(NonlocalPPForce.getEnergyFunction())
+
+print("\nEVForce:")
+print(EVForce.getEnergyFunction())
+
+print("\n===== FORCE ORDER =====\n")
+
+for i in range(system.getNumForces()):
+
+    force = system.getForce(i)
+
+    print(
+        i,
+        force.__class__.__name__
+    )
+
 
 for i in range(system.getNumForces()):
     system.getForce(i).setForceGroup(i)
@@ -820,7 +1032,7 @@ if restart:
     simulation.loadCheckpoint("chkin.chk")
 else:
     print("restart: False")
-    simulation.context.setPositions(positions)
+    simulation.context.setPositions(positions_unwrapped)
     simulation.context.setVelocitiesToTemperature(T)
 
 counts = ion_counts(ions)
@@ -847,8 +1059,10 @@ print(initial_energy)
 
 labels = [
     "FENEForce",
-    "LocalRepForce",
-    "NativeForce",
+    # "LocalRepForce",
+    "NativeBBForce",
+    "NativeBSForce",
+    "NativeSSForce",
     "NonNativeRepForce",
     "NonlocalPPForce",
     "EVForce_PI_II",
@@ -867,11 +1081,56 @@ initial_kcal = initial_energy.value_in_unit(u.kilocalorie_per_mole)
 if np.isnan(initial_kcal) or np.isinf(initial_kcal):
     raise RuntimeError("Initial energy is NaN/Inf")
 
+# Find local pairs that are severely overlapping at crystal geometry
+print("Checking local pair distances vs sigma:")
+worst_ratio = 1.0
+for i, j in local_pairs:
+    r = np.linalg.norm(pos_A[i] - pos_A[j])
+    sig = sigma_A(i, j)
+    ratio = r / sig
+    if ratio < 0.5:  # severely overlapping
+        print(f"  Pair ({i},{j}): r={r:.2f} A, sig={sig:.2f} A, r/sig={ratio:.3f}")
+    if ratio < worst_ratio:
+        worst_ratio = ratio
+print(f"Worst local r/sig ratio: {worst_ratio:.3f}")
+
+print("\n===== FENE STRAIN CHECK =====")
+
+state = simulation.context.getState(getPositions=True)
+
+p = state.getPositions(asNumpy=True).value_in_unit(u.angstrom)
+
+max_frac = 0.0
+
+for (i, j), rref in rref_dict.items():
+
+    r = np.linalg.norm(p[i] - p[j])
+
+    frac = abs((r - rref) / 5.0)
+
+    if frac > max_frac:
+        max_frac = frac
+
+    if frac > 0.3:
+        print(
+            i, j,
+            "r =", r,
+            "rref =", rref,
+            "frac =", frac
+        )
+
+print("Maximum FENE fractional extension:", max_frac)
+
+
 if minimization:
     print("\nPerforming minimization")
+    simulation.context.setVelocitiesToTemperature(T)
     # simulation.minimizeEnergy(tolerance=1e-5 * u.kilojoule_per_mole / u.nanometer)
-    simulation.minimizeEnergy(tolerance=10 * u.kilojoule_per_mole / u.nanometer)
-
+    # simulation.minimizeEnergy(tolerance=1.0 * u.kilojoule_per_mole / u.nanometer)
+    simulation.minimizeEnergy(
+        tolerance=10.0 * u.kilojoule_per_mole / u.nanometer,
+        maxIterations=500
+    )
     state = simulation.context.getState(getPositions=True, getEnergy=True)
     e = state.getPotentialEnergy()
     print("Minimized energy:", e)
@@ -879,6 +1138,19 @@ if minimization:
     e_kcal = e.value_in_unit(u.kilocalorie_per_mole)
 
     if np.isnan(e_kcal) or np.isinf(e_kcal):
+
+        # Diagnose which FENE bond broke
+        p = state.getPositions(asNumpy=True).value_in_unit(u.angstrom)
+        print("Diagnosing broken FENE bonds:")
+        fene_R0_val = fene_R0.value_in_unit(u.angstrom)
+        for (i, j), rref in rref_dict.items():
+            r = np.linalg.norm(p[i] - p[j])
+            extension = abs(r - rref)
+            if extension > fene_R0_val * 0.9:
+                print(f"  Bond ({i},{j}): r={r:.3f} rref={rref:.3f} "
+                      f"extension={extension:.3f} R0={fene_R0_val:.3f} "
+                      f"fraction={extension/fene_R0_val:.3f}")
+                
         raise RuntimeError("Energy became NaN/Inf after minimization.")
 
     check_fene_bonds(simulation.context)
@@ -928,6 +1200,13 @@ simulation.reporters.append(
 simulation.reporters.append(app.CheckpointReporter(checkpoint_name, data_interval))
 simulation.reporters.append(EnergyReporter(energy_name, data_interval, system.getNumForces()))
 
+# Short equilibration with high friction to gently relax from crystal geometry
+print("Equilibrating with high friction...")
+integrator.setFriction(5.0 / u.picosecond)   # overdamped
+simulation.step(50000)
+integrator.setFriction(friction_coeff / u.picosecond)  # restore
+print("Equilibration done, starting production MD")
+
 simulation.step(numsteps)
 
 final_state_obj = simulation.context.getState(getPositions=True, getEnergy=True)
@@ -949,3 +1228,43 @@ if final_state:
 
 end_time = datetime.now()
 print("Duration:", end_time - start_time)
+
+# ============================================================
+# Check for steric overlaps
+# ============================================================
+
+positions = simulation.context.getState(
+    getPositions=True
+).getPositions(asNumpy=True)
+
+min_ratio = 1e9
+worst_pair = None
+
+for i in range(n_protein_beads):
+    for j in range(i + 1, n_protein_beads):
+
+        pair = tuple(sorted((i, j)))
+
+        if pair in all_exclusions:
+            continue
+
+        rij = np.linalg.norm(
+            positions[i].value_in_unit(u.angstrom)
+            - positions[j].value_in_unit(u.angstrom)
+        )
+
+        sig = sig_table[
+            bead_types[i],
+            bead_types[j]
+        ]
+
+        ratio = rij / sig
+
+        if ratio < min_ratio:
+            min_ratio = ratio
+            worst_pair = (i, j, rij, sig)
+
+print("\nWorst steric overlap pair:")
+print(worst_pair)
+
+print(f"Minimum r/sigma ratio: {min_ratio:.3f}")
