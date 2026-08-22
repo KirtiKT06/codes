@@ -1,0 +1,3 @@
+data_cell
+# Created with OpenMM 8.5.2, 2026-07-15
+#

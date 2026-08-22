@@ -1,0 +1,107 @@
+{
+  "_comment_section_1": "=== FILE PATHS ===",
+
+  "aa_pdb"              : "2CV5.pdb",
+  "dna_pdb"             : "fixed.pdb",
+  "cg_pdb"              : "histone_cg.pdb",
+  "cg_pdb_with_tails"   : "histone_cg_with_tails.pdb",
+  "native_contacts_file": "native_contacts.dat",
+  "charged_beads_file"  : "charged_beads.dat",
+
+  "dcd_prefix"          : "/data/cg_dna_histone/sop_single_bead/run4/hpc_traj",
+  "data_name"           : "/data/cg_dna_histone/sop_single_bead/run4/hpc_log.csv",
+  "checkpoint_name"     : "/data/cg_dna_histone/sop_single_bead/run4/hpc_equil.chk",
+  "final_state_name"    : "/data/cg_dna_histone/sop_single_bead/run4/hpc_final.pdb",
+
+  "_comment_section_2": "=== HISTONE CHAINS (AA2CG + add_tails) ===",
+
+  "histone_chains"      : ["A", "B", "C", "D", "E", "F", "G", "H"],
+  "dna_chains"          : ["I", "J"],
+
+  "_comment_section_3": "=== TAIL BUILDING (add_tails) ===",
+
+  "bond_length"         : 3.8,
+  "clash_cutoff"        : 3.4,
+  "max_placement_tries" : 5000,
+  "random_seed"         : 42,
+
+  "_comment_section_4": "=== NATIVE CONTACTS (build_contacts) ===",
+
+  "native_cutoff"       : 8.0,
+
+  "_comment_section_5": "=== FORCEFIELD PARAMETERS (SOP model) ===",
+
+  "fene_k"              : 20.0,
+  "fene_R0"             : 2.0,
+  "sigma_protein"       : 3.8,
+  "eps_h_native"        : 2.0,
+  "eps_local"           : 1.0,
+
+  "_comment_section_6": "=== ELECTROSTATICS ===",
+
+  "dielectric_protein"  : 10.0,
+  "dielectric_water"    : 80.0,
+  "pme_cutoff"          : 30.0,
+  "histidine_charge"    : 1.0,
+
+  "_comment_section_7": "=== EXPLICIT IONS ===",
+
+  "auto_ions"           : true,
+  "KCl_mM"              : 150.0,
+  "MgCl2_mM"            : 20.0,
+  "neutralize"          : true,
+
+  "nK"                  : 0,
+  "nCl"                 : 0,
+  "nMg"                 : 0, 
+
+  "rK"                  : 1.590,
+  "rCl"                 : 2.760,
+  "rMg"                 : 1.353,
+
+  "mK"                  : 39.0983,
+  "mCl"                 : 35.453,
+  "mMg"                 : 24.305,
+
+  "epsK"                : 0.27946510,
+  "epsCl"               : 0.01166150,
+  "epsMg"               : 0.00941798,
+
+  "qK"                  : 1.0,
+  "qCl"                 : -1.0,
+  "qMg"                 : 2.0,
+
+  "ion_min_dist"        : 4.5,
+
+  "_comment_section_8": "=== SIMULATION SETTINGS ===",
+
+  "box_padding"         : 15.0,
+  "box_scale_factor"    : 1.3,
+  "Temp"                : 298.0,
+  "friction_coeff"      : 1.0,
+  "time_step"           : 0.005,
+  "numsteps_equil"      : 2000000,
+  "numsteps_prod"       : 10000000000,
+  "data_interval"       : 10000,
+  "snap_interval"       : 10000,
+  "minimization"        : true,
+  "minimization_maxiter": 5000,
+  "minimization_tol"    : 100.0,
+  "restart"             : false,
+
+  "_comment_section_9": "=== PLATFORM ===",
+
+  "platform_type"       : "CUDA",
+
+  "_comment_section_10": "=== MISC ===",
+
+  "ComMotionRemover"    : true,
+  "CMMR_frequency"      : 100,
+
+
+  "box_mode" : "manual",
+  "box_x_nm" : 20.0,
+  "box_y_nm" : 20.0,
+  "box_z_nm" : 20.0
+
+}

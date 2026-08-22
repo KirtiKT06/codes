@@ -1,0 +1,119 @@
+{
+    "_comment_section_1": "=== FILE PATHS ===",
+
+    "nucleosome_pdb"      : "histone_dna_openmm.pdb",
+    "native_contacts_file": "native_contacts.dat",
+    "charged_beads_file"  : "charged_beads.dat",
+    "protein_mass_file"   : "masses_proteins.inp",
+
+    "dna_bonds_file"      : "dna_bonds.dat",
+    "dna_angles_file"     : "dna_angles.dat",
+    "dna_stacking_file"   : "dna_stacking.dat",
+    "dna_hbonds_file"     : "dna_hbonds.dat",
+    "dna_charges_file"    : "dna_charges.dat",
+    "dna_mass_file"       : "3_sigma_eps_mass_charge_dna.inp",
+
+    "_comment_section_2": "=== OUTPUT FILES ===",
+
+    "dcd_prefix"          : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_traj",
+    "data_name"           : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_log.csv",
+    "checkpoint_name"     : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/checkpoints/chk_60900000.chk",
+    "checkpoint_save"     : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_equil.chk",
+    "energy_breakdown"    : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_energy_breakdown.out",
+    "initial_pdb_name"    : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_initial.pdb",
+    "final_state_name"    : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/dna_final.pdb",
+    "CHK_DIR"             : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/checkpoints",
+    "STATE_DIR"           : "/data/cg_dna_histone/sop_single_bead/run1_nucleosome_91_20/states",
+
+    "_comment_section_3": "=== Forcefield Parameters ===",
+
+    "D0"              : 3.2,
+    "eps0"            : 1.0,
+    "U0_HB"           : -1.92,
+    "kl_stack"        : 1.45,
+    "kphi_stack"      : 3.00,
+    "kd_HB"           : 4.00,
+    "ktheta_HB"       : 1.50,
+    "kpsi_HB"         : 0.15,
+
+    "fene_k"              : 20.0,
+    "fene_R0"             : 2.0,
+    "sigma_protein"       : 3.8,
+    "eps_h_native"        : 2.0,
+    "eps_local"           : 1.0,
+
+    "sigma_hpc_dna"       : 5.4,
+
+    "_comment_section_4": "=== ELECTROSTATICS ===",
+
+    "dielectric_protein"  : 10.0,
+    "dielectric_water"    : 80.0,
+    "pme_cutoff"          : 30.0,
+    "histidine_charge"    : 1.0,
+    "nonlocal_cutoff"     : 30.0,
+    "phosphate_charge"    : -0.6,
+    
+    "_comment_section_5": "=== EXPLICIT IONS ===",
+
+    "auto_ions"           : true,
+    "KCl_mM"              : 50.0,
+    "MgCl2_mM"            : 8.0,
+    "neutralize"          : true,   
+    
+    "nK"                  : 0,
+    "nCl"                 : 0,
+    "nMg"                 : 0, 
+
+    "rK"                  : 1.590,
+    "rCl"                 : 2.760,
+    "rMg"                 : 1.353,
+
+    "mK"                  : 39.0983,
+    "mCl"                 : 35.453,
+    "mMg"                 : 24.305,
+
+    "epsK"                : 0.27946510,
+    "epsCl"               : 0.01166150,
+    "epsMg"               : 0.00941798,
+
+    "qK"                  : 1.0,
+    "qCl"                 : -1.0,
+    "qMg"                 : 2.0,
+
+    "ion_min_dist"        : 8.0,
+
+    "_comment_section_6": "=== SIMULATION SETTINGS ===",
+
+    "box_padding"         : 15.0,
+    "box_x_nm"            : 70.0,
+    "box_y_nm"            : 70.0,
+    "box_z_nm"            : 70.0,
+
+    "Temp"                : 298.0,
+    "Boltz_Const"         : 0.001987,
+    "N_A"                 : 6.02214076e23,
+    "friction_coeff"      : 91,
+    "time_step"           : 0.020,
+    "numsteps_equil"      : 20000000,
+    "numsteps_prod"       : 10000000000,
+    "data_interval"       : 5000,
+    "snap_interval"       : 5000,
+    "minimization"        : true,
+    "minimization_maxiter": 5000,
+    "minimization_tol"    : 100.0, 
+    "restart"             : true,
+
+    "_comment_section_7": "=== PLATFORM ===",
+
+    "platform_type"       : "CUDA",
+
+    "_comment_section_8": "=== MISC ===",
+
+    "ComMotionRemover"    : true,
+    "CMMR_frequency"      : 100,
+
+    "_comment_section_9": "=== HISTONE CHAINS (AA2CG + add_tails) ===",
+
+    "histone_chains"      : ["A", "B", "C", "D", "E", "F", "G", "H"],
+    "dna_chains"          : ["I", "J"]
+}

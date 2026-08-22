@@ -1,0 +1,52 @@
+{
+"pdb_prefix"      : "5tpy_Mg20",
+"dcd_prefix"      : "anim",
+"data_name"       : "data.out",
+"N_nucleic"       : 244,
+"nMg"             : 264,
+"nCo"             : 0,
+"nK"              : 1322,
+"nCl"             : 1606,
+
+"rMg"             : 1.353,  
+"rCo"             : 1.288,
+"rK"              : 1.590,
+"rCl"             : 2.760,
+
+"epsMg"           : 0.00941798,
+"epsCo"           : 0.00417787,
+"epsK"            : 0.27946510,
+"epsCl"           : 0.01166150,
+
+"mMg"             : 24.305,
+"mCo"             : 58.9332,
+"mK"              : 39.0983,
+"mCl"             : 35.453,
+
+"qMg"             : 2,
+"qCo"             : 2,
+"qK"              : 1,
+"qCl"             : -1,
+
+"u0HBond"         : -2.93,
+"u0TStack"        : -6.5,
+"LJ_cutoff"       : 7.0,
+
+"box_length"      : 280,
+"Temp"            : 310,
+"Boltz_Const"     : 0.001987,
+"s_rna_rna"       : 3.2,
+"rSmallestIon"    : 1.353,
+"friction_coeff"  : 0.01,
+"numsteps"        : 50000000000,
+"data_interval"   : 5000,
+"snap_interval"   : 5000,
+"time_step"       : 0.010,
+"platform_type"   : "CUDA",
+"final_state"     : false,
+"minimization"    : false,
+"restart"         : false,
+
+"ComMotionRemover": false,
+"CMMR_frequency"  : 100
+}

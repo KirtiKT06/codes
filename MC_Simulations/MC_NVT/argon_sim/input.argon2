@@ -1,0 +1,57 @@
+# Lammps Input File for Argon runs
+variable        output_freq string 1000
+variable        input string Argon
+
+units           real
+atom_style      atomic
+boundary        p p p
+
+read_data       /home/feynman/projects/codes/MC_Simulations/MC_NVT/argon_sim/data.Argon 
+include         /home/feynman/projects/codes/MC_Simulations/MC_NVT/argon_sim/forcefield.Argon
+
+velocity all create 44.4 4928459 rot yes dist gaussian
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 1 check yes
+
+thermo_style    custom step temp pe ke etotal lx ly lz
+thermo          1000
+
+# Energy minimisation to remove bad FCC contacts
+minimize 1e-12 1.0e-10 1000 10000
+
+# ── STAGE 1: Equilibration — heat from 44.4 K to 94.4 K ──
+dump            1 all atom 1000 ${input}.lammpstrj
+dump_modify     1 sort id scale no
+
+fix nvt1 all nvt temp 44.4 94.4 100
+timestep        1.0
+run             500000          # 500 ps heating
+unfix nvt1
+undump 1
+# ── STAGE 2: Production at 94.4 K — 50 ns ──
+reset_timestep  0               # Reset clock for clean analysis
+
+dump            prod all custom 100 prod.lammpstrj id type x y z vx vy vz
+dump_modify     prod sort id
+
+# RDF — computed and averaged during production
+compute         rdf_compute all rdf 100 cutoff 7.65
+fix             rdf_fix all ave/time 1000 1 1000 c_rdf_compute[*] &
+                file rdf.dat mode vector
+
+# MSD — needs unwrapped coordinates
+compute         msd_compute all msd com yes
+fix             msd_fix all ave/time 1 1 1000 c_msd_compute[4] &
+                file msd.dat
+
+# VACF
+compute         vacf_compute all vacf
+fix             vacf_fix all ave/correlate 1 5000 50000 &
+                c_vacf_compute[1] c_vacf_compute[2] c_vacf_compute[3] &
+                file vacf.dat ave running
+
+fix nvt2 all nvt temp 94.4 94.4 100
+timestep        1.0
+run             50000000        # 50 ns production
+unfix nvt2

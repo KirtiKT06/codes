@@ -1,0 +1,496 @@
+FASTA_File,Protein,Chains,Copies,Residue_Number,Residue,Charge
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,1,M,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,2,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,3,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,4,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,5,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,6,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,7,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,8,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,9,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,10,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,11,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,12,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,13,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,14,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,15,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,16,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,17,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,18,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,19,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,20,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,21,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,22,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,23,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,24,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,25,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,26,D,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,27,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,28,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,29,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,30,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,31,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,32,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,33,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,34,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,35,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,36,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,37,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,38,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,39,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,40,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,41,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,42,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,43,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,44,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,45,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,46,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,47,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,48,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,49,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,50,H,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,51,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,52,D,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,53,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,54,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,55,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,56,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,57,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,58,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,59,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,60,M,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,61,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,62,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,63,M,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,64,N,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,65,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,66,F,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,67,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,68,N,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,69,D,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,70,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,71,F,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,72,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,73,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,74,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,75,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,76,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,77,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,78,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,79,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,80,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,81,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,82,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,83,H,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,84,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,85,N,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,86,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,87,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,88,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,89,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,90,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,91,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,92,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,93,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,94,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,95,I,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,96,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,97,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,98,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,99,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,100,R,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,101,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,102,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,103,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,104,P,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,105,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,106,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,107,L,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,108,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,109,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,110,H,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,111,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,112,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,113,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,114,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,115,G,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,116,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,117,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,118,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,119,V,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,120,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,121,K,1
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,122,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,123,T,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,124,S,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,125,A,0
+rcsb_pdb_2CV5.fasta,Histone H2B K,"Chains F[auth D], J[auth H]",2,126,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,1,M,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,2,S,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,3,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,4,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,5,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,6,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,7,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,8,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,9,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,10,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,11,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,12,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,13,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,14,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,15,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,16,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,17,T,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,18,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,19,S,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,20,S,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,21,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,22,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,23,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,24,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,25,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,26,F,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,27,P,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,28,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,29,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,30,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,31,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,32,H,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,33,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,34,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,35,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,36,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,37,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,38,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,39,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,40,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,41,S,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,42,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,43,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,44,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,45,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,46,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,47,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,48,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,49,P,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,50,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,51,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,52,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,53,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,54,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,55,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,56,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,57,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,58,Y,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,59,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,60,T,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,61,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,62,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,63,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,64,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,65,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,66,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,67,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,68,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,69,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,70,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,71,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,72,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,73,D,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,74,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,75,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,76,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,77,T,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,78,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,79,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,80,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,81,P,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,82,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,83,H,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,84,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,85,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,86,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,87,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,88,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,89,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,90,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,91,D,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,92,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,93,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,94,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,95,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,96,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,97,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,98,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,99,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,100,R,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,101,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,102,T,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,103,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,104,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,105,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,106,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,107,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,108,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,109,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,110,P,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,111,N,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,112,I,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,113,Q,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,114,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,115,V,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,116,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,117,L,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,118,P,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,119,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,120,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,121,T,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,122,E,-1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,123,S,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,124,H,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,125,H,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,126,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,127,A,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,128,K,1
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,129,G,0
+rcsb_pdb_2CV5.fasta,Histone H2A.a,"Chains E[auth C], I[auth G]",2,130,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,1,M,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,2,S,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,3,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,4,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,5,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,6,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,7,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,8,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,9,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,10,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,11,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,12,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,13,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,14,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,15,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,16,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,17,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,18,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,19,H,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,20,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,21,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,22,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,23,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,24,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,25,D,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,26,N,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,27,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,28,Q,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,29,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,30,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,31,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,32,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,33,P,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,34,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,35,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,36,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,37,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,38,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,39,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,40,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,41,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,42,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,43,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,44,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,45,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,46,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,47,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,48,S,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,49,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,50,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,51,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,52,Y,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,53,E,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,54,E,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,55,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,56,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,57,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,58,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,59,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,60,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,61,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,62,F,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,63,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,64,E,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,65,N,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,66,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,67,I,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,68,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,69,D,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,70,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,71,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,72,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,73,Y,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,74,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,75,E,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,76,H,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,77,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,78,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,79,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,80,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,81,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,82,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,83,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,84,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,85,M,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,86,D,-1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,87,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,88,V,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,89,Y,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,90,A,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,91,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,92,K,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,93,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,94,Q,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,95,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,96,R,1
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,97,T,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,98,L,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,99,Y,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,100,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,101,F,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,102,G,0
+rcsb_pdb_2CV5.fasta,Histone H4,"Chains D[auth B], H[auth F]",2,103,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,1,M,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,2,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,3,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,4,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,5,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,6,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,7,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,8,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,9,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,10,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,11,S,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,12,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,13,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,14,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,15,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,16,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,17,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,18,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,19,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,20,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,21,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,22,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,23,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,24,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,25,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,26,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,27,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,28,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,29,S,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,30,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,31,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,32,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,33,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,34,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,35,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,36,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,37,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,38,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,39,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,40,H,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,41,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,42,Y,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,43,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,44,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,45,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,46,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,47,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,48,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,49,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,50,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,51,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,52,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,53,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,54,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,55,Y,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,56,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,57,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,58,S,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,59,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,60,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,61,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,62,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,63,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,64,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,65,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,66,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,67,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,68,F,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,69,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,70,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,71,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,72,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,73,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,74,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,75,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,76,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,77,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,78,D,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,79,F,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,80,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,81,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,82,D,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,83,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,84,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,85,F,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,86,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,87,S,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,88,S,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,89,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,90,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,91,M,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,92,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,93,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,94,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,95,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,96,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,97,C,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,98,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,99,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,100,Y,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,101,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,102,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,103,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,104,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,105,F,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,106,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,107,D,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,108,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,109,N,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,110,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,111,C,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,112,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,113,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,114,H,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,115,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,116,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,117,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,118,V,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,119,T,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,120,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,121,M,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,122,P,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,123,K,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,124,D,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,125,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,126,Q,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,127,L,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,128,A,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,129,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,130,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,131,I,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,132,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,133,G,0
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,134,E,-1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,135,R,1
+rcsb_pdb_2CV5.fasta,Histone H3.1,"Chains C[auth A], G[auth E]",2,136,A,0

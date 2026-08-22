@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run MNIST",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "ml.training.run_mnist",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "Run XOR",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "ml.training.train_xor",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Run OR",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "ml.training.train_or",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

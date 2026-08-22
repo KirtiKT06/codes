@@ -1,0 +1,5 @@
+Protein,Chains,Copies,Sequence_Length,Positive_Residues,Negative_Residues,Single_Chain_Charge,Total_Charge
+histone H3,"Chains C[auth A], G[auth E]",2,135,31,11,20,40
+histone H4,"Chains D[auth B], H[auth F]",2,102,25,7,18,36
+histone H2A.1,"Chains E[auth C], I[auth G]",2,128,26,9,17,34
+histone H2B.2,"Chains F[auth D], J[auth H]",2,125,28,10,18,36

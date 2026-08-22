@@ -1,0 +1,21 @@
+# Global settings for your 700*700*700 box
+tolerance 2.5
+filetype pdb
+output histone_dna_openmm.pdb
+
+# Molecule 1: Histone Core Complex (Locked at the dead center of the box)
+structure histone_cg_with_tails.pdb
+  number 1
+  center
+  fixed 450.0 350.0 350.0 0.0 0.0 0.0
+end structure
+
+# Molecule 2: ~50nm Straight DNA Rod (Aligned perfectly along the Z-axis)
+structure dna_tis.pdb
+  number 1
+  center
+  
+  # Lock the DNA 55 Angstroms away on the X-axis, aligned vertically in Y and Z
+  # Format: fixed <X> <Y> <Z> <rot_X> <rot_Y> <rot_Z>
+  fixed 270.0 350.0 350.0 0.0 0.0 0.0
+end structure

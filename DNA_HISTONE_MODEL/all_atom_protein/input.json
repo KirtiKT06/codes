@@ -1,0 +1,89 @@
+{
+  "paths": {
+    "raw_pdb": "2CV5.pdb",
+    "output_dir": "/data/cg_dna_histone/all_atom",
+    "protein_only_pdb": "/data/cg_dna_histone/all_atom/01_protein_only.pdb",
+    "fixed_pdb": "/data/cg_dna_histone/all_atom/02_fixed.pdb",
+    "added_residues_json": "/data/cg_dna_histone/all_atom/02_added_residues.json",
+    "compacted_pdb": "/data/cg_dna_histone/all_atom/02b_compacted.pdb",
+    "solvated_pdb": "/data/cg_dna_histone/all_atom/03_solvated.pdb",
+    "system_xml": "/data/cg_dna_histone/all_atom/03_system.xml",
+    "state_minimized": "/data/cg_dna_histone/all_atom/04_minimized.xml",
+    "state_equilibrated": "/data/cg_dna_histone/all_atom/04_equilibrated.xml",
+    "checkpoint": "/data/cg_dna_histone/all_atom/04_checkpoint.chk",
+    "production_dcd": "/data/cg_dna_histone/all_atom/04_production.dcd",
+    "production_log": "/data/cg_dna_histone/all_atom/04_production.log",
+    "energy_breakdown_dat": "/data/cg_dna_histone/all_atom/04_energy_breakdown.dat"
+  },
+
+  "structure": {
+    "dna_chain_ids": ["I", "J"],
+    "protein_chain_ids": ["A", "B", "C", "D", "E", "F", "G", "H"],
+    "remove_waters_and_hetatm": true,
+    "ph": 7.4,
+    "use_compacted_tails": true
+  },
+
+  "forcefield": {
+    "_comment": "IMPORTANT: the files below MUST be genuine CHARMM36m XMLs (the 'm' backbone/CMAP revision for disordered regions), not plain CHARMM36. OpenMM's bundled charmm36.xml is plain CHARMM36 (toppar_c36_aug15) and will NOT give you the 36m improvements you asked for. Get real CHARMM36m via CHARMM-GUI (Archive > toppar, or run this protein-only PDB through PDB Reader & Manipulator choosing 'CHARMM36m' + OpenMM output) and point these paths at the resulting XML files.",
+    "files": ["charmm36m.xml"],
+    "water_model": "tip3p"
+  },
+
+  "solvation": {
+    "box_size_nm": [20.0, 20.0, 20.0],
+    "box_shape": "cube",
+    "padding_nm": 2.0,
+    "positive_ion": "Na+",
+    "negative_ion": "Cl-",
+    "ion_concentration_M": 0.15,
+    "neutralize": true,
+    "extra_salts": [
+      {
+        "_comment": "example: 10.0 mM MgCl2. Add/remove entries as needed. cation/anion resnames must be CHARMM36 ion residue names (see 03b_add_extra_ions.py's ION_TEMPLATES) — Co2+ is NOT in the standard set, see that script's docstring.",
+        "cation_resname": "MG",
+        "anion_resname": "CLA",
+        "concentration_M": 0.010
+      }
+    ]
+  },
+
+  "simulation": {
+    "nonbonded_method": "PME",
+    "nonbonded_cutoff_nm": 1.2,
+    "switch_distance_nm": 1.0,
+    "constraints": "HBonds",
+    "rigid_water": true,
+    "hydrogen_mass_amu": 1.5,
+    "timestep_fs": 2.0,
+    "temperature_K": 298.0,
+    "pressure_bar": 1.0,
+    "barostat_interval_steps": 25,
+    "friction_per_ps": 1.0,
+
+    "minimize_max_iterations": 50000,
+
+    "equilibration_nvt_ps": 1000,
+    "equilibration_npt_ps": 2000,
+    "equilibration_report_interval_steps": 1000,
+
+    "energy_report_interval_steps": 1000,
+
+    "production_ns": 500,
+    "production_report_interval_steps": 5000,
+    "production_checkpoint_interval_steps": 50000,
+    "production_dcd_interval_steps": 5000
+  },
+
+  "restraints": {
+    "_comment": "During equilibration, restrain the ordered histone-fold core (everything PDBFixer did NOT add) so the freshly built tails can relax without dragging the core out of its crystallographic geometry.",
+    "restrain_core_during_equilibration": true,
+    "core_force_constant_kj_per_mol_per_nm2": 1000.0,
+    "taper_restraints_over_npt": true
+  },
+
+  "platform": {
+    "name": "CUDA",
+    "precision": "mixed"
+  }
+}

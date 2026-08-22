@@ -1,0 +1,11 @@
+pair_style      lj/cut 7.65
+#bond_style      none
+#angle_style     none
+#dihedral_style  none
+#improper_style  none
+
+mass     1   39.9480  # name Argon
+
+pair_coeff 1 1 0.2372 3.4 7.65
+
+

@@ -1,0 +1,72 @@
+# Data-source notes for the four candidate proteins.
+#
+# I have NOT hardcoded exact ProteinGym DMS_filename values here because
+# those identifiers are occasionally renamed in the repo and I don't want
+# you to burn time chasing a stale filename. Get the exact, current names
+# yourself in under 5 minutes:
+#
+#   1. git clone https://github.com/OATML-Markslab/ProteinGym
+#   2. open reference_files/DMS_substitutions.csv
+#   3. filter by UniProt_ID or protein name to find the exact DMS_filename
+#      and DMS_id for each assay below.
+#
+# Every ProteinGym substitution assay CSV has (at minimum) columns:
+#   mutant       e.g. "A1P" (single) or "A1P:D2N" (multi)
+#   mutated_sequence   full mutant sequence
+#   DMS_score    the experimental readout, already on a consistent scale
+#
+# Convert 'mutant' -> position/substitution tuples with sequence_utils, or
+# just derive them from mutated_sequence vs. the WT sequence the way
+# pipeline._variants_from_df already does (recommended -- self-consistent,
+# doesn't depend on parsing the mutant string correctly).
+
+GFP:
+  common_name: "avGFP (Aequorea victoria GFP)"
+  uniprot_id: "P42212"
+  proteingym_hint: "search DMS_substitutions.csv for 'GFP' / 'AEQVI'"
+  source_paper: "Sarkisyan et al. 2016, Nature"
+  notes: >
+    Fitness readout is fluorescence brightness. Complete single-mutant
+    coverage; some multi-mutant data. Good first non-GB1 protein: large,
+    saturating, well-characterized structure (beta-barrel + chromophore).
+
+TEM1:
+  common_name: "TEM-1 beta-lactamase"
+  uniprot_id: "P62593"
+  proteingym_hint: "search DMS_substitutions.csv for 'BLAT_ECOLX' or 'TEM'"
+  source_paper: "Firnberg et al. 2014, MBE (Ambler numbering)"
+  notes: >
+    Fitness readout is ampicillin resistance. Good test case for the
+    position-specific-pooling vs mean-pooling comparison (Sec 3.5 of the
+    framework doc) since catalytic-site vs. surface-loop positions behave
+    very differently.
+
+GB1:
+  common_name: "Protein G, B1 domain (IgG-binding domain)"
+  proteingym_hint: "search for 'SPG1_STRSG' or 'GB1'"
+  source_papers:
+    - "Olson, Wu & Sun 2014, Current Biology (binding fitness, near-complete double mutants)"
+    - "Nisthal et al. 2019, PNAS (ddG stability -- what you already have embeddings for)"
+  notes: >
+    You already have ESM-2 embeddings + a working pipeline for this from the
+    active-learning stability project -- START HERE. Decide explicitly
+    whether you're using the Olson (binding fitness) or Nisthal (ddG)
+    labels; they measure different phenotypes and are not interchangeable
+    for the robustness/evolvability ground-truth definitions in Section 3.2
+    of the framework document. The Olson dataset's near-complete double-
+    mutant coverage is unusually good for testing the Hamming-1 double-
+    mutant neighbor logic in sequence_utils.build_neighbor_graph().
+
+RBD:
+  common_name: "SARS-CoV-2 Spike receptor-binding domain"
+  uniprot_id: "P0DTC2 (spike; RBD is a subregion)"
+  proteingym_hint: "search for 'Starr' / 'RBD' / spike-related entries"
+  source_paper: "Starr et al. 2020, Cell (ACE2 binding + expression, complete single-mutant scan)"
+  notes: >
+    Two separate DMS readouts exist (ACE2 binding affinity, and expression/
+    folding) -- decide which phenotype you mean by "DMS score" before
+    computing robustness/evolvability, they will give different answers.
+    Good candidate for testing whether embedding-distance-as-phenotype-proxy
+    degrades for antigenic/immune-escape-relevant positions specifically
+    (per the 2026 Spike-constraint caveat in the literature review), since
+    ESM-2 was never trained on antibody-escape data.

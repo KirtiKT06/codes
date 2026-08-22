@@ -1,0 +1,1 @@
+print("Hello Kirti, VS Code is working")

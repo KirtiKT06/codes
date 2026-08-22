@@ -1,0 +1,33 @@
+units lj
+atom_style atomic
+boundary p p p
+
+lattice fcc 0.8
+region box block 0 5 0 5 0 5
+create_box 1 box
+create_atoms 1 box
+
+pair_style lj/cut 2.5
+pair_coeff 1 1 1.0 1.0 2.5
+
+mass 1 1.0
+
+velocity all create 1.12 1234
+
+fix 1 all npt temp 1.12 1.12 1.0 iso 0.3 0.3 5.0
+
+thermo 100
+thermo_style custom step temp press density
+
+timestep 0.005
+
+# -------- EQUILIBRATION --------
+run 50000
+
+# reset time (clean start)
+reset_timestep 0
+
+log log.lammps
+
+# -------- PRODUCTION --------
+run 300000

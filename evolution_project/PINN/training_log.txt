@@ -1,0 +1,221 @@
+[structure.py] Excluded non-solute HETATM residues from the solute cloud: ['HOH', 'MG', 'MN']
+[sanity check] n_phosphates detected: 76  (1EHZ should be ~76)
+epoch     0  total 4.07552e+03  pde 4.07486e+03  bc 6.56633e-01
+epoch   200  total 1.78385e+02  pde 1.78372e+02  bc 1.26316e-02
+epoch   400  total 4.29415e+00  pde 4.29380e+00  bc 3.51275e-04
+epoch   600  total 8.21920e-01  pde 8.21814e-01  bc 1.05338e-04
+epoch   800  total 4.56601e-01  pde 4.56506e-01  bc 9.48096e-05
+epoch  1000  total 6.35892e-01  pde 6.35790e-01  bc 1.01454e-04
+epoch  1200  total 4.79643e-01  pde 4.79551e-01  bc 9.19687e-05
+epoch  1400  total 5.77506e-01  pde 5.77405e-01  bc 1.01015e-04
+epoch  1600  total 4.58902e-01  pde 4.58792e-01  bc 1.09670e-04
+epoch  1800  total 3.43058e-01  pde 3.42956e-01  bc 1.02619e-04
+epoch  2000  total 2.49471e-01  pde 2.49366e-01  bc 1.04513e-04
+epoch  2200  total 2.96138e-01  pde 2.96037e-01  bc 1.01097e-04
+epoch  2400  total 3.25393e-01  pde 3.25296e-01  bc 9.79355e-05
+epoch  2600  total 2.05520e-01  pde 2.05412e-01  bc 1.07395e-04
+epoch  2800  total 1.78565e-01  pde 1.78468e-01  bc 9.66382e-05
+epoch  3000  total 2.05123e-01  pde 2.05024e-01  bc 9.88606e-05
+epoch  3200  total 1.82446e-01  pde 1.82341e-01  bc 1.04877e-04
+epoch  3400  total 1.78929e-01  pde 1.78822e-01  bc 1.06840e-04
+epoch  3600  total 1.73290e-01  pde 1.73193e-01  bc 9.76780e-05
+epoch  3800  total 1.39629e-01  pde 1.39518e-01  bc 1.11055e-04
+epoch  4000  total 1.40908e-01  pde 1.40812e-01  bc 9.56951e-05
+epoch  4200  total 1.63509e-01  pde 1.63405e-01  bc 1.03515e-04
+epoch  4400  total 1.12150e-01  pde 1.12044e-01  bc 1.05800e-04
+epoch  4600  total 1.52117e-01  pde 1.52004e-01  bc 1.12930e-04
+epoch  4800  total 1.23108e-01  pde 1.23008e-01  bc 9.98893e-05
+epoch  5000  total 1.28134e-01  pde 1.28030e-01  bc 1.03981e-04
+epoch  5200  total 1.52976e-01  pde 1.52887e-01  bc 8.90414e-05
+epoch  5400  total 1.17215e-01  pde 1.17118e-01  bc 9.72133e-05
+epoch  5600  total 1.06867e-01  pde 1.06770e-01  bc 9.72979e-05
+epoch  5800  total 1.27522e-01  pde 1.27420e-01  bc 1.02560e-04
+epoch  6000  total 1.43583e-01  pde 1.43479e-01  bc 1.03785e-04
+epoch  6200  total 1.03678e-01  pde 1.03572e-01  bc 1.06053e-04
+epoch  6400  total 1.01910e-01  pde 1.01820e-01  bc 9.02724e-05
+epoch  6600  total 8.87353e-02  pde 8.86402e-02  bc 9.51002e-05
+epoch  6800  total 1.36105e-01  pde 1.36010e-01  bc 9.46892e-05
+epoch  7000  total 1.06928e-01  pde 1.06835e-01  bc 9.32610e-05
+epoch  7200  total 9.73869e-02  pde 9.72739e-02  bc 1.12952e-04
+epoch  7400  total 9.77142e-02  pde 9.76141e-02  bc 1.00096e-04
+epoch  7600  total 9.15502e-02  pde 9.14439e-02  bc 1.06269e-04
+epoch  7800  total 9.13621e-02  pde 9.12605e-02  bc 1.01555e-04
+epoch  8000  total 9.76772e-02  pde 9.75787e-02  bc 9.84534e-05
+epoch  8200  total 9.17968e-02  pde 9.16878e-02  bc 1.08948e-04
+epoch  8400  total 6.89391e-02  pde 6.88419e-02  bc 9.72107e-05
+epoch  8600  total 9.49894e-02  pde 9.48828e-02  bc 1.06534e-04
+epoch  8800  total 1.03575e-01  pde 1.03477e-01  bc 9.86829e-05
+epoch  9000  total 7.56112e-02  pde 7.55115e-02  bc 9.97618e-05
+epoch  9200  total 9.76809e-02  pde 9.75781e-02  bc 1.02799e-04
+epoch  9400  total 7.25573e-02  pde 7.24403e-02  bc 1.16964e-04
+epoch  9600  total 1.16129e-01  pde 1.16031e-01  bc 9.81454e-05
+epoch  9800  total 1.04893e-01  pde 1.04798e-01  bc 9.56095e-05
+epoch 10000  total 7.12468e-02  pde 7.11512e-02  bc 9.55909e-05
+epoch 10200  total 8.15466e-02  pde 8.14377e-02  bc 1.08857e-04
+epoch 10400  total 8.39237e-02  pde 8.38266e-02  bc 9.71243e-05
+epoch 10600  total 1.07056e-01  pde 1.06957e-01  bc 9.92266e-05
+epoch 10800  total 7.17429e-02  pde 7.16384e-02  bc 1.04502e-04
+epoch 11000  total 8.65943e-02  pde 8.64971e-02  bc 9.72742e-05
+epoch 11200  total 8.06368e-02  pde 8.05411e-02  bc 9.57125e-05
+epoch 11400  total 8.44079e-02  pde 8.43108e-02  bc 9.70838e-05
+epoch 11600  total 8.74340e-02  pde 8.73392e-02  bc 9.48424e-05
+epoch 11800  total 7.10486e-02  pde 7.09509e-02  bc 9.76241e-05
+epoch 12000  total 6.81130e-02  pde 6.80099e-02  bc 1.03168e-04
+epoch 12200  total 6.39622e-02  pde 6.38658e-02  bc 9.64483e-05
+epoch 12400  total 7.61545e-02  pde 7.60490e-02  bc 1.05477e-04
+epoch 12600  total 8.31421e-02  pde 8.30462e-02  bc 9.58670e-05
+epoch 12800  total 6.15842e-02  pde 6.14817e-02  bc 1.02580e-04
+epoch 13000  total 7.56583e-02  pde 7.55655e-02  bc 9.27812e-05
+epoch 13200  total 8.47679e-02  pde 8.46769e-02  bc 9.10183e-05
+epoch 13400  total 6.58286e-02  pde 6.57265e-02  bc 1.02028e-04
+epoch 13600  total 8.02260e-02  pde 8.01340e-02  bc 9.20021e-05
+epoch 13800  total 6.18929e-02  pde 6.17857e-02  bc 1.07231e-04
+epoch 14000  total 7.46531e-02  pde 7.45445e-02  bc 1.08665e-04
+epoch 14200  total 5.65697e-02  pde 5.64681e-02  bc 1.01647e-04
+epoch 14400  total 6.88068e-02  pde 6.87144e-02  bc 9.23999e-05
+epoch 14600  total 6.63919e-02  pde 6.62758e-02  bc 1.16116e-04
+epoch 14800  total 6.71255e-02  pde 6.70158e-02  bc 1.09645e-04
+epoch 15000  total 6.27838e-02  pde 6.26992e-02  bc 8.46500e-05
+epoch 15200  total 5.72766e-02  pde 5.71732e-02  bc 1.03445e-04
+epoch 15400  total 6.42786e-02  pde 6.41797e-02  bc 9.88286e-05
+epoch 15600  total 6.20239e-02  pde 6.19157e-02  bc 1.08206e-04
+epoch 15800  total 7.76512e-02  pde 7.75565e-02  bc 9.47697e-05
+epoch 16000  total 6.44766e-02  pde 6.43836e-02  bc 9.30271e-05
+epoch 16200  total 5.36534e-02  pde 5.35636e-02  bc 8.97957e-05
+epoch 16400  total 5.15508e-02  pde 5.14568e-02  bc 9.39931e-05
+epoch 16600  total 6.22586e-02  pde 6.21552e-02  bc 1.03452e-04
+epoch 16800  total 6.73143e-02  pde 6.72178e-02  bc 9.65317e-05
+epoch 17000  total 6.24195e-02  pde 6.23231e-02  bc 9.64338e-05
+epoch 17200  total 6.46993e-02  pde 6.45972e-02  bc 1.02036e-04
+epoch 17400  total 7.55751e-02  pde 7.54703e-02  bc 1.04732e-04
+epoch 17600  total 6.92713e-02  pde 6.91705e-02  bc 1.00741e-04
+epoch 17800  total 5.87266e-02  pde 5.86353e-02  bc 9.13165e-05
+epoch 18000  total 6.67324e-02  pde 6.66339e-02  bc 9.84835e-05
+epoch 18200  total 7.79964e-02  pde 7.78913e-02  bc 1.05092e-04
+epoch 18400  total 7.03614e-02  pde 7.02546e-02  bc 1.06798e-04
+epoch 18600  total 6.46748e-02  pde 6.45788e-02  bc 9.59128e-05
+epoch 18800  total 7.18785e-02  pde 7.17929e-02  bc 8.56186e-05
+epoch 19000  total 5.84016e-02  pde 5.83015e-02  bc 1.00165e-04
+epoch 19200  total 5.73457e-02  pde 5.72403e-02  bc 1.05362e-04
+epoch 19400  total 5.87130e-02  pde 5.86182e-02  bc 9.47669e-05
+epoch 19600  total 6.17571e-02  pde 6.16520e-02  bc 1.05026e-04
+epoch 19800  total 6.95097e-02  pde 6.94166e-02  bc 9.30641e-05
+epoch 20000  total 6.43553e-02  pde 6.42649e-02  bc 9.03867e-05
+epoch 20200  total 6.40617e-02  pde 6.39635e-02  bc 9.82189e-05
+epoch 20400  total 6.34076e-02  pde 6.33110e-02  bc 9.66386e-05
+epoch 20600  total 5.25214e-02  pde 5.24140e-02  bc 1.07323e-04
+epoch 20800  total 6.31285e-02  pde 6.30173e-02  bc 1.11138e-04
+epoch 21000  total 5.32651e-02  pde 5.31635e-02  bc 1.01645e-04
+epoch 21200  total 6.42701e-02  pde 6.41711e-02  bc 9.89771e-05
+epoch 21400  total 6.42109e-02  pde 6.41174e-02  bc 9.34961e-05
+epoch 21600  total 5.05695e-02  pde 5.04684e-02  bc 1.01018e-04
+epoch 21800  total 6.28475e-02  pde 6.27478e-02  bc 9.97488e-05
+epoch 22000  total 4.92627e-02  pde 4.91484e-02  bc 1.14302e-04
+epoch 22200  total 6.16493e-02  pde 6.15429e-02  bc 1.06404e-04
+epoch 22400  total 5.15501e-02  pde 5.14522e-02  bc 9.79652e-05
+epoch 22600  total 6.59682e-02  pde 6.58673e-02  bc 1.00926e-04
+epoch 22800  total 6.48784e-02  pde 6.47743e-02  bc 1.04165e-04
+epoch 23000  total 5.23686e-02  pde 5.22614e-02  bc 1.07118e-04
+epoch 23200  total 6.41534e-02  pde 6.40555e-02  bc 9.78306e-05
+epoch 23400  total 5.51202e-02  pde 5.50214e-02  bc 9.87838e-05
+epoch 23600  total 5.13417e-02  pde 5.12417e-02  bc 1.00020e-04
+epoch 23800  total 6.58227e-02  pde 6.57307e-02  bc 9.20176e-05
+epoch 24000  total 6.69063e-02  pde 6.68084e-02  bc 9.79466e-05
+epoch 24200  total 5.46358e-02  pde 5.45389e-02  bc 9.68878e-05
+epoch 24400  total 6.97890e-02  pde 6.96827e-02  bc 1.06332e-04
+epoch 24600  total 5.38854e-02  pde 5.37836e-02  bc 1.01761e-04
+epoch 24800  total 5.21615e-02  pde 5.20662e-02  bc 9.52695e-05
+epoch 25000  total 6.56302e-02  pde 6.55391e-02  bc 9.10948e-05/home/feynman/projects/codes/evolution_project/pb_pinn.py:279: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /home/conda/feedstock_root/build_artifacts/libtorch_1739474893324/work/torch/csrc/utils/tensor_new.cpp:254.)
+  pt = torch.tensor(
+
+epoch 25200  total 5.63521e-02  pde 5.62530e-02  bc 9.91494e-05
+epoch 25400  total 6.48632e-02  pde 6.47696e-02  bc 9.36481e-05
+epoch 25600  total 6.58117e-02  pde 6.57095e-02  bc 1.02164e-04
+epoch 25800  total 5.94053e-02  pde 5.93016e-02  bc 1.03698e-04
+epoch 26000  total 5.12725e-02  pde 5.11583e-02  bc 1.14191e-04
+epoch 26200  total 4.97140e-02  pde 4.96238e-02  bc 9.02388e-05
+epoch 26400  total 5.67577e-02  pde 5.66589e-02  bc 9.87409e-05
+epoch 26600  total 5.47729e-02  pde 5.46719e-02  bc 1.00992e-04
+epoch 26800  total 5.02105e-02  pde 5.01086e-02  bc 1.01900e-04
+epoch 27000  total 5.12171e-02  pde 5.11082e-02  bc 1.08929e-04
+epoch 27200  total 5.49077e-02  pde 5.47956e-02  bc 1.12112e-04
+epoch 27400  total 6.03358e-02  pde 6.02361e-02  bc 9.96695e-05
+epoch 27600  total 5.63350e-02  pde 5.62284e-02  bc 1.06536e-04
+epoch 27800  total 4.66120e-02  pde 4.65166e-02  bc 9.54431e-05
+epoch 28000  total 6.32885e-02  pde 6.31870e-02  bc 1.01435e-04
+epoch 28200  total 5.38195e-02  pde 5.37160e-02  bc 1.03456e-04
+epoch 28400  total 5.13470e-02  pde 5.12464e-02  bc 1.00569e-04
+epoch 28600  total 5.55079e-02  pde 5.54122e-02  bc 9.57063e-05
+epoch 28800  total 5.10979e-02  pde 5.10019e-02  bc 9.59673e-05
+epoch 29000  total 5.24485e-02  pde 5.23525e-02  bc 9.59436e-05
+epoch 29200  total 4.56230e-02  pde 4.55176e-02  bc 1.05406e-04
+epoch 29400  total 5.59527e-02  pde 5.58512e-02  bc 1.01540e-04
+epoch 29600  total 6.13362e-02  pde 6.12378e-02  bc 9.84430e-05
+epoch 29800  total 5.17927e-02  pde 5.16983e-02  bc 9.43811e-05
+epoch 30000  total 5.58033e-02  pde 5.57063e-02  bc 9.69378e-05
+epoch 30200  total 5.58911e-02  pde 5.57938e-02  bc 9.73297e-05
+epoch 30400  total 4.98794e-02  pde 4.97788e-02  bc 1.00600e-04
+epoch 30600  total 4.94882e-02  pde 4.93982e-02  bc 9.00134e-05
+epoch 30800  total 4.54417e-02  pde 4.53433e-02  bc 9.83885e-05
+epoch 31000  total 4.95564e-02  pde 4.94564e-02  bc 9.99978e-05
+epoch 31200  total 5.00499e-02  pde 4.99450e-02  bc 1.04934e-04
+epoch 31400  total 4.86605e-02  pde 4.85640e-02  bc 9.64678e-05
+epoch 31600  total 4.67192e-02  pde 4.66179e-02  bc 1.01289e-04
+epoch 31800  total 4.50686e-02  pde 4.49665e-02  bc 1.02084e-04
+epoch 32000  total 4.55957e-02  pde 4.54986e-02  bc 9.71195e-05
+epoch 32200  total 5.52555e-02  pde 5.51569e-02  bc 9.86018e-05
+epoch 32400  total 5.03412e-02  pde 5.02453e-02  bc 9.58945e-05
+epoch 32600  total 5.72647e-02  pde 5.71644e-02  bc 1.00255e-04
+epoch 32800  total 5.15073e-02  pde 5.14073e-02  bc 9.99485e-05
+epoch 33000  total 5.85878e-02  pde 5.84867e-02  bc 1.01098e-04
+epoch 33200  total 4.49998e-02  pde 4.48962e-02  bc 1.03575e-04
+epoch 33400  total 5.04063e-02  pde 5.03135e-02  bc 9.28060e-05
+epoch 33600  total 5.99334e-02  pde 5.98421e-02  bc 9.12979e-05
+epoch 33800  total 4.60703e-02  pde 4.59678e-02  bc 1.02564e-04
+epoch 34000  total 5.21725e-02  pde 5.20667e-02  bc 1.05869e-04
+epoch 34200  total 4.97422e-02  pde 4.96472e-02  bc 9.50382e-05
+epoch 34400  total 4.40605e-02  pde 4.39601e-02  bc 1.00395e-04
+epoch 34600  total 4.78324e-02  pde 4.77384e-02  bc 9.40119e-05
+epoch 34800  total 5.27099e-02  pde 5.26097e-02  bc 1.00215e-04
+epoch 35000  total 6.22319e-02  pde 6.21326e-02  bc 9.92793e-05
+epoch 35200  total 4.88368e-02  pde 4.87397e-02  bc 9.70847e-05
+epoch 35400  total 5.12233e-02  pde 5.11188e-02  bc 1.04570e-04
+epoch 35600  total 5.47260e-02  pde 5.46212e-02  bc 1.04863e-04
+epoch 35800  total 4.61956e-02  pde 4.61030e-02  bc 9.25483e-05
+epoch 36000  total 4.78950e-02  pde 4.77984e-02  bc 9.66434e-05
+epoch 36200  total 5.25243e-02  pde 5.24356e-02  bc 8.87733e-05
+epoch 36400  total 5.03982e-02  pde 5.02997e-02  bc 9.84888e-05
+epoch 36600  total 4.53511e-02  pde 4.52504e-02  bc 1.00732e-04
+epoch 36800  total 5.70812e-02  pde 5.69854e-02  bc 9.58057e-05
+epoch 37000  total 5.55580e-02  pde 5.54554e-02  bc 1.02617e-04
+epoch 37200  total 4.94876e-02  pde 4.93863e-02  bc 1.01310e-04
+epoch 37400  total 4.85198e-02  pde 4.84234e-02  bc 9.63243e-05
+epoch 37600  total 5.04751e-02  pde 5.03719e-02  bc 1.03159e-04
+epoch 37800  total 4.63124e-02  pde 4.62149e-02  bc 9.74835e-05
+epoch 38000  total 4.88111e-02  pde 4.87086e-02  bc 1.02592e-04
+epoch 38200  total 4.32117e-02  pde 4.31122e-02  bc 9.95090e-05
+epoch 38400  total 5.30566e-02  pde 5.29563e-02  bc 1.00358e-04
+epoch 38600  total 4.85353e-02  pde 4.84359e-02  bc 9.93513e-05
+epoch 38800  total 5.49117e-02  pde 5.48106e-02  bc 1.01076e-04
+epoch 39000  total 4.62674e-02  pde 4.61661e-02  bc 1.01322e-04
+epoch 39200  total 4.52965e-02  pde 4.51974e-02  bc 9.90998e-05
+epoch 39400  total 4.79695e-02  pde 4.78765e-02  bc 9.30067e-05
+epoch 39600  total 5.62921e-02  pde 5.61949e-02  bc 9.71708e-05
+epoch 39800  total 4.34556e-02  pde 4.33518e-02  bc 1.03747e-04
+epoch 39999  total 4.29360e-02  pde 4.28376e-02  bc 9.83998e-05
+
+Per-phosphate potential statistics
+min  = -0.6044
+max  = -0.5362
+mean = -0.5678
+std  = 0.0153
+
+Potential profile near first phosphate
+d =  2.0 Å   phi = -0.1030
+d =  3.0 Å   phi = -0.0438
+d =  5.0 Å   phi = -0.0209
+d = 10.0 Å   phi = -0.0105
+d = 20.0 Å   phi = -0.0057
+d = 40.0 Å   phi = -0.0070
+Gamma_i range: 0.005342225858483531 0.011102125305224704
+Gamma_i mean: 0.007287486504192005
