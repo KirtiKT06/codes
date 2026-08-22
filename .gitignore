@@ -16,3 +16,4 @@ ml/datasets/data/
 *.dx
 rna_mg/rna_labels/work/
 *.pdb
+*.cif
