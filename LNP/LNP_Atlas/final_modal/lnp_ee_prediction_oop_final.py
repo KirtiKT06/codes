@@ -16,6 +16,8 @@ Run/inspect one section only, e.g. just the primary model:
     for cls in [Setup, DataCleaning, FeatureEngineering, FeatureAblation]:
         cls(state).run()
     PrimaryModel(state).run()
+
+    python -c "from lnp_ee_prediction_oop import *; state = PipelineState(); [cls(state).run() for cls in [Setup, DataCleaning, FeatureEngineering, FeatureAblation]]; PrimaryModel(state).run()"F
 """
 
 # ============================================================================
@@ -45,11 +47,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.calibration import calibration_curve, CalibratedClassifierCV
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
+from sklearn.metrics import mean_squared_error
 import shap
 from scipy import stats
 from scipy.stats import wilcoxon
 from scipy.stats import chi2_contingency, spearmanr
 from statsmodels.stats.multitest import multipletests
+import statsmodels.api as sm
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import matplotlib
 matplotlib.use('Agg')  # headless/non-interactive: script only saves figures, never plt.show()
@@ -847,87 +851,87 @@ class FeatureAblation:
         save_pub_figure(fig, 'fig_sec6_ablation', width='double')
         plt.show()
 
-        # ── Inject Gaussian noise into EE% labels, re-run classifier, show AUC ──────
-        # Regression R² collapses; classification AUC stays
-        noise_levels = [0, 2, 4, 6, 8, 10, 11, 12, 14, 16, 18, 20]     # % noise sigma to add
-        n_monte_carlo = 20                                             # repeats per noise level
+        # # ── Inject Gaussian noise into EE% labels, re-run classifier, show AUC ──────
+        # # Regression R² collapses; classification AUC stays
+        # noise_levels = [0, 2, 4, 6, 8, 10, 11, 12, 14, 16, 18, 20]     # % noise sigma to add
+        # n_monte_carlo = 20                                             # repeats per noise level
 
-        mc_auc_means, mc_auc_stds = [], []
-        mc_r2_means,  mc_r2_stds  = [], []
+        # mc_auc_means, mc_auc_stds = [], []
+        # mc_r2_means,  mc_r2_stds  = [], []
 
-        np.random.seed(42)
-        for sigma in noise_levels:
-            aucs_mc, r2s_mc = [], []
-            for trial in range(n_monte_carlo):
-                # Add Gaussian noise to EE%
-                noisy_ee = clean_df['EE'].values + np.random.normal(0, sigma, len(clean_df))
-                noisy_ee = np.clip(noisy_ee, 0, 100)
-                y_noisy  = (noisy_ee >= 80).astype(int)
+        # np.random.seed(42)
+        # for sigma in noise_levels:
+        #     aucs_mc, r2s_mc = [], []
+        #     for trial in range(n_monte_carlo):
+        #         # Add Gaussian noise to EE%
+        #         noisy_ee = clean_df['EE'].values + np.random.normal(0, sigma, len(clean_df))
+        #         noisy_ee = np.clip(noisy_ee, 0, 100)
+        #         y_noisy  = (noisy_ee >= 80).astype(int)
 
-                # Classification AUC
-                rfc_mc = RandomForestClassifier(n_estimators=500, class_weight='balanced',
-                                                 random_state=42, n_jobs=-1)
-                aucs_fold = []
-                for tr, te in gkf.split(X_D, y_noisy, groups):
-                    rfc_mc.fit(X_D.iloc[tr], y_noisy[tr])
-                    prob_mc = rfc_mc.predict_proba(X_D.iloc[te])[:,1]
-                    try:
-                        aucs_fold.append(roc_auc_score(y_noisy[te], prob_mc))
-                    except:
-                        pass
-                aucs_mc.append(np.mean(aucs_fold))
+        #         # Classification AUC
+        #         rfc_mc = RandomForestClassifier(n_estimators=500, class_weight='balanced',
+        #                                          random_state=42, n_jobs=-1)
+        #         aucs_fold = []
+        #         for tr, te in gkf.split(X_D, y_noisy, groups):
+        #             rfc_mc.fit(X_D.iloc[tr], y_noisy[tr])
+        #             prob_mc = rfc_mc.predict_proba(X_D.iloc[te])[:,1]
+        #             try:
+        #                 aucs_fold.append(roc_auc_score(y_noisy[te], prob_mc))
+        #             except:
+        #                 pass
+        #         aucs_mc.append(np.mean(aucs_fold))
 
-                # Regression R²
-                rfr_mc = RandomForestRegressor(n_estimators=500, random_state=42, n_jobs=-1)
-                r2s_fold = []
-                for tr, te in gkf.split(X_D, noisy_ee, groups):
-                    rfr_mc.fit(X_D.iloc[tr], noisy_ee[tr])
-                    pred_mc = rfr_mc.predict(X_D.iloc[te])
-                    r2s_fold.append(r2_score(noisy_ee[te], pred_mc))
-                r2s_mc.append(np.mean(r2s_fold))
+        #         # Regression R²
+        #         rfr_mc = RandomForestRegressor(n_estimators=500, random_state=42, n_jobs=-1)
+        #         r2s_fold = []
+        #         for tr, te in gkf.split(X_D, noisy_ee, groups):
+        #             rfr_mc.fit(X_D.iloc[tr], noisy_ee[tr])
+        #             pred_mc = rfr_mc.predict(X_D.iloc[te])
+        #             r2s_fold.append(r2_score(noisy_ee[te], pred_mc))
+        #         r2s_mc.append(np.mean(r2s_fold))
 
-            mc_auc_means.append(np.mean(aucs_mc))
-            mc_auc_stds.append(np.std(aucs_mc))
-            mc_r2_means.append(np.mean(r2s_mc))
-            mc_r2_stds.append(np.std(r2s_mc))
-            print(f"$\\sigma$={sigma:>2}%  AUC={np.mean(aucs_mc):.3f}±{np.std(aucs_mc):.3f}  R²={np.mean(r2s_mc):.3f}±{np.std(r2s_mc):.3f}")
+        #     mc_auc_means.append(np.mean(aucs_mc))
+        #     mc_auc_stds.append(np.std(aucs_mc))
+        #     mc_r2_means.append(np.mean(r2s_mc))
+        #     mc_r2_stds.append(np.std(r2s_mc))
+        #     print(f"$\\sigma$={sigma:>2}%  AUC={np.mean(aucs_mc):.3f}±{np.std(aucs_mc):.3f}  R²={np.mean(r2s_mc):.3f}±{np.std(r2s_mc):.3f}")
 
-        mc_auc_means = np.array(mc_auc_means); mc_auc_stds = np.array(mc_auc_stds)
-        mc_r2_means  = np.array(mc_r2_means);  mc_r2_stds  = np.array(mc_r2_stds)
+        # mc_auc_means = np.array(mc_auc_means); mc_auc_stds = np.array(mc_auc_stds)
+        # mc_r2_means  = np.array(mc_r2_means);  mc_r2_stds  = np.array(mc_r2_stds)
 
-        fig, ax = plt.subplots(figsize=(7, 3))
-        colors = PUB_PALETTE[8:16]
-        ax2 = ax.twinx()
+        # fig, ax = plt.subplots(figsize=(7, 3))
+        # colors = PUB_PALETTE[8:16]
+        # ax2 = ax.twinx()
 
-        ax.plot(noise_levels, mc_auc_means, '^--', color=colors[5], lw=1.5, ms=4, label='Classification AUC (left)')
-        ax.fill_between(noise_levels, mc_auc_means-mc_auc_stds, mc_auc_means+mc_auc_stds,
-                        alpha=0.08, color=colors[5])
-        ax.axhline(0.5, ls='--', color=colors[5], lw=1, alpha=0.8)
-        ax.set_ylabel('ROC-AUC (classification)', color=colors[5])
-        ax.tick_params(axis='y', labelcolor=colors[5])
-        ax.set_ylim([0.4, 0.80])
+        # ax.plot(noise_levels, mc_auc_means, '^--', color=colors[5], lw=1.5, ms=4, label='Classification AUC (left)')
+        # ax.fill_between(noise_levels, mc_auc_means-mc_auc_stds, mc_auc_means+mc_auc_stds,
+        #                 alpha=0.08, color=colors[5])
+        # ax.axhline(0.5, ls='--', color=colors[5], lw=1, alpha=0.8)
+        # ax.set_ylabel('ROC-AUC (classification)', color=colors[5])
+        # ax.tick_params(axis='y', labelcolor=colors[5])
+        # ax.set_ylim([0.4, 0.80])
 
-        ax2.plot(noise_levels, mc_r2_means, 's--', color=colors[4], lw=1.5, ms=4, label='Regression $R^2$ (right)')
-        ax2.fill_between(noise_levels, mc_r2_means-mc_r2_stds, mc_r2_means+mc_r2_stds,
-                         alpha=0.08, color=colors[4])
-        ax2.axhline(0.0, ls='--', color=colors[4], lw=1, alpha=0.8)
-        ax2.set_ylabel('$R^2$ (regression)', color=colors[4])
-        ax2.tick_params(axis='y', labelcolor=colors[4])
+        # ax2.plot(noise_levels, mc_r2_means, 's--', color=colors[4], lw=1.5, ms=4, label='Regression $R^2$ (right)')
+        # ax2.fill_between(noise_levels, mc_r2_means-mc_r2_stds, mc_r2_means+mc_r2_stds,
+        #                  alpha=0.08, color=colors[4])
+        # ax2.axhline(0.0, ls='--', color=colors[4], lw=1, alpha=0.8)
+        # ax2.set_ylabel('$R^2$ (regression)', color=colors[4])
+        # ax2.tick_params(axis='y', labelcolor=colors[4])
 
-        # Mark the empirical noise floor
-        ax.axvline(bl_df['std_EE'].median(), ls=':', color=colors[7], lw=1,
-                   label=f'Median between-lab EE standard deviation ({bl_df['std_EE'].median():.1f}%)')
+        # # Mark the empirical noise floor
+        # ax.axvline(bl_df['std_EE'].median(), ls=':', color=colors[7], lw=1,
+        #            label=f'Median between-lab EE standard deviation ({bl_df['std_EE'].median():.1f}%)')
 
-        ax.set_xlabel('Added Gaussian noise $\\sigma$ (% EE)')
-        # ax.set_title('Monte Carlo Noise Injection\nClassification AUC shows greater robustness; Regression R² collapses',
-        #              fontsize=12, fontweight='bold')
+        # ax.set_xlabel('Added Gaussian noise $\\sigma$ (% EE)')
+        # # ax.set_title('Monte Carlo Noise Injection\nClassification AUC shows greater robustness; Regression R² collapses',
+        # #              fontsize=12, fontweight='bold')
 
-        lines1, labels1 = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines1+lines2, labels1+labels2, loc='upper right')
-        plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec4_monte_carlo_noise', width='double')
-        plt.show()
+        # lines1, labels1 = ax.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax.legend(lines1+lines2, labels1+labels2, loc='upper right')
+        # plt.tight_layout()
+        # save_pub_figure(fig, 'fig_sec4_monte_carlo_noise', width='double')
+        # plt.show()
 
         # expose to later sections
         self.state.gkf = gkf
@@ -3680,36 +3684,13 @@ class Chemistry:
         print('\nFull table (incl. all 4-component SMILES, cargo, and source paper) is in '
               'table_universally_robust_lipid_compositions.csv -- pull that directly into the report.')
 
-        # --- Physicochemical Descriptors: pKa, LogP, Tail Length, PEG Length ----------------------------------------
-        """
-        We do not have access to a calibrated pKa predictor (e.g. MoKa/ChemAxon) in this environment, so
-        `estimate_amine_pka` below is a **transparent, literature-anchored heuristic**: it starts from typical
-        aliphatic-amine pKa ranges by substitution class (tertiary/secondary/primary), and applies known
-        first-order corrections (aromatic/conjugated nitrogen lowers basicity; nearby ester/amide carbonyls
-        are electron-withdrawing and lower pKa; extra ring shielding modestly raises it). This is meant to
-        surface **directional trends** for hypothesis generation, not to stand in for experimental pKa
-        measurement — that caveat should be stated explicitly in the manuscript Methods if these results are used.
-        
+        # --- Physicochemical Descriptors: LogP, Tail Length, PEG Length ----------------------------------------
+        """        
         `ion_tail_len` is the longest connected run of non-ring sp3 carbons in the ionizable lipid (a proxy for
         tail length/saturation — double bonds and ring carbons break the run, so this is closer to
         "longest saturated segment" than "total tail carbon count"). `peg_repeat_units` counts `O-C-C` motifs
         in the PEG-lipid SMILES as a monotonic proxy for PEG chain length.
         """
-        def estimate_amine_pka(mol):
-            """Transparent literature-anchored heuristic for the ionizable amine pKa.
-            NOT a substitute for a calibrated predictor (e.g. MoKa/ChemAxon) — intended only
-            to test directional trends against EE%. See markdown cell above for the logic."""
-            if mol is None: return np.nan
-            n_tert = Fragments.fr_NH0(mol); n_sec = Fragments.fr_NH1(mol); n_prim = Fragments.fr_NH2(mol)
-            n_arom = Fragments.fr_ArN(mol)
-            if n_tert == 0 and n_sec == 0 and n_prim == 0:
-                return np.nan
-            base = 9.8 if n_tert > 0 else (10.2 if n_sec > 0 else 10.5)
-            if n_arom > 0: base -= 3.0
-            n_ewg = Fragments.fr_ester(mol) + Fragments.fr_amide(mol)
-            base -= min(n_ewg, 4) * 0.35
-            base += min(Lipinski.RingCount(mol), 3) * 0.1
-            return round(base, 2)
 
         def longest_aliphatic_run(mol):
             """Longest connected run of non-ring sp3 carbons (proxy for tail length/saturation)."""
@@ -3745,13 +3726,11 @@ class Chemistry:
             return len(mol.GetSubstructMatches(patt))
 
         print('Computing physicochemical descriptors for all 452 formulations...')
-        clean_df['ion_pKa_est']      = clean_df['ionizable_lipid_smiles'].apply(lambda s: estimate_amine_pka(Chem.MolFromSmiles(str(s))))
         clean_df['ion_LogP']         = clean_df['ionizable_lipid_smiles'].apply(lambda s: Descriptors.MolLogP(Chem.MolFromSmiles(str(s))) if Chem.MolFromSmiles(str(s)) else np.nan)
         clean_df['ion_tail_len']     = clean_df['ionizable_lipid_smiles'].apply(lambda s: longest_aliphatic_run(Chem.MolFromSmiles(str(s))))
         clean_df['peg_repeat_units'] = clean_df['peg_lipid_smiles'].apply(peg_repeat_units)
 
         desc_cols = {
-            'Ionizable pKa (est.)':    'ion_pKa_est',
             'Ionizable LogP':          'ion_LogP',
             'Longest aliphatic run':   'ion_tail_len',
             'PEG repeat units (est.)': 'peg_repeat_units',
@@ -3769,7 +3748,7 @@ class Chemistry:
         print(desc_corr_df.to_string(index=False))
 
         fig, axes = plt.subplots(1, 4, figsize=(18, 4))
-        panels = [('ion_pKa_est', 'Ionizable amine pKa (est.)'), ('ion_LogP', 'Ionizable lipid LogP'),
+        panels = [('ion_LogP', 'Ionizable lipid LogP'),
                   ('ion_tail_len', 'Longest aliphatic run (atoms)'), ('peg_repeat_units', 'PEG repeat units (est.)')]
         for ax, (col, title) in zip(axes, panels):
             m = clean_df[col].notna()
@@ -3953,228 +3932,6 @@ class Chemistry:
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec13H_lipid_class', width='double')
         plt.show()
-
-        # --- pKa Calibration (Free Alternative) & Leave-One-Publication-Out Validation ----------------------------------------
-        """
-        **ChemAxon requires a paid license** (free academic licenses exist but still require registration/
-        approval and are not guaranteed) — not a good default for a reproducible, shareable notebook. Instead
-        of gating this analysis behind a license, we build a small, transparent, **fully free calibration**:
-        a linear fit of **RDKit LogP → published "apparent" ionizable-lipid pKa**, anchored to five
-        well-characterized, clinically-relevant ionizable lipids with pKa values measured by the TNS
-        fluorescence assay in an LNP context (Jayaraman *et al.* 2012 for MC3/KC2; Sabnis *et al.* 2018 for
-        SM-102; Hassett *et al.* 2019 / patent literature for ALC-0315; Semple *et al.* 2010 for DODAP,
-        approximate).
-
-        **This is arguably the more correct tool for this question, not just the free one.** ChemAxon's
-        `cxcalc` predicts the isolated-molecule aqueous pKa of a structure drawn in a vacuum/water model —
-        a physically different quantity from the **apparent pKa** that matters for LNP encapsulation, which
-        depends on the amine's local environment inside a lipid bilayer (measured empirically via TNS assay).
-        A small calibration anchored directly to bilayer-context pKa values is closer to the quantity we
-        actually want, even though it is fit on only 5 points.
-        
-        **Validate the calibration honestly, not just fit it.** We report leave-one-out cross-validated
-        error on the 5 anchors (not just training-set residuals), and we flag any formulation whose LogP
-        falls well outside the anchor range as an extrapolation, since the linear fit is unvalidated there.
-        
-        *(If you do have institutional ChemAxon access, the `cxcalc` code path from the previous version of
-        this section is a straightforward drop-in alternative — swap the `calibrated_pka()` function below for
-        a `subprocess` call to `cxcalc pka -a 1 -b 1`. We removed it as the default so this notebook runs
-        end-to-end without a license.)*
-
-        Published "apparent" (TNS-assay, LNP-context) pKa anchors for well-characterized ionizable lipids.
-        Values are as commonly reported in the primary literature; treat as approximate to ~0.1-0.2 units.
-        """
-        PKA_ANCHORS = {
-            'MC3':      ('O=C(OCCC(OC(=O)CCCCCCC/C=C\\CCCCCCCC)COCCN(CC)CC)CCCCCCC/C=C\\CCCCCCCC', 6.44),  # Jayaraman 2012
-            'KC2':      ('CCCCCC/C=C\\C/C=C\\CCCCC(OCCN(C)C)CCCCC/C=C\\C/C=C\\CCCCC', 6.70),              # Jayaraman 2012
-            'SM-102':   ('CCCCCCCCCC(CCCCCCCCC(=O)OCCCCCCCC)OC(=O)CCCCCCCCN(CCO)CCCCCCCC', 6.68),               # Sabnis 2018
-            'ALC-0315': ('CCCCCCCCC(CCCCCCCC)OC(=O)CCCCCCCCCCN(CCCCCCCCCC(=O)OC(CCCCCCCC)CCCCCCCC)CCCCO', 6.09),# Hassett 2019
-            'DODAP':    ('CCCCCCCCCCCCCCCCC(=O)OCC(CN(C)C)OC(=O)CCCCCCCCCCCCCCCC', 6.50),                       # Semple 2010, approx.
-        }
-
-        X_anchor = np.array([[Descriptors.MolLogP(Chem.MolFromSmiles(smi))] for smi, _ in PKA_ANCHORS.values()])
-        y_anchor = np.array([pk for _, pk in PKA_ANCHORS.values()])
-
-        pka_model = LinearRegression().fit(X_anchor, y_anchor)
-        print(f'Calibration: pKa ≈ {pka_model.intercept_:.2f} + ({pka_model.coef_[0]:.3f}) × LogP')
-
-        # Honest validation: leave-one-out CV on the 5 anchors (not training residuals)
-        loo = LeaveOneOut()
-        loo_errs = []
-        for tr, te in loo.split(X_anchor):
-            m = LinearRegression().fit(X_anchor[tr], y_anchor[tr])
-            loo_errs.append((y_anchor[te] - m.predict(X_anchor[te]))[0])
-        loo_errs = np.array(loo_errs)
-        print(f'Leave-one-out CV RMSE on the 5 anchors: {np.sqrt(np.mean(loo_errs**2)):.2f} pKa units')
-        print(f'Leave-one-out residuals: {np.round(loo_errs, 2)}')
-        print('(Small n=5 means this error estimate is itself noisy — treat as a rough calibration, not a')
-        print(' validated QSPR. It is still far better anchored to the LNP-relevant quantity than a generic')
-        print(' aqueous-pKa predictor would be.)')
-
-        LOGP_MIN, LOGP_MAX = X_anchor.min(), X_anchor.max()
-
-        def calibrated_pka(smi):
-            """LogP-calibrated apparent pKa. Returns (pka, is_extrapolated)."""
-            mol = Chem.MolFromSmiles(str(smi))
-            if mol is None: return np.nan, True
-            lp = Descriptors.MolLogP(mol)
-            pka = float(pka_model.predict([[lp]])[0])
-            is_extrap = (lp < LOGP_MIN - 2) or (lp > LOGP_MAX + 2)
-            return round(pka, 2), is_extrap
-
-        results = clean_df['ionizable_lipid_smiles'].apply(calibrated_pka)
-        clean_df['ion_pKa_calibrated']    = results.apply(lambda t: t[0])
-        clean_df['ion_pKa_extrapolated']  = results.apply(lambda t: t[1])
-        n_extrap = int(clean_df['ion_pKa_extrapolated'].sum())
-        print(f'\nApplied to all {len(clean_df)} formulations. Calibrated pKa range: '
-              f'{clean_df["ion_pKa_calibrated"].min():.2f}-{clean_df["ion_pKa_calibrated"].max():.2f}')
-        print(f'{n_extrap}/{len(clean_df)} formulations ({n_extrap/len(clean_df)*100:.0f}%) fall outside the '
-              f'anchor LogP range ±2 and are flagged as extrapolated (use with caution / exclude from strict claims).')
-
-        m = clean_df['ion_pKa_calibrated'].notna() & (~clean_df['ion_pKa_extrapolated'])
-        r, p = stats.spearmanr(clean_df.loc[m, 'ion_pKa_calibrated'], clean_df.loc[m, 'EE'])
-        print(f'\nCalibrated pKa vs EE% (non-extrapolated formulations only, n={m.sum()}): '
-              f'Spearman rho={r:.3f}, p={p:.3f}')
-
-        r_old = stats.spearmanr(clean_df['ion_pKa_est'], clean_df['EE'])
-        print(f'(For comparison, the crude K1 heuristic gave rho={r_old.correlation:.2f}, p={r_old.pvalue:.1e} — '
-              f'that correlation does NOT survive using a properly calibrated pKa. Treat the K1 pKa finding as')
-        print(f' superseded by this result: once pKa is anchored to real bilayer-context values, its correlation')
-        print(f' with EE% in this dataset is weak but statistically significant, and the earlier heuristic was very likely')
-        print(f' picking up amine-type/ester-count features directly rather than genuine pKa signal.)')
-
-        fig, ax = plt.subplots(figsize=(6, 4.5))
-        colors = np.where(clean_df.loc[m, 'ion_pKa_extrapolated'], 'grey', '#2B579A')
-        ax.scatter(clean_df.loc[m, 'ion_pKa_calibrated'], clean_df.loc[m, 'EE'], s=14, alpha=0.5, color='#2B579A')
-        ax.set_xlabel('Ionizable amine apparent pKa (LogP-calibrated, free alternative)')
-        ax.set_ylabel('EE%')
-        ax.set_title(f'Calibrated pKa vs EE%  (ρ={r:.2f}, p={p:.2f}, n={m.sum()})\n'
-                     f'5-anchor LOOCV RMSE={np.sqrt(np.mean(loo_errs**2)):.2f}', fontsize=10)
-        plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec13I_pka_calibrated', width='double')
-        plt.show()
-
-        fig, axes = plt.subplots(1, 3, figsize=(11, 3.8))
-        # Panel A: the calibration itself -- 5 anchors + fitted line, shows why the calibration is trustworthy
-        lp_range = np.linspace(X_anchor.min()-1, X_anchor.max()+1, 50)
-        axes[0].plot(lp_range, pka_model.predict(lp_range.reshape(-1,1)), color=PUB_PALETTE[0], lw=1.5, zorder=1)
-        axes[0].scatter(X_anchor, y_anchor, s=45, color=PUB_PALETTE[1], edgecolor='k', zorder=2)
-        for (name, (_, pk)), lp in zip(PKA_ANCHORS.items(), X_anchor.ravel()):
-            axes[0].annotate(name, (lp, pk), fontsize=6, xytext=(3,3), textcoords='offset points')
-        axes[0].set_xlabel('Ionizable lipid LogP')
-        axes[0].set_ylabel('Literature apparent pKa (TNS-assay)')
-        axes[0].set_title(f'A. Calibration anchors\nLOOCV RMSE={np.sqrt(np.mean(loo_errs**2)):.2f} pKa units', fontsize=9)
-        # Panel B: BEFORE -- uncalibrated heuristic vs EE% (the wrong-sign trend)
-        axes[1].scatter(clean_df['ion_pKa_est'], clean_df['EE'], s=10, alpha=0.4, color=PUB_PALETTE[3])
-        z = np.polyfit(clean_df['ion_pKa_est'].dropna(), clean_df.loc[clean_df['ion_pKa_est'].notna(),'EE'], 1)
-        xx = np.linspace(clean_df['ion_pKa_est'].min(), clean_df['ion_pKa_est'].max(), 50)
-        axes[1].plot(xx, np.polyval(z, xx), color=PUB_PALETTE[3], lw=1.5)
-        axes[1].set_xlabel('Uncalibrated heuristic pKa')
-        axes[1].set_ylabel('EE%')
-        axes[1].set_title(f'B. Before calibration\nρ={r_old.correlation:.2f}, p={r_old.pvalue:.1e}', fontsize=9)
-        # Panel C: AFTER -- calibrated pKa vs EE%, with extrapolated points now actually flagged (bug fix)
-        is_extrap = clean_df.loc[m, 'ion_pKa_extrapolated']
-        axes[2].scatter(clean_df.loc[m & ~clean_df['ion_pKa_extrapolated'], 'ion_pKa_calibrated'],
-                         clean_df.loc[m & ~clean_df['ion_pKa_extrapolated'], 'EE'],
-                         s=10, alpha=0.5, color=PUB_PALETTE[0], label='In calibration range')
-        axes[2].scatter(clean_df.loc[m & clean_df['ion_pKa_extrapolated'], 'ion_pKa_calibrated'],
-                         clean_df.loc[m & clean_df['ion_pKa_extrapolated'], 'EE'],
-                         s=10, alpha=0.5, color='grey', label='Extrapolated (excluded from ρ)')
-        z2 = np.polyfit(clean_df.loc[m & ~clean_df['ion_pKa_extrapolated'], 'ion_pKa_calibrated'],
-                         clean_df.loc[m & ~clean_df['ion_pKa_extrapolated'], 'EE'], 1)
-        axes[2].plot(xx, np.polyval(z2, xx), color=PUB_PALETTE[0], lw=1.5)
-        axes[2].set_xlabel('Calibrated pKa (LogP-anchored)')
-        axes[2].set_ylabel('EE%')
-        axes[2].set_title(f'C. After calibration\nρ={r:.2f}, p={p:.3f}, n={m.sum()}', fontsize=9)
-        axes[2].legend(fontsize=6, loc='upper right')
-
-        plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec13I_pka_calibrated', width='double')
-        plt.show()
-
-        fig, axes = plt.subplots(1, 3, figsize=(11, 3))
-        rng = np.random.RandomState(0)
-        # Panel A: unchanged
-        lp_range = np.linspace(X_anchor.min()-1, X_anchor.max()+1, 50)
-        axes[0].plot(lp_range, pka_model.predict(lp_range.reshape(-1,1)), color=PUB_PALETTE[0], lw=1.5, zorder=1)
-        axes[0].scatter(X_anchor, y_anchor, s=45, color=PUB_PALETTE[1], edgecolor='k', zorder=2)
-        for (name, (_, pk)), lp in zip(PKA_ANCHORS.items(), X_anchor.ravel()):
-            axes[0].annotate(name, (lp, pk), fontsize=6, xytext=(3,3), textcoords='offset points')
-        axes[0].set_xlabel('Ionizable lipid LogP')
-        axes[0].set_ylabel('Literature apparent pKa (TNS-assay)')
-        # axes[0].set_title(f'A. Calibration anchors\nLOOCV RMSE={np.sqrt(np.mean(loo_errs**2)):.2f} pKa units', fontsize=9)
-
-        def binned_trend(x, y, ax, color, n_bins=8):
-            """Median EE% per x-decile -- appropriate visual for a Spearman (rank) claim."""
-            bins = pd.qcut(x, n_bins, duplicates='drop')
-            trend = pd.DataFrame({'x': x, 'y': y, 'bin': bins}).groupby('bin', observed=True).agg(
-                x_mid=('x','median'), y_med=('y','median'), y_lo=('y', lambda v: v.quantile(0.25)),
-                y_hi=('y', lambda v: v.quantile(0.75)))
-            ax.plot(trend['x_mid'], trend['y_med'], color=color, lw=1.8, marker='o', ms=4, zorder=3)
-            ax.fill_between(trend['x_mid'], trend['y_lo'], trend['y_hi'], color=color, alpha=0.15, zorder=2)
-
-        mask_ok = m & ~clean_df['ion_pKa_extrapolated']
-        mask_ex = m & clean_df['ion_pKa_extrapolated']
-
-        def lowess_trend(x, y, ax, color, frac=0.6):
-            smoothed = lowess(y, x, frac=frac, return_sorted=True)
-            ax.plot(smoothed[:,0], smoothed[:,1], color=color, lw=1.8, zorder=3)
-
-        # Panel B
-        x_b = clean_df['ion_pKa_est'].dropna()
-        y_b = clean_df.loc[x_b.index, 'EE']
-        jitter_b = x_b + rng.normal(0, 0.03, len(x_b))
-        axes[1].scatter(jitter_b, y_b, s=8, alpha=0.25, color=PUB_PALETTE[3], zorder=1)
-        lowess_trend(x_b, y_b, axes[1], PUB_PALETTE[3])
-        axes[1].set_xlabel('Uncalibrated heuristic pKa'); axes[1].set_ylabel('EE%')
-        axes[1].set_ylim(-5, 105)
-        # axes[1].set_title(f'B. Before calibration\nρ={r_old.correlation:.2f}, p={r_old.pvalue:.1e}', fontsize=9)
-        # Panel C
-        x_c_ok = clean_df.loc[mask_ok, 'ion_pKa_calibrated']
-        y_c_ok = clean_df.loc[mask_ok, 'EE']
-        jitter_c_ok = x_c_ok + rng.normal(0, 0.02, len(x_c_ok))
-        jitter_c_ex = clean_df.loc[mask_ex,'ion_pKa_calibrated'] + rng.normal(0, 0.02, mask_ex.sum())
-        axes[2].scatter(jitter_c_ok, y_c_ok, s=8, alpha=0.3, color=PUB_PALETTE[0], zorder=1, label='In calibration range')
-        axes[2].scatter(jitter_c_ex, clean_df.loc[mask_ex,'EE'], s=8, alpha=0.3, color='grey', zorder=1,
-                         label='Extrapolated (excluded from ρ)')
-        lowess_trend(x_c_ok, y_c_ok, axes[2], PUB_PALETTE[0])
-        axes[2].set_xlabel('Calibrated pKa (LogP-anchored)'); axes[2].set_ylabel('EE%')
-        axes[2].set_ylim(-5, 105)
-        # axes[2].set_title(f'C. After calibration\nρ={r:.2f}, p={p:.3f}, n={m.sum()}', fontsize=9)
-        axes[2].legend(fontsize=6, loc='lower left')
-        plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec13I_pka_calibrated', width='double')
-        plt.show()
-
-        def lowess_trend(x, y, ax, color, frac=0.6):
-            smoothed = lowess(y, x, frac=frac, return_sorted=True)
-            ax.plot(smoothed[:,0], smoothed[:,1], color=color, lw=1.8, zorder=3)
-
-        # Panel B
-        x_b = clean_df['ion_pKa_est'].dropna()
-        y_b = clean_df.loc[x_b.index, 'EE']
-        jitter_b = x_b + rng.normal(0, 0.03, len(x_b))
-        axes[1].scatter(jitter_b, y_b, s=8, alpha=0.25, color=PUB_PALETTE[3], zorder=1)
-        lowess_trend(x_b, y_b, axes[1], PUB_PALETTE[3])
-        axes[1].set_xlabel('Uncalibrated heuristic pKa'); axes[1].set_ylabel('EE%')
-        axes[1].set_ylim(-5, 105)
-        axes[1].set_title(f'B. Before calibration\nρ={r_old.correlation:.2f}, p={r_old.pvalue:.1e}', fontsize=9)
-        # Panel C
-        x_c_ok = clean_df.loc[mask_ok, 'ion_pKa_calibrated']
-        y_c_ok = clean_df.loc[mask_ok, 'EE']
-        jitter_c_ok = x_c_ok + rng.normal(0, 0.02, len(x_c_ok))
-        jitter_c_ex = clean_df.loc[mask_ex,'ion_pKa_calibrated'] + rng.normal(0, 0.02, mask_ex.sum())
-        axes[2].scatter(jitter_c_ok, y_c_ok, s=8, alpha=0.3, color=PUB_PALETTE[0], zorder=1, label='In calibration range')
-        axes[2].scatter(jitter_c_ex, clean_df.loc[mask_ex,'EE'], s=8, alpha=0.3, color='grey', zorder=1,
-                         label='Extrapolated (excluded from ρ)')
-        lowess_trend(x_c_ok, y_c_ok, axes[2], PUB_PALETTE[0])
-        axes[2].set_xlabel('Calibrated pKa (LogP-anchored)'); axes[2].set_ylabel('EE%')
-        axes[2].set_ylim(-5, 105)
-        axes[2].set_title(f'C. After calibration\nρ={r:.2f}, p={p:.3f}, n={m.sum()}', fontsize=9)
-        axes[2].legend(fontsize=6, loc='lower left')
-
-        return self.state
-
 
 # ============================================================================
 # Section14 FeedbackLoop
