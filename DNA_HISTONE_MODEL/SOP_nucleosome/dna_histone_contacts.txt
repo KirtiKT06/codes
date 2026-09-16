@@ -1,0 +1,13 @@
+DNA-histone CG contact analysis (cutoff = 10.0 A)
+Total bead-bead contact pairs: 1296
+Unique (histone residue - DNA nucleotide) contact pairs: 879
+
+Contacts per histone chain:
+  Chain A: 236 bead-bead contacts
+  Chain B: 105 bead-bead contacts
+  Chain C: 177 bead-bead contacts
+  Chain D: 148 bead-bead contacts
+  Chain E: 247 bead-bead contacts
+  Chain F: 115 bead-bead contacts
+  Chain G: 136 bead-bead contacts
+  Chain H: 132 bead-bead contacts

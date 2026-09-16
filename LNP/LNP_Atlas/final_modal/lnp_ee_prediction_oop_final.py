@@ -1,6 +1,5 @@
 """
-Multi-Component Molecular Fingerprints and Classification-Based Prediction
-of LNP Encapsulation Efficiency
+Knowledge-guided Unified Model for Understanding Design and encapsulation efficiency of Lipid Nanoparticles (KUMUDLNP)
 
 Author: Kirti | IISc Bangalore | June 2026
 Dataset: LNP Atlas v1 (Scientific Data, December 2025)
@@ -50,11 +49,11 @@ from sklearn.metrics import silhouette_score
 from sklearn.metrics import mean_squared_error
 import shap
 from scipy import stats
-from scipy.stats import wilcoxon
-from scipy.stats import chi2_contingency, spearmanr
+from scipy.stats import wilcoxon, kruskal
+from scipy.stats import chi2_contingency, spearmanr, mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 import statsmodels.api as sm
-from statsmodels.nonparametric.smoothers_lowess import lowess
+import statsmodels.formula.api as smf
 import matplotlib
 matplotlib.use('Agg')  # headless/non-interactive: script only saves figures, never plt.show()
 import matplotlib.pyplot as plt
@@ -564,49 +563,191 @@ class RigorousNoiseFloor:
         print(f'\nWorst offenders (highest between-lab std):')
         print(bl_df.head(8)[['n_papers','mean_EE','std_EE','cv_pct','values']].to_string())
 
-        # ── One-way ANOVA: partition variance into between-lipid (chemistry) and within-lipid (lab/measurement) components ─────────────────────────────
-        # Only use lipids with ≥2 observations
-        multi_lip = variability[variability['n_obs'] >= 2].index
-        sub = clean_df[clean_df['ionizable_lipid_smiles'].isin(multi_lip)].copy()
+        # =============================================================================
+        # Mixed-effects variance partitioning
+        # =============================================================================
+        print("\n" + "="*80)
+        print("MIXED-EFFECTS VARIANCE PARTITIONING")
+        print("="*80)
 
-        # One-way ANOVA using scipy
-        groups_anova = [sub[sub['ionizable_lipid_smiles']==lip]['EE'].values for lip in multi_lip]
-        F_stat, p_val = stats.f_oneway(*groups_anova)
-
-        # Compute variance components manually (method of moments)
-        # σ²_total = overall variance
-        # σ²_within (lab) = mean of within-group variances
-        # σ²_between (chemistry) = total - within
-        sigma2_total   = sub['EE'].var(ddof=1)
-        sigma2_within  = np.mean([g.var(ddof=1) for g in groups_anova if len(g) > 1])
-        sigma2_between = max(sigma2_total - sigma2_within, 0)  # chemistry component
-
-        pct_chemistry = 100 * sigma2_between / sigma2_total
-        pct_lab       = 100 * sigma2_within  / sigma2_total
-
-        print('=== Variance Decomposition ===')
-        print(f'σ²_total (all formulations):  {sigma2_total:.2f}  (σ = {np.sqrt(sigma2_total):.2f}%)')
-        print(f'σ²_chemistry (between-lipid): {sigma2_between:.2f}  ({pct_chemistry:.1f}% of total)')
-        print(f'σ²_lab (within-lipid):        {sigma2_within:.2f}  ({pct_lab:.1f}% of total)')
-        print(f'\nOne-way ANOVA: F={F_stat:.2f}, p={p_val:.2e}')
-        print(f'\nInterpretation:')
-        print(f'  {pct_chemistry:.0f}% of EE% variance comes from lipid chemistry (learnable)')
-        print(f'  {pct_lab:.0f}% comes from cross-lab measurement noise (irreducible)')
-        print(f'  A perfect model can explain at most {pct_chemistry:.0f}% of variance → max R² ≈ {pct_chemistry/100:.2f}')
-
-        # ──figure ──────────────────────────────────────────────
-        fig, axes = plt.subplots(figsize=(7, 3))
-        colors = PUB_PALETTE[:8]
-        # Left: pie chart of variance components
-        wedges, texts, autotexts = axes.pie(
-            [sigma2_between, sigma2_within],
-            labels=['$\sigma^2$ Chemistry\n(learnable)', '$\\sigma^2$ Cross-study Variability \n(irreducible)'],
-            colors=[colors[3], colors[6]], autopct='%1.1f%%',
-            startangle=90
+        # -------------------------------------------------------------------------
+        # Ionizable lipid identity
+        # -------------------------------------------------------------------------
+        ion_model = smf.mixedlm(
+            "EE ~ 1",
+            data=clean_df,
+            groups=clean_df["ionizable_lipid_smiles"]
         )
-        for at in autotexts: at.set_fontsize(13); at.set_fontweight('bold')
-        plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec4_variance_decomposition', width='single')
+
+        ion_res = ion_model.fit(reml=True)
+
+        ion_var = float(ion_res.cov_re.iloc[0, 0])
+        ion_resid = float(ion_res.scale)
+
+        ion_icc = ion_var / (ion_var + ion_resid)
+
+        print("\nIonizable lipid identity")
+        print(f"Between-lipid variance   = {ion_var:.2f}")
+        print(f"Residual variance        = {ion_resid:.2f}")
+        print(f"ICC                      = {ion_icc:.3f}")
+        print(f"Variance explained       = {ion_icc*100:.1f}%")
+
+        # -------------------------------------------------------------------------
+        # Cargo identity
+        # -------------------------------------------------------------------------
+        cargo_model = smf.mixedlm(
+            "EE ~ 1",
+            data=clean_df,
+            groups=clean_df["target_type"]
+        )
+
+        cargo_res = cargo_model.fit(reml=True)
+
+        cargo_var = float(cargo_res.cov_re.iloc[0, 0])
+        cargo_resid = float(cargo_res.scale)
+
+        cargo_icc = cargo_var / (cargo_var + cargo_resid)
+
+        print("\nCargo identity")
+        print(f"Cargo variance           = {cargo_var:.2f}")
+        print(f"Residual variance        = {cargo_resid:.2f}")
+        print(f"ICC                      = {cargo_icc:.3f}")
+        print(f"Variance explained       = {cargo_icc*100:.1f}%")
+
+        # -------------------------------------------------------------------------
+        # Exact formulation identity
+        # -------------------------------------------------------------------------
+        clean_df["formulation_id"] = (
+            clean_df["ionizable_lipid_smiles"].astype(str) + "|" +
+            clean_df["helper_lipid_smiles"].astype(str) + "|" +
+            clean_df["sterol_lipid_smiles"].astype(str) + "|" +
+            clean_df["peg_lipid_smiles"].astype(str) + "|" +
+            clean_df["lipid_molar_ratio"].astype(str)
+        )
+
+        form_model = smf.mixedlm(
+            "EE ~ 1",
+            data=clean_df,
+            groups=clean_df["formulation_id"]
+        )
+
+        form_res = form_model.fit(reml=True)
+
+        form_var = float(form_res.cov_re.iloc[0, 0])
+        form_resid = float(form_res.scale)
+
+        form_icc = form_var / (form_var + form_resid)
+
+        print("\nExact formulation identity")
+        print(f"Formulation variance     = {form_var:.2f}")
+        print(f"Residual variance        = {form_resid:.2f}")
+        print(f"ICC                      = {form_icc:.3f}")
+        print(f"Variance explained       = {form_icc*100:.1f}%")
+
+        intra_lipid_sigma = variability.loc[
+                variability["n_obs"] >= 2,
+                "std_EE"
+            ].median()
+        between_lab_sigma = bl_df["std_EE"].median()
+
+        cargo_pct = 100 * cargo_icc
+        ionizable_pct = 100 * ion_icc
+        formulation_pct = 100 * form_icc
+
+        print("\nFigure values")
+        print(f"Intra-lipid sigma      : {intra_lipid_sigma:.1f}%")
+        print(f"Between-lab sigma      : {between_lab_sigma:.1f}%")
+        print(f"Cargo ICC             : {cargo_pct:.1f}%")
+        print(f"Ionizable ICC         : {ionizable_pct:.1f}%")
+        print(f"Formulation ICC       : {formulation_pct:.1f}%")
+
+        # =============================================================================
+        # Figure: Noise floor and variance partitioning
+        # =============================================================================
+
+        fig, axes = plt.subplots(
+            1, 2,
+            figsize=(7, 3),
+            constrained_layout=True
+        )
+
+        colors = PUB_PALETTE[:16]
+
+        # -------------------------------------------------------------------------
+        # Panel A
+        # -------------------------------------------------------------------------
+
+        noise_labels = [
+            'Same ionizable\nlipid',
+            'Exact formulation\n(across papers)'
+        ]
+
+        noise_vals = [
+            intra_lipid_sigma,
+            between_lab_sigma
+        ]
+
+        bars = axes[0].bar(
+            noise_labels,
+            noise_vals,
+            color=[colors[0], colors[3]],
+            edgecolor='white',
+            alpha=0.7
+        )
+
+        for b, v in zip(bars, noise_vals):
+            axes[0].text(
+                b.get_x() + b.get_width()/2,
+                v + 0.3,
+                f'{v:.1f}%',
+                ha='center'
+            )
+
+        axes[0].set_ylabel('EE variability (σ, %)')
+        axes[0].set_title('Empirical measurement variability')
+
+        # -------------------------------------------------------------------------
+        # Panel B
+        # -------------------------------------------------------------------------
+
+        labels = [
+            "Cargo identity",
+            "Ionizable lipid identity",
+            "Exact formulation identity"
+        ]
+
+        vals = [
+            cargo_pct,
+            ionizable_pct,
+            formulation_pct
+        ]
+
+        axes[1].barh(
+            labels,
+            vals,
+            color=[colors[6], colors[1], colors[2]],
+            edgecolor='white',
+            alpha=0.75
+        )
+
+        for y, v in enumerate(vals):
+            axes[1].text(
+                v + 1,
+                y,
+                f"{v:.1f}%",
+                va="center"
+            )
+
+        axes[1].set_xlim(0, 60)
+        axes[1].set_xlabel("Variance explained (%)")
+        axes[1].set_title("Random-effects variance partitioning")
+
+        save_pub_figure(
+            fig,
+            'fig_variance_partition_and_noise_floor',
+            width='double'
+        )
+
         plt.show()
 
         fig, axes = plt.subplots(figsize=(4, 3))
@@ -903,12 +1044,12 @@ class FeatureAblation:
         # colors = PUB_PALETTE[8:16]
         # ax2 = ax.twinx()
 
-        # ax.plot(noise_levels, mc_auc_means, '^--', color=colors[5], lw=1.5, ms=4, label='Classification AUC (left)')
+        # ax.plot(noise_levels, mc_auc_means, '^--', color=colors[8], lw=1.5, ms=4, label='Classification AUC (left)')
         # ax.fill_between(noise_levels, mc_auc_means-mc_auc_stds, mc_auc_means+mc_auc_stds,
-        #                 alpha=0.08, color=colors[5])
+        #                 alpha=0.08, color=colors[8])
         # ax.axhline(0.5, ls='--', color=colors[5], lw=1, alpha=0.8)
-        # ax.set_ylabel('ROC-AUC (classification)', color=colors[5])
-        # ax.tick_params(axis='y', labelcolor=colors[5])
+        # ax.set_ylabel('ROC-AUC (classification)', color=colors[8])
+        # ax.tick_params(axis='y', labelcolor=colors[8])
         # ax.set_ylim([0.4, 0.80])
 
         # ax2.plot(noise_levels, mc_r2_means, 's--', color=colors[4], lw=1.5, ms=4, label='Regression $R^2$ (right)')
@@ -1150,7 +1291,7 @@ class FingerprintBenchmark:
         ax.axvline(0.5, color='grey', ls='--', lw=1.5)
         ax.set_xlim(0, 1.0)
         plt.tight_layout()
-        save_pub_figure(fig, 'fig_sec7_fingerprint_benchmark', width='single')  # -> .pdf (vector) + .png (300dpi)
+        save_pub_figure(fig, 'fig_sec7_fingerprint_benchmark', width='single')  
         plt.show()
 
         # expose to later sections
@@ -1579,7 +1720,7 @@ class ModelComparison:
         PUB_PALETTE = self.state.PUB_PALETTE
         save_pub_figure = self.state.save_pub_figure
         clean_df = self.state.clean_df
-        X_D = self.state.X_Du
+        X_D = self.state.X_D
         y = self.state.y
         groups = self.state.groups
         results_df = self.state.results_df
@@ -3314,6 +3455,3955 @@ class SHAP:
         save_pub_figure(fig, 'fig_sec12C_smarts_enrichment', width='double')
         plt.show()
 
+        # ============================================================================
+        # HEADGROUP / LINKER / TAIL ANALYSIS
+        # ============================================================================
+        #
+        # Functional groups are assigned relative to the nearest nitrogen atom:
+        #
+        # 0–4 bonds   -> Headgroup
+        # 5–8 bonds   -> Linker
+        # >8 bonds    -> Tail
+        #
+        # Statistics:
+        #   • Spearman rho (continuous EE)
+        #   • Mann-Whitney U ΔEE
+        #   • Chi-square
+        #   • Phi coefficient
+        #   • FDR correction
+        #   • Bonferroni correction
+        #
+        # ============================================================================
+
+        # ============================================================================
+        # Functional groups
+        # ============================================================================
+
+        GROUPS = {
+
+            "OH":
+                "[OX2H]",
+
+            "Ether":
+                "[#6]-O-[#6]",
+
+            "Ester":
+                "C(=O)O[#6]",
+
+            "Amide":
+                "C(=O)N",
+        }
+
+
+        # ============================================================================
+        # Region classification
+        # ============================================================================
+
+        def classify_distance(dist):
+
+            if dist <= 4:
+                return "Headgroup"
+
+            elif dist <= 8:
+                return "Linker"
+
+            else:
+                return "Tail"
+
+
+        # ============================================================================
+        # Count locations
+        # ============================================================================
+
+        def count_group_locations(smiles, smarts):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+
+                return {
+                    "Headgroup": 0,
+                    "Linker": 0,
+                    "Tail": 0
+                }
+
+            patt = Chem.MolFromSmarts(smarts)
+
+            matches = mol.GetSubstructMatches(patt)
+
+            if len(matches) == 0:
+
+                return {
+                    "Headgroup": 0,
+                    "Linker": 0,
+                    "Tail": 0
+                }
+
+            nitrogen_atoms = [
+
+                atom.GetIdx()
+
+                for atom in mol.GetAtoms()
+
+                if atom.GetAtomicNum() == 7
+            ]
+
+            if len(nitrogen_atoms) == 0:
+
+                return {
+                    "Headgroup": 0,
+                    "Linker": 0,
+                    "Tail": 0
+                }
+
+            result = {
+
+                "Headgroup": 0,
+                "Linker": 0,
+                "Tail": 0
+            }
+
+            for match in matches:
+
+                anchor = match[0]
+
+                nearest = 999
+
+                for n in nitrogen_atoms:
+
+                    if n == anchor:
+
+                        dist = 0
+
+                    else:
+
+                        try:
+
+                            path = Chem.rdmolops.GetShortestPath(
+                                mol,
+                                n,
+                                anchor
+                            )
+
+                            dist = len(path) - 1
+
+                        except:
+
+                            continue
+
+                    nearest = min(
+                        nearest,
+                        dist
+                    )
+
+                region = classify_distance(nearest)
+
+                result[region] += 1
+
+            return result
+
+
+        # ============================================================================
+        # Build feature matrix
+        # ============================================================================
+
+        loc_df = pd.DataFrame()
+
+        loc_df["EE"] = clean_df["EE"]
+
+        loc_df["HIGH_EE"] = (
+            clean_df["EE"] >= 80
+        ).astype(int)
+
+        for group_name, smarts in GROUPS.items():
+
+            head_vals = []
+            linker_vals = []
+            tail_vals = []
+
+            for smi in clean_df["ionizable_lipid_smiles"]:
+
+                locations = count_group_locations(
+                    smi,
+                    smarts
+                )
+
+                head_vals.append(
+                    int(locations["Headgroup"] > 0)
+                )
+
+                linker_vals.append(
+                    int(locations["Linker"] > 0)
+                )
+
+                tail_vals.append(
+                    int(locations["Tail"] > 0)
+                )
+
+            loc_df[
+                f"{group_name}_Headgroup"
+            ] = head_vals
+
+            loc_df[
+                f"{group_name}_Linker"
+            ] = linker_vals
+
+            loc_df[
+                f"{group_name}_Tail"
+            ] = tail_vals
+
+
+        # ============================================================================
+        # Statistics
+        # ============================================================================
+
+        EE = loc_df["EE"].values
+
+        HIGH_EE = loc_df["HIGH_EE"].values
+
+        results = []
+
+        feature_cols = [
+
+            c for c in loc_df.columns
+
+            if c not in [
+                "EE",
+                "HIGH_EE"
+            ]
+        ]
+
+        for feature in feature_cols:
+
+            x = loc_df[feature].values
+
+            # skip constant features
+
+            if len(np.unique(x)) < 2:
+                continue
+
+            n_present = int(np.sum(x))
+
+            prevalence = 100 * np.mean(x)
+
+            # --------------------------------------------------------
+            # Spearman
+            # --------------------------------------------------------
+
+            try:
+
+                rho, p_rho = spearmanr(
+                    x,
+                    EE
+                )
+
+            except:
+
+                rho = np.nan
+                p_rho = np.nan
+
+            # --------------------------------------------------------
+            # Delta EE + MWU
+            # --------------------------------------------------------
+
+            ee_present = EE[x == 1]
+            ee_absent = EE[x == 0]
+
+            if (
+                len(ee_present) < 3
+                or
+                len(ee_absent) < 3
+            ):
+                continue
+
+            delta_EE = (
+
+                np.mean(ee_present)
+                -
+                np.mean(ee_absent)
+            )
+
+            _, p_mwu = mannwhitneyu(
+
+                ee_present,
+                ee_absent,
+
+                alternative="two-sided"
+            )
+
+            # --------------------------------------------------------
+            # Chi-square + Phi
+            # --------------------------------------------------------
+
+            contingency = pd.crosstab(
+                x,
+                HIGH_EE
+            )
+
+            try:
+
+                chi2, p_chi2, _, _ = chi2_contingency(
+                    contingency
+                )
+
+                n = contingency.values.sum()
+
+                phi = np.sqrt(
+                    chi2 / n
+                )
+
+            except:
+
+                chi2 = np.nan
+                p_chi2 = np.nan
+                phi = np.nan
+
+            results.append({
+
+                "Feature":
+                    feature,
+
+                "n_present":
+                    n_present,
+
+                "Prevalence_%":
+                    prevalence,
+
+                "Phi":
+                    phi,
+
+                "Chi2":
+                    chi2,
+
+                "p_chi2":
+                    p_chi2,
+
+                "rho_spearman":
+                    rho,
+
+                "p_spearman":
+                    p_rho,
+
+                "Delta_EE":
+                    delta_EE,
+
+                "p_mwu":
+                    p_mwu
+            })
+
+        results_df = pd.DataFrame(results)
+
+
+        # ============================================================================
+        # Remove very rare features
+        # ============================================================================
+
+        MIN_COUNT = 10
+
+        results_df = results_df[
+            results_df["n_present"] >= MIN_COUNT
+        ].copy()
+
+
+        # ============================================================================
+        # Multiple testing correction
+        # ============================================================================
+
+        results_df["q_fdr"] = multipletests(
+            results_df["p_mwu"],
+            method="fdr_bh"
+        )[1]
+
+        results_df["p_bonf"] = multipletests(
+            results_df["p_mwu"],
+            method="bonferroni"
+        )[1]
+
+        results_df["FDR_sig"] = (
+            results_df["q_fdr"] < 0.05
+        )
+
+        results_df["Bonf_sig"] = (
+            results_df["p_bonf"] < 0.05
+        )
+
+
+        # ============================================================================
+        # Sort
+        # ============================================================================
+
+        results_df = results_df.sort_values(
+            "Delta_EE",
+            ascending=False
+        )
+
+
+        # ============================================================================
+        # Output
+        # ============================================================================
+
+        print("\n")
+        print("=" * 120)
+        print("HEADGROUP / LINKER / TAIL ANALYSIS")
+        print("=" * 120)
+
+        display_cols = [
+
+            "Feature",
+
+            "n_present",
+
+            "Prevalence_%",
+
+            "Phi",
+
+            "rho_spearman",
+
+            "Delta_EE",
+
+            "q_fdr",
+
+            "p_bonf",
+
+            "FDR_sig",
+
+            "Bonf_sig"
+        ]
+
+        print(
+            results_df[
+                display_cols
+            ]
+            .round(3)
+            .to_string(index=False)
+        )
+
+        results_df.to_csv(
+            "table_headgroup_linker_tail_analysis.csv",
+            index=False
+        )
+
+        print(
+            "\nSaved: table_headgroup_linker_tail_analysis.csv"
+        )
+
+        # =============================================================================
+        # MECHANISTIC TOPOLOGY ANALYSIS
+        # =============================================================================
+
+        # =============================================================================
+        # SETTINGS
+        # =============================================================================
+
+        HIGH_EE_THRESHOLD = 80
+        MIN_COUNT = 10
+
+        GROUPS = {
+
+            "OH":
+                "[OX2H]",
+
+            "Ether":
+                "[#6]-O-[#6]",
+
+            "Ester":
+                "C(=O)O[#6]",
+
+            "Amide":
+                "C(=O)N",
+        }
+
+
+        # =============================================================================
+        # HELPERS
+        # =============================================================================
+
+        def nearest_distance(smiles, smarts):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+                return np.nan
+
+            patt = Chem.MolFromSmarts(smarts)
+
+            matches = mol.GetSubstructMatches(patt)
+
+            if len(matches) == 0:
+                return np.nan
+
+            N_atoms = [
+
+                a.GetIdx()
+
+                for a in mol.GetAtoms()
+
+                if a.GetAtomicNum() == 7
+            ]
+
+            if len(N_atoms) == 0:
+                return np.nan
+
+            best = 999
+
+            for match in matches:
+
+                anchor = match[0]
+
+                for n in N_atoms:
+
+                    if n == anchor:
+
+                        dist = 0
+
+                    else:
+
+                        try:
+
+                            path = Chem.rdmolops.GetShortestPath(
+                                mol,
+                                n,
+                                anchor
+                            )
+
+                            dist = len(path) - 1
+
+                        except:
+                            continue
+
+                    best = min(best, dist)
+
+            return best
+
+
+        def distance_bin(x):
+
+            if pd.isna(x):
+                return np.nan
+
+            if x <= 2:
+                return "0-2"
+
+            elif x <= 5:
+                return "3-5"
+
+            elif x <= 8:
+                return "6-8"
+
+            else:
+                return ">8"
+
+
+        def region(x):
+
+            if pd.isna(x):
+                return np.nan
+
+            if x <= 4:
+                return "Headgroup"
+
+            elif x <= 8:
+                return "Linker"
+
+            else:
+                return "Tail"
+
+
+        # =============================================================================
+        # BUILD DATAFRAME
+        # =============================================================================
+
+        topo_df = pd.DataFrame()
+
+        topo_df["EE"] = clean_df["EE"]
+
+        topo_df["HIGH_EE"] = (
+            clean_df["EE"] >= HIGH_EE_THRESHOLD
+        ).astype(int)
+
+        topo_df["MolWt"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda s:
+                Descriptors.MolWt(
+                    Chem.MolFromSmiles(s)
+                )
+            )
+        )
+
+        topo_df["LogP"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda s:
+                Descriptors.MolLogP(
+                    Chem.MolFromSmiles(s)
+                )
+            )
+        )
+
+        for group, smarts in GROUPS.items():
+
+            topo_df[f"{group}_dist"] = (
+
+                clean_df["ionizable_lipid_smiles"]
+
+                .apply(
+                    lambda x:
+                    nearest_distance(
+                        x,
+                        smarts
+                    )
+                )
+            )
+
+            topo_df[f"{group}_bin"] = (
+                topo_df[f"{group}_dist"]
+                .apply(distance_bin)
+            )
+
+            topo_df[f"{group}_region"] = (
+                topo_df[f"{group}_dist"]
+                .apply(region)
+            )
+
+
+        # =============================================================================
+        # CONTINUOUS DISTANCE CORRELATIONS
+        # =============================================================================
+
+        corr_rows = []
+
+        for group in GROUPS:
+
+            col = f"{group}_dist"
+
+            subset = topo_df[
+                ["EE", col]
+            ].dropna()
+
+            if len(subset) < 15:
+                continue
+
+            rho,p = spearmanr(
+                subset[col],
+                subset["EE"]
+            )
+
+            corr_rows.append({
+
+                "Feature":group,
+
+                "n":len(subset),
+
+                "rho":rho,
+
+                "p":p
+            })
+
+        corr_df = pd.DataFrame(corr_rows)
+
+        corr_df.to_csv(
+            "table_graph_distance_correlations.csv",
+            index=False
+        )
+
+        print("\n=== CONTINUOUS DISTANCE CORRELATIONS ===")
+        print(corr_df.round(3))
+
+
+        # =============================================================================
+        # DISTANCE BIN ANALYSIS
+        # =============================================================================
+
+        bin_results = []
+
+        for group in GROUPS:
+
+            for b in [
+
+                "0-2",
+                "3-5",
+                "6-8",
+                ">8"
+
+            ]:
+
+                indicator = (
+
+                    topo_df[
+                        f"{group}_bin"
+                    ] == b
+
+                ).astype(int)
+
+                n_present = int(
+                    indicator.sum()
+                )
+
+                if n_present < MIN_COUNT:
+                    continue
+
+                ee_present = topo_df.loc[
+                    indicator==1,
+                    "EE"
+                ]
+
+                ee_absent = topo_df.loc[
+                    indicator==0,
+                    "EE"
+                ]
+
+                delta = (
+
+                    ee_present.mean()
+
+                    -
+
+                    ee_absent.mean()
+                )
+
+                _, p_mwu = mannwhitneyu(
+                    ee_present,
+                    ee_absent
+                )
+
+                contingency = pd.crosstab(
+                    indicator,
+                    topo_df["HIGH_EE"]
+                )
+
+                chi2,p_chi2,_,_ = (
+                    chi2_contingency(
+                        contingency
+                    )
+                )
+
+                phi = np.sqrt(
+                    chi2 /
+                    contingency.values.sum()
+                )
+
+                bin_results.append({
+
+                    "Feature":group,
+
+                    "Distance_bin":b,
+
+                    "n_present":n_present,
+
+                    "Mean_EE":
+                        ee_present.mean(),
+
+                    "Median_EE":
+                        ee_present.median(),
+
+                    "Delta_EE":
+                        delta,
+
+                    "Phi":
+                        phi,
+
+                    "p_chi2":
+                        p_chi2,
+
+                    "p_mwu":
+                        p_mwu
+                })
+
+        bin_df = pd.DataFrame(
+            bin_results
+        )
+
+        bin_df["q_fdr"] = multipletests(
+            bin_df["p_mwu"],
+            method="fdr_bh"
+        )[1]
+
+        bin_df["p_bonf"] = multipletests(
+            bin_df["p_mwu"],
+            method="bonferroni"
+        )[1]
+
+        bin_df["FDR_sig"] = (
+            bin_df["q_fdr"] < 0.05
+        )
+
+        bin_df["Bonf_sig"] = (
+            bin_df["p_bonf"] < 0.05
+        )
+
+        bin_df.to_csv(
+            "table_distance_bins.csv",
+            index=False
+        )
+
+        print("\n=== DISTANCE BIN ANALYSIS ===")
+        print(
+            bin_df.sort_values(
+                "Delta_EE",
+                ascending=False
+            ).round(3)
+        )
+
+
+        # =============================================================================
+        # HEADGROUP / LINKER / TAIL
+        # =============================================================================
+
+        region_results = []
+
+        for group in GROUPS:
+
+            for reg in [
+
+                "Headgroup",
+                "Linker",
+                "Tail"
+
+            ]:
+
+                indicator = (
+
+                    topo_df[
+                        f"{group}_region"
+                    ] == reg
+
+                ).astype(int)
+
+                n_present = int(
+                    indicator.sum()
+                )
+
+                if n_present < MIN_COUNT:
+                    continue
+
+                ee_present = topo_df.loc[
+                    indicator==1,
+                    "EE"
+                ]
+
+                ee_absent = topo_df.loc[
+                    indicator==0,
+                    "EE"
+                ]
+
+                delta = (
+                    ee_present.mean()
+                    -
+                    ee_absent.mean()
+                )
+
+                _, p_mwu = mannwhitneyu(
+                    ee_present,
+                    ee_absent
+                )
+
+                contingency = pd.crosstab(
+                    indicator,
+                    topo_df["HIGH_EE"]
+                )
+
+                chi2,p_chi2,_,_ = (
+                    chi2_contingency(
+                        contingency
+                    )
+                )
+
+                phi = np.sqrt(
+                    chi2 /
+                    contingency.values.sum()
+                )
+
+                rho,p_rho = spearmanr(
+                    indicator,
+                    topo_df["EE"]
+                )
+
+                region_results.append({
+
+                    "Feature":
+                        f"{group}_{reg}",
+
+                    "n_present":
+                        n_present,
+
+                    "Prevalence_%":
+                        100*np.mean(
+                            indicator
+                        ),
+
+                    "Phi":
+                        phi,
+
+                    "rho_spearman":
+                        rho,
+
+                    "Delta_EE":
+                        delta,
+
+                    "p_mwu":
+                        p_mwu
+                })
+
+        region_df = pd.DataFrame(
+            region_results
+        )
+
+        region_df["q_fdr"] = multipletests(
+            region_df["p_mwu"],
+            method="fdr_bh"
+        )[1]
+
+        region_df["p_bonf"] = multipletests(
+            region_df["p_mwu"],
+            method="bonferroni"
+        )[1]
+
+        region_df.to_csv(
+            "table_headgroup_linker_tail.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # CONFOUNDING CHECKS
+        # =============================================================================
+
+        confound_rows = []
+
+        for group in GROUPS:
+
+            dcol = f"{group}_dist"
+
+            subset = topo_df[
+                [dcol,"MolWt"]
+            ].dropna()
+
+            if len(subset) > 15:
+
+                rho,p = spearmanr(
+                    subset[dcol],
+                    subset["MolWt"]
+                )
+
+                confound_rows.append({
+
+                    "Feature":group,
+                    "Confounder":"MolWt",
+                    "rho":rho,
+                    "p":p
+                })
+
+            subset = topo_df[
+                [dcol,"LogP"]
+            ].dropna()
+
+            if len(subset) > 15:
+
+                rho,p = spearmanr(
+                    subset[dcol],
+                    subset["LogP"]
+                )
+
+                confound_rows.append({
+
+                    "Feature":group,
+                    "Confounder":"LogP",
+                    "rho":rho,
+                    "p":p
+                })
+
+        confound_df = pd.DataFrame(
+            confound_rows
+        )
+
+        confound_df.to_csv(
+            "table_distance_confounding.csv",
+            index=False
+        )
+
+        print("\n=== DISTANCE CONFOUNDING ===")
+        print(confound_df.round(3))
+
+
+        # =============================================================================
+        # ADJUSTED REGRESSION
+        # =============================================================================
+
+        reg_results = []
+
+        for group in GROUPS:
+
+            dcol = f"{group}_dist"
+
+            tmp = topo_df[
+                [
+                    "EE",
+                    dcol,
+                    "MolWt",
+                    "LogP"
+                ]
+            ].dropna()
+
+            if len(tmp) < 20:
+                continue
+
+            model = smf.ols(
+
+                f"""
+                EE ~ {dcol}
+                    + MolWt
+                    + LogP
+                """,
+
+                data=tmp
+
+            ).fit()
+
+            reg_results.append({
+
+                "Feature":group,
+
+                "Beta_distance":
+                    model.params[dcol],
+
+                "p_distance":
+                    model.pvalues[dcol],
+
+                "R2":
+                    model.rsquared
+            })
+
+        reg_df = pd.DataFrame(
+            reg_results
+        )
+
+        reg_df["q_fdr"] = multipletests(
+            reg_df["p_distance"],
+            method="fdr_bh"
+        )[1]
+
+        reg_df.to_csv(
+            "table_adjusted_regression.csv",
+            index=False
+        )
+
+        print("\n=== ADJUSTED REGRESSION ===")
+        print(reg_df.round(4))
+
+
+        # =============================================================================
+        # DISTANCE BIN FIGURE
+        # =============================================================================
+
+        order = [
+            "0-2",
+            "3-5",
+            "6-8",
+            ">8"
+        ]
+
+        plt.figure(
+            figsize=(10,6)
+        )
+
+        sns.barplot(
+            data=bin_df,
+            x="Distance_bin",
+            y="Delta_EE",
+            hue="Feature",
+            order=order
+        )
+
+        plt.axhline(
+            0,
+            color="black",
+            linestyle="--"
+        )
+
+        plt.ylabel("ΔEE (%)")
+
+        plt.title(
+            "Functional Group Distance vs Encapsulation Efficiency"
+        )
+
+        plt.tight_layout()
+
+        plt.savefig(
+            "fig_distance_bin_analysis.png",
+            dpi=600
+        )
+
+        plt.show()
+
+        print("\nSaved:")
+        print(" table_graph_distance_correlations.csv")
+        print(" table_distance_bins.csv")
+        print(" table_headgroup_linker_tail.csv")
+        print(" table_distance_confounding.csv")
+        print(" table_adjusted_regression.csv")
+        print(" fig_distance_bin_analysis.png")
+
+
+        # =============================================================================
+        # RIGOROUS OH MECHANISTIC ANALYSIS
+        # =============================================================================
+
+        # -----------------------------------------------------------------------------
+        # OH SMARTS
+        # -----------------------------------------------------------------------------
+
+        OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
+
+
+        # -----------------------------------------------------------------------------
+        # Count OH groups
+        # -----------------------------------------------------------------------------
+
+        def count_oh(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+                return np.nan
+
+            return len(
+                mol.GetSubstructMatches(
+                    OH_PATTERN
+                )
+            )
+
+
+        # -----------------------------------------------------------------------------
+        # Closest OH distance to N
+        # -----------------------------------------------------------------------------
+
+        def nearest_oh_distance(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+                return np.nan
+
+            oh_matches = mol.GetSubstructMatches(
+                OH_PATTERN
+            )
+
+            if len(oh_matches) == 0:
+                return np.nan
+
+            N_atoms = [
+
+                a.GetIdx()
+
+                for a in mol.GetAtoms()
+
+                if a.GetAtomicNum() == 7
+            ]
+
+            if len(N_atoms) == 0:
+                return np.nan
+
+            best = 999
+
+            for match in oh_matches:
+
+                O_idx = match[0]
+
+                for n in N_atoms:
+
+                    try:
+
+                        path = Chem.rdmolops.GetShortestPath(
+                            mol,
+                            O_idx,
+                            n
+                        )
+
+                        dist = len(path) - 1
+
+                        best = min(
+                            best,
+                            dist
+                        )
+
+                    except:
+
+                        continue
+
+            return best
+
+
+        # -----------------------------------------------------------------------------
+        # Headgroup OH count
+        # -----------------------------------------------------------------------------
+
+        def headgroup_oh_count(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+                return np.nan
+
+            oh_matches = mol.GetSubstructMatches(
+                OH_PATTERN
+            )
+
+            N_atoms = [
+
+                a.GetIdx()
+
+                for a in mol.GetAtoms()
+
+                if a.GetAtomicNum() == 7
+            ]
+
+            if len(oh_matches) == 0:
+                return 0
+
+            if len(N_atoms) == 0:
+                return 0
+
+            count = 0
+
+            for match in oh_matches:
+
+                O_idx = match[0]
+
+                nearest = 999
+
+                for n in N_atoms:
+
+                    try:
+
+                        path = Chem.rdmolops.GetShortestPath(
+                            mol,
+                            O_idx,
+                            n
+                        )
+
+                        dist = len(path) - 1
+
+                        nearest = min(
+                            nearest,
+                            dist
+                        )
+
+                    except:
+
+                        continue
+
+                # headgroup definition
+                if nearest <= 4:
+                    count += 1
+
+            return count
+
+
+        # -----------------------------------------------------------------------------
+        # Build dataframe
+        # -----------------------------------------------------------------------------
+
+        oh_df = pd.DataFrame()
+
+        oh_df["EE"] = clean_df["EE"]
+
+        oh_df["MolWt"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda s:
+                Descriptors.MolWt(
+                    Chem.MolFromSmiles(s)
+                )
+            )
+        )
+
+        oh_df["LogP"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda s:
+                Descriptors.MolLogP(
+                    Chem.MolFromSmiles(s)
+                )
+            )
+        )
+
+        oh_df["OH_count"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                count_oh
+            )
+        )
+
+        oh_df["OH_distance"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                nearest_oh_distance
+            )
+        )
+
+        oh_df["Headgroup_OH_count"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                headgroup_oh_count
+            )
+        )
+
+        # Only OH-containing lipids
+
+        oh_df = oh_df[
+            oh_df["OH_count"] > 0
+        ].copy()
+
+
+        # =============================================================================
+        # SPEARMAN CORRELATIONS
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("OH CORRELATIONS")
+        print("="*80)
+
+        for col in [
+
+            "OH_count",
+            "OH_distance",
+            "Headgroup_OH_count"
+
+        ]:
+
+            rho,p = spearmanr(
+                oh_df[col],
+                oh_df["EE"]
+            )
+
+            print(
+                f"{col:20s}"
+                f" rho={rho:+.3f}"
+                f" p={p:.5f}"
+            )
+
+
+        # =============================================================================
+        # OH COUNT EFFECT
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("OH COUNT EFFECT")
+        print("="*80)
+
+        summary = (
+
+            oh_df
+
+            .groupby(
+                "OH_count"
+            )
+
+            ["EE"]
+
+            .agg(
+                ["count","mean","median","std"]
+            )
+        )
+
+        print(
+            summary.round(2)
+        )
+
+        # Kruskal-Wallis
+
+        groups = [
+
+            g["EE"].values
+
+            for _,g in
+
+            oh_df.groupby(
+                "OH_count"
+            )
+
+            if len(g) >= 3
+        ]
+
+        if len(groups) >= 2:
+
+            H,p = kruskal(*groups)
+
+            print(
+                f"\nKruskal-Wallis: "
+                f"H={H:.3f} "
+                f"p={p:.5g}"
+            )
+
+
+        # =============================================================================
+        # DISTANCE EFFECT
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("DISTANCE EFFECT")
+        print("="*80)
+
+        print(
+
+            oh_df
+
+            .groupby(
+                pd.cut(
+                    oh_df["OH_distance"],
+                    bins=[0,2,5,8,20]
+                )
+            )
+
+            ["EE"]
+
+            .agg(
+                ["count","mean","median","std"]
+            )
+        )
+
+
+        # =============================================================================
+        # REGRESSION 1
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("MODEL 1")
+        print("EE ~ OH_COUNT")
+        print("="*80)
+
+        m1 = smf.ols(
+
+            """
+            EE ~ OH_count
+            """,
+
+            data=oh_df
+
+        ).fit()
+
+        print(m1.summary())
+
+
+        # =============================================================================
+        # REGRESSION 2
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("MODEL 2")
+        print("EE ~ OH_DISTANCE")
+        print("="*80)
+
+        m2 = smf.ols(
+
+            """
+            EE ~ OH_distance
+            """,
+
+            data=oh_df
+
+        ).fit()
+
+        print(m2.summary())
+
+
+        # =============================================================================
+        # REGRESSION 3
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("MODEL 3")
+        print("EE ~ OH_DISTANCE + OH_COUNT")
+        print("="*80)
+
+        m3 = smf.ols(
+
+            """
+            EE ~ OH_distance
+            + OH_count
+            """,
+
+            data=oh_df
+
+        ).fit()
+
+        print(m3.summary())
+
+
+        # =============================================================================
+        # REGRESSION 4 (MOST IMPORTANT)
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("MODEL 4")
+        print("EE ~ OH_DISTANCE + OH_COUNT + MolWt + LogP")
+        print("="*80)
+
+        m4 = smf.ols(
+            """
+            EE ~ OH_distance
+            + OH_count
+            + MolWt
+            + LogP
+            """,
+            data=oh_df
+        ).fit()
+        print(m4.summary())
+
+        from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+        X = oh_df[
+            [
+                "OH_distance",
+                "OH_count",
+                "MolWt",
+                "LogP"
+            ]
+        ].dropna()
+
+        vif_df = pd.DataFrame()
+        vif_df["Feature"] = X.columns
+        vif_df["VIF"] = [
+            variance_inflation_factor(
+                X.values,
+                i
+            )
+            for i in range(X.shape[1])
+        ]
+        print(vif_df)
+
+
+        # =============================================================================
+        # SAVE SUMMARY TABLE
+        # =============================================================================
+
+        summary_table = pd.DataFrame({
+
+            "Model":[
+
+                "OH_count",
+                "OH_distance",
+
+                "OH_distance + OH_count",
+
+                "OH_distance + OH_count + MolWt + LogP"
+            ],
+
+            "R2":[
+
+                m1.rsquared,
+                m2.rsquared,
+                m3.rsquared,
+                m4.rsquared
+            ]
+        })
+
+        summary_table.to_csv(
+            "table_OH_regression_models.csv",
+            index=False
+        )
+
+        print(
+            "\nSaved: table_OH_regression_models.csv"
+        )
+
+        # =============================================================================
+        # OH DEEP-DIVE ANALYSIS
+        # =============================================================================
+
+        # =============================================================================
+        # SMARTS
+        # =============================================================================
+
+        OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
+
+
+        # =============================================================================
+        # HELPER
+        # =============================================================================
+
+        def get_oh_metrics(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+
+                return pd.Series({
+
+                    "OH_count": np.nan,
+
+                    "Headgroup_OH_count": np.nan,
+                    "Linker_OH_count": np.nan,
+                    "Tail_OH_count": np.nan,
+
+                    "OH_min_distance": np.nan,
+                    "OH_mean_distance": np.nan,
+
+                    "OH_burden": np.nan
+                })
+
+            OH_matches = mol.GetSubstructMatches(
+                OH_PATTERN
+            )
+
+            N_atoms = [
+
+                a.GetIdx()
+
+                for a in mol.GetAtoms()
+
+                if a.GetAtomicNum() == 7
+            ]
+
+            if len(N_atoms) == 0:
+
+                return pd.Series({
+
+                    "OH_count": 0,
+
+                    "Headgroup_OH_count": 0,
+                    "Linker_OH_count": 0,
+                    "Tail_OH_count": 0,
+
+                    "OH_min_distance": np.nan,
+                    "OH_mean_distance": np.nan,
+
+                    "OH_burden": np.nan
+                })
+
+            distances = []
+
+            head = 0
+            linker = 0
+            tail = 0
+
+            for match in OH_matches:
+
+                O_idx = match[0]
+
+                nearest = 999
+
+                for n in N_atoms:
+
+                    try:
+
+                        path = Chem.rdmolops.GetShortestPath(
+                            mol,
+                            O_idx,
+                            n
+                        )
+
+                        dist = len(path) - 1
+
+                        nearest = min(
+                            nearest,
+                            dist
+                        )
+
+                    except:
+
+                        pass
+
+                distances.append(nearest)
+
+                if nearest <= 4:
+
+                    head += 1
+
+                elif nearest <= 8:
+
+                    linker += 1
+
+                else:
+
+                    tail += 1
+
+            if len(distances) == 0:
+
+                min_dist = np.nan
+                mean_dist = np.nan
+                burden = 0
+
+            else:
+
+                min_dist = np.min(
+                    distances
+                )
+
+                mean_dist = np.mean(
+                    distances
+                )
+
+                burden = np.sum(
+                    [1/d for d in distances]
+                )
+
+            return pd.Series({
+
+                "OH_count":
+                    len(distances),
+
+                "Headgroup_OH_count":
+                    head,
+
+                "Linker_OH_count":
+                    linker,
+
+                "Tail_OH_count":
+                    tail,
+
+                "OH_min_distance":
+                    min_dist,
+
+                "OH_mean_distance":
+                    mean_dist,
+
+                "OH_burden":
+                    burden
+            })
+
+
+        # =============================================================================
+        # BUILD DATAFRAME
+        # =============================================================================
+
+        oh_df = pd.DataFrame()
+
+        oh_df["EE"] = clean_df["EE"]
+
+        oh_df["MolWt"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolWt(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        oh_df["LogP"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolLogP(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        metrics = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                get_oh_metrics
+            )
+        )
+
+        oh_df = pd.concat(
+            [oh_df, metrics],
+            axis=1
+        )
+
+        oh_df = oh_df[
+            oh_df["OH_count"] > 0
+        ].copy()
+
+
+        # =============================================================================
+        # SPEARMAN ANALYSIS
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("OH DESCRIPTOR CORRELATIONS")
+        print("="*80)
+
+        corr_rows = []
+
+        for col in [
+
+            "OH_count",
+
+            "Headgroup_OH_count",
+            "Linker_OH_count",
+            "Tail_OH_count",
+
+            "OH_min_distance",
+            "OH_mean_distance",
+
+            "OH_burden"
+        ]:
+
+            rho,p = spearmanr(
+                oh_df[col],
+                oh_df["EE"]
+            )
+
+            corr_rows.append({
+
+                "Descriptor":
+                    col,
+
+                "rho":
+                    rho,
+
+                "p":
+                    p
+            })
+
+        corr_df = pd.DataFrame(
+            corr_rows
+        )
+
+        print(
+            corr_df
+            .round(4)
+            .to_string(index=False)
+        )
+
+        corr_df.to_csv(
+            "table_OH_correlations.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # REGRESSIONS
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("REGRESSION COMPARISON")
+        print("="*80)
+
+        models = {
+
+            "OH_count":
+
+                """
+                EE ~ OH_count
+                """,
+
+            "Headgroup_OH":
+
+                """
+                EE ~ Headgroup_OH_count
+                """,
+
+            "OH_burden":
+
+                """
+                EE ~ OH_burden
+                """,
+
+            "Burden+Count":
+
+                """
+                EE ~ OH_burden
+                + OH_count
+                """,
+
+            "Burden+Headgroup":
+
+                """
+                EE ~ OH_burden
+                + Headgroup_OH_count
+                """,
+
+            "Full":
+
+                """
+                EE ~ OH_burden
+                + OH_count
+                + Headgroup_OH_count
+                + MolWt
+                + LogP
+                """
+        }
+
+        reg_results = []
+
+        for name, formula in models.items():
+
+            model = smf.ols(
+                formula,
+                data=oh_df
+            ).fit()
+
+            reg_results.append({
+
+                "Model":
+                    name,
+
+                "R2":
+                    model.rsquared,
+
+                "Adj_R2":
+                    model.rsquared_adj,
+
+                "AIC":
+                    model.aic
+            })
+
+            print("\n")
+            print("-"*80)
+            print(name)
+            print("-"*80)
+
+            print(model.summary())
+
+        reg_df = pd.DataFrame(
+            reg_results
+        )
+
+        reg_df.to_csv(
+            "table_OH_model_comparison.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # VIF
+        # =============================================================================
+
+        print("\n")
+        print("="*80)
+        print("VIF ANALYSIS")
+        print("="*80)
+
+        X = oh_df[
+
+            [
+
+                "OH_burden",
+
+                "OH_count",
+
+                "Headgroup_OH_count",
+
+                "MolWt",
+
+                "LogP"
+
+            ]
+
+        ].dropna()
+
+        vif_df = pd.DataFrame()
+
+        vif_df["Feature"] = X.columns
+
+        vif_df["VIF"] = [
+
+            variance_inflation_factor(
+                X.values,
+                i
+            )
+
+            for i in range(
+                X.shape[1]
+            )
+        ]
+
+        print(
+            vif_df
+            .round(2)
+            .to_string(index=False)
+        )
+
+        vif_df.to_csv(
+            "table_OH_VIF.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # PARTIAL CORRELATIONS
+        # =============================================================================
+
+        try:
+
+            from pingouin import partial_corr
+
+            print("\n")
+            print("="*80)
+            print("PARTIAL CORRELATIONS")
+            print("="*80)
+
+            pc1 = partial_corr(
+
+                data=oh_df,
+
+                x="OH_burden",
+
+                y="EE",
+
+                covar=["MolWt","LogP"]
+
+            )
+
+            print(
+                "\nOH burden vs EE controlling MolWt+LogP"
+            )
+
+            print(pc1)
+
+            pc2 = partial_corr(
+
+                data=oh_df,
+
+                x="Headgroup_OH_count",
+
+                y="EE",
+
+                covar=["MolWt","LogP"]
+
+            )
+
+            print(
+                "\nHeadgroup OH count vs EE controlling MolWt+LogP"
+            )
+
+            print(pc2)
+
+        except Exception as e:
+
+            print(
+                "\nPartial correlation skipped:",
+                e
+            )
+
+
+        # =============================================================================
+        # SAVE
+        # =============================================================================
+
+        print("\nSaved:")
+        print(" table_OH_correlations.csv")
+        print(" table_OH_model_comparison.csv")
+        print(" table_OH_VIF.csv")
+
+        # =============================================================================
+        # SCAFFOLD-STRATIFIED OH ANALYSIS
+        # =============================================================================
+
+        # -----------------------------------------------------------------------------
+        # OH SMARTS
+        # -----------------------------------------------------------------------------
+
+        OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
+
+        # -----------------------------------------------------------------------------
+        # OH count
+        # -----------------------------------------------------------------------------
+
+        def count_oh(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+                return np.nan
+
+            return len(
+                mol.GetSubstructMatches(
+                    OH_PATTERN
+                )
+            )
+
+        # -----------------------------------------------------------------------------
+        # Build dataframe
+        # -----------------------------------------------------------------------------
+
+        tmp = pd.DataFrame()
+
+        tmp["EE"] = clean_df["EE"]
+
+        tmp["lipid"] = clean_df["ionizable_lipid"]
+
+        tmp["smiles"] = clean_df["ionizable_lipid_smiles"]
+
+        tmp["OH_count"] = (
+            tmp["smiles"]
+            .apply(count_oh)
+        )
+
+        # -----------------------------------------------------------------------------
+        # Overall summary
+        # -----------------------------------------------------------------------------
+
+        print("\n")
+        print("="*90)
+        print("OH COUNT DISTRIBUTION")
+        print("="*90)
+
+        print(
+
+            tmp
+
+            .groupby("OH_count")
+
+            ["EE"]
+
+            .agg(
+                ["count","mean","median","std"]
+            )
+
+            .round(2)
+        )
+
+        # -----------------------------------------------------------------------------
+        # Scaffold summaries
+        # -----------------------------------------------------------------------------
+
+        print("\n")
+        print("="*90)
+        print("SCAFFOLD SUMMARY")
+        print("="*90)
+
+        scaffold_summary = (
+
+            tmp
+
+            .groupby("lipid")
+
+            .agg(
+
+                n=("EE","size"),
+
+                mean_EE=("EE","mean"),
+
+                sd_EE=("EE","std"),
+
+                OH_count=("OH_count","mean")
+            )
+
+            .sort_values(
+                "n",
+                ascending=False
+            )
+        )
+
+        print(
+            scaffold_summary
+            .round(2)
+            .to_string()
+        )
+
+        scaffold_summary.to_csv(
+            "table_scaffold_oh_summary.csv"
+        )
+
+        # -----------------------------------------------------------------------------
+        # Within-scaffold correlations
+        # -----------------------------------------------------------------------------
+
+        print("\n")
+        print("="*90)
+        print("WITHIN-SCAFFOLD OH EFFECTS")
+        print("="*90)
+
+        rows = []
+
+        for lipid, sub in tmp.groupby("lipid"):
+
+            if len(sub) < 5:
+                continue
+
+            if sub["OH_count"].nunique() < 2:
+                continue
+
+            rho,p = spearmanr(
+                sub["OH_count"],
+                sub["EE"]
+            )
+
+            rows.append({
+
+                "lipid":
+                    lipid,
+
+                "n":
+                    len(sub),
+
+                "rho":
+                    rho,
+
+                "p":
+                    p,
+
+                "mean_EE":
+                    sub["EE"].mean()
+            })
+
+        within_df = pd.DataFrame(rows)
+
+        if len(within_df) > 0:
+
+            print(
+                within_df
+                .sort_values("rho")
+                .round(3)
+                .to_string(index=False)
+            )
+
+            within_df.to_csv(
+                "table_within_scaffold_OH_effects.csv",
+                index=False
+            )
+
+        else:
+
+            print(
+                "\nNo scaffold contains sufficient OH-count variation."
+            )
+
+        # -----------------------------------------------------------------------------
+        # Which scaffolds drive the OH signal?
+        # -----------------------------------------------------------------------------
+
+        print("\n")
+        print("="*90)
+        print("TOP HIGH-OH SCAFFOLDS")
+        print("="*90)
+
+        high_oh = (
+
+            scaffold_summary
+
+            .sort_values(
+                "OH_count",
+                ascending=False
+            )
+
+            .head(20)
+        )
+
+        print(
+            high_oh
+            .round(2)
+            .to_string()
+        )
+
+        # -----------------------------------------------------------------------------
+        # Between-scaffold correlation
+        # -----------------------------------------------------------------------------
+
+        print("\n")
+        print("="*90)
+        print("BETWEEN-SCAFFOLD ANALYSIS")
+        print("="*90)
+
+        rho,p = spearmanr(
+            scaffold_summary["OH_count"],
+            scaffold_summary["mean_EE"]
+        )
+
+        print(
+
+            f"\nScaffold mean OH count vs scaffold mean EE\n"
+            f"rho = {rho:.3f}\n"
+            f"p   = {p:.5g}"
+
+        )
+
+        # -----------------------------------------------------------------------------
+        # Variance decomposition
+        # -----------------------------------------------------------------------------
+
+        overall_var = np.var(
+            tmp["EE"]
+        )
+
+        between_var = np.var(
+            scaffold_summary["mean_EE"]
+        )
+
+        print("\n")
+        print("="*90)
+        print("VARIANCE DECOMPOSITION")
+        print("="*90)
+
+        print(
+            f"Overall EE variance     : {overall_var:.2f}"
+        )
+
+        print(
+            f"Between-scaffold variance: {between_var:.2f}"
+        )
+
+        print(
+            f"Fraction explained by scaffold: "
+            f"{between_var/overall_var:.3f}"
+        )
+
+        print("\nSaved:")
+        print(" table_scaffold_oh_summary.csv")
+        print(" table_within_scaffold_OH_effects.csv")
+
+
+        # =============================================================================
+        # ETHER + ESTER FINAL ARBITRATION ANALYSIS
+        # =============================================================================
+        try:
+            from pingouin import partial_corr
+            HAS_PINGOUIN = True
+        except:
+            HAS_PINGOUIN = False
+
+        # =============================================================================
+        # SMARTS
+        # =============================================================================
+
+        PATTERNS = {
+
+            "Ether":
+                "[#6]-O-[#6]",
+
+            "Ester":
+                "C(=O)O[#6]"
+        }
+
+
+        # =============================================================================
+        # DESCRIPTOR GENERATOR
+        # =============================================================================
+
+        def get_group_metrics(smiles, smarts):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+
+                return pd.Series({
+
+                    "count": np.nan,
+
+                    "min_dist": np.nan,
+                    "mean_dist": np.nan,
+
+                    "burden": np.nan,
+
+                    "head_count": np.nan,
+                    "linker_count": np.nan,
+                    "tail_count": np.nan
+                })
+
+            patt = Chem.MolFromSmarts(smarts)
+
+            matches = mol.GetSubstructMatches(patt)
+
+            N_atoms = [
+
+                a.GetIdx()
+
+                for a in mol.GetAtoms()
+
+                if a.GetAtomicNum() == 7
+            ]
+
+            if len(matches) == 0 or len(N_atoms) == 0:
+
+                return pd.Series({
+
+                    "count": 0,
+
+                    "min_dist": np.nan,
+                    "mean_dist": np.nan,
+
+                    "burden": 0,
+
+                    "head_count": 0,
+                    "linker_count": 0,
+                    "tail_count": 0
+                })
+
+            distances = []
+
+            head = 0
+            linker = 0
+            tail = 0
+
+            for match in matches:
+
+                anchor = match[0]
+
+                nearest = 999
+
+                for n in N_atoms:
+
+                    try:
+
+                        path = Chem.rdmolops.GetShortestPath(
+                            mol,
+                            anchor,
+                            n
+                        )
+
+                        dist = len(path)-1
+
+                        nearest = min(
+                            nearest,
+                            dist
+                        )
+
+                    except:
+                        pass
+
+                distances.append(nearest)
+
+                if nearest <= 4:
+
+                    head += 1
+
+                elif nearest <= 8:
+
+                    linker += 1
+
+                else:
+
+                    tail += 1
+
+            burden = sum(
+                1/d for d in distances
+                if d > 0
+            )
+
+            return pd.Series({
+
+                "count":
+                    len(distances),
+
+                "min_dist":
+                    np.min(distances),
+
+                "mean_dist":
+                    np.mean(distances),
+
+                "burden":
+                    burden,
+
+                "head_count":
+                    head,
+
+                "linker_count":
+                    linker,
+
+                "tail_count":
+                    tail
+            })
+
+
+        # =============================================================================
+        # BUILD DATAFRAME
+        # =============================================================================
+
+        chem_df = pd.DataFrame()
+
+        chem_df["EE"] = clean_df["EE"]
+
+        chem_df["MolWt"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolWt(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        chem_df["LogP"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolLogP(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        for group, smarts in PATTERNS.items():
+
+            tmp = (
+                clean_df["ionizable_lipid_smiles"]
+                .apply(
+                    lambda x:
+                    get_group_metrics(
+                        x,
+                        smarts
+                    )
+                )
+            )
+
+            tmp.columns = [
+
+                f"{group}_{c}"
+
+                for c in tmp.columns
+            ]
+
+            chem_df = pd.concat(
+                [chem_df, tmp],
+                axis=1
+            )
+
+        # =============================================================================
+        # ANALYSIS
+        # =============================================================================
+
+        for GROUP in ["Ether","Ester"]:
+
+            print("\n")
+            print("="*90)
+            print(GROUP.upper())
+            print("="*90)
+
+            descriptors = [
+
+                f"{GROUP}_count",
+
+                f"{GROUP}_min_dist",
+
+                f"{GROUP}_mean_dist",
+
+                f"{GROUP}_burden",
+
+                f"{GROUP}_head_count",
+
+                f"{GROUP}_linker_count",
+
+                f"{GROUP}_tail_count"
+            ]
+
+            # -----------------------------------------------------------------
+            # Spearman
+            # -----------------------------------------------------------------
+
+            print("\nCORRELATIONS\n")
+
+            rows = []
+
+            for col in descriptors:
+
+                sub = chem_df[
+                    ["EE", col]
+                ].dropna()
+
+                if len(sub) < 20:
+                    continue
+
+                rho,p = spearmanr(
+                    sub[col],
+                    sub["EE"]
+                )
+
+                rows.append({
+
+                    "Descriptor":
+                        col,
+
+                    "rho":
+                        rho,
+
+                    "p":
+                        p
+                })
+
+            corr_df = pd.DataFrame(rows)
+
+            print(
+                corr_df
+                .round(4)
+                .to_string(index=False)
+            )
+
+            corr_df.to_csv(
+                f"{GROUP}_correlations.csv",
+                index=False
+            )
+
+            # -----------------------------------------------------------------
+            # Single-variable regressions
+            # -----------------------------------------------------------------
+
+            print("\nREGRESSIONS\n")
+
+            for col in descriptors:
+
+                sub = chem_df[
+                    ["EE", col]
+                ].dropna()
+
+                if len(sub) < 20:
+                    continue
+
+                model = smf.ols(
+                    f"EE ~ {col}",
+                    data=sub
+                ).fit()
+
+                print("\n")
+                print(col)
+
+                coef = model.params.get(col, np.nan)
+                pval = model.pvalues.get(col, np.nan)
+
+                print(
+                    f"R²={model.rsquared:.3f} "
+                    f"beta={coef:.3f} "
+                    f"p={pval:.5g}"
+                )
+
+            # -----------------------------------------------------------------
+            # Adjusted model
+            # -----------------------------------------------------------------
+
+            print("\n")
+            print("ADJUSTED MODEL")
+            print("-"*60)
+
+            dcol = f"{GROUP}_mean_dist"
+
+            reg = chem_df[
+                [
+                    "EE",
+                    dcol,
+                    "MolWt",
+                    "LogP"
+                ]
+            ].dropna()
+
+            model = smf.ols(
+
+                f"""
+                EE ~ {dcol}
+                    + MolWt
+                    + LogP
+                """,
+
+                data=reg
+
+            ).fit()
+
+            print(model.summary())
+
+            # -----------------------------------------------------------------
+            # VIF
+            # -----------------------------------------------------------------
+
+            print("\nVIF\n")
+
+            X = reg[
+                [
+                    dcol,
+                    "MolWt",
+                    "LogP"
+                ]
+            ]
+
+            vif_df = pd.DataFrame()
+
+            vif_df["Feature"] = X.columns
+
+            vif_df["VIF"] = [
+
+                variance_inflation_factor(
+                    X.values,
+                    i
+                )
+
+                for i in range(
+                    X.shape[1]
+                )
+            ]
+
+            print(
+                vif_df
+                .round(2)
+                .to_string(index=False)
+            )
+
+            # -----------------------------------------------------------------
+            # Partial correlation
+            # -----------------------------------------------------------------
+
+            if HAS_PINGOUIN:
+
+                print("\nPARTIAL CORRELATION\n")
+
+                pc = partial_corr(
+
+                    data=reg,
+
+                    x=dcol,
+
+                    y="EE",
+
+                    covar=[
+                        "MolWt",
+                        "LogP"
+                    ]
+
+                )
+
+                print(pc)
+
+        # =============================================================================
+        # SAVE MASTER TABLE
+        # =============================================================================
+
+        chem_df.to_csv(
+            "table_ether_ester_final_analysis.csv",
+            index=False
+        )
+
+        print(
+            "\nSaved: table_ether_ester_final_analysis.csv"
+        )
+
+        # =============================================================================
+        # NITROGEN ARCHITECTURE ANALYSIS
+        # =============================================================================
+
+        try:
+            from pingouin import partial_corr
+            HAS_PINGOUIN = True
+        except:
+            HAS_PINGOUIN = False
+
+
+        # =============================================================================
+        # SMARTS
+        # =============================================================================
+
+        PRIMARY = Chem.MolFromSmarts("[NX3;H2]")
+        SECONDARY = Chem.MolFromSmarts("[NX3;H1]")
+        TERTIARY = Chem.MolFromSmarts("[NX3;H0]")
+        QUATERNARY = Chem.MolFromSmarts("[N+]")
+
+
+        # =============================================================================
+        # NITROGEN DESCRIPTORS
+        # =============================================================================
+
+        def nitrogen_metrics(smiles):
+
+            mol = Chem.MolFromSmiles(smiles)
+
+            if mol is None:
+
+                return pd.Series({
+
+                    "Total_N": np.nan,
+
+                    "Primary_N": np.nan,
+                    "Secondary_N": np.nan,
+                    "Tertiary_N": np.nan,
+                    "Quaternary_N": np.nan,
+
+                    "Min_NN_Distance": np.nan,
+                    "Mean_NN_Distance": np.nan,
+
+                    "N_Cluster_Score": np.nan,
+
+                    "Polyamine": np.nan
+                })
+
+            # ------------------------
+            # N atoms
+            # ------------------------
+
+            N_atoms = [
+
+                atom.GetIdx()
+
+                for atom in mol.GetAtoms()
+
+                if atom.GetAtomicNum() == 7
+            ]
+
+            total_n = len(N_atoms)
+
+            if total_n == 0:
+
+                return pd.Series({
+
+                    "Total_N": 0,
+
+                    "Primary_N": 0,
+                    "Secondary_N": 0,
+                    "Tertiary_N": 0,
+                    "Quaternary_N": 0,
+
+                    "Min_NN_Distance": np.nan,
+                    "Mean_NN_Distance": np.nan,
+
+                    "N_Cluster_Score": 0,
+
+                    "Polyamine": 0
+                })
+
+            # ------------------------
+            # Amine classes
+            # ------------------------
+
+            primary = len(
+                mol.GetSubstructMatches(PRIMARY)
+            )
+
+            secondary = len(
+                mol.GetSubstructMatches(SECONDARY)
+            )
+
+            tertiary = len(
+                mol.GetSubstructMatches(TERTIARY)
+            )
+
+            quaternary = len(
+                mol.GetSubstructMatches(QUATERNARY)
+            )
+
+            # ------------------------
+            # N-N topology
+            # ------------------------
+
+            pair_distances = []
+
+            for i in range(len(N_atoms)):
+
+                for j in range(i+1,len(N_atoms)):
+
+                    try:
+
+                        path = Chem.rdmolops.GetShortestPath(
+                            mol,
+                            N_atoms[i],
+                            N_atoms[j]
+                        )
+
+                        dist = len(path)-1
+
+                        pair_distances.append(dist)
+
+                    except:
+                        pass
+
+            if len(pair_distances)==0:
+
+                min_nn = np.nan
+                mean_nn = np.nan
+                cluster_score = 0
+
+            else:
+
+                min_nn = np.min(pair_distances)
+
+                mean_nn = np.mean(pair_distances)
+
+                cluster_score = np.sum(
+                    [1/d for d in pair_distances]
+                )
+
+            # ------------------------
+            # Polyamine flag
+            # ------------------------
+
+            polyamine = int(total_n >= 2)
+
+            return pd.Series({
+
+                "Total_N":
+                    total_n,
+
+                "Primary_N":
+                    primary,
+
+                "Secondary_N":
+                    secondary,
+
+                "Tertiary_N":
+                    tertiary,
+
+                "Quaternary_N":
+                    quaternary,
+
+                "Min_NN_Distance":
+                    min_nn,
+
+                "Mean_NN_Distance":
+                    mean_nn,
+
+                "N_Cluster_Score":
+                    cluster_score,
+
+                "Polyamine":
+                    polyamine
+            })
+
+
+        # =============================================================================
+        # BUILD DATAFRAME
+        # =============================================================================
+
+        n_df = pd.DataFrame()
+
+        n_df["EE"] = clean_df["EE"]
+
+        n_df["MolWt"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolWt(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        n_df["LogP"] = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                lambda x:
+                Descriptors.MolLogP(
+                    Chem.MolFromSmiles(x)
+                )
+            )
+        )
+
+        metrics = (
+
+            clean_df["ionizable_lipid_smiles"]
+
+            .apply(
+                nitrogen_metrics
+            )
+        )
+
+        n_df = pd.concat(
+            [n_df, metrics],
+            axis=1
+        )
+
+
+        # =============================================================================
+        # CORRELATIONS
+        # =============================================================================
+
+        print("\n")
+        print("="*90)
+        print("NITROGEN CORRELATIONS")
+        print("="*90)
+
+        descriptors = [
+
+            "Total_N",
+
+            "Primary_N",
+            "Secondary_N",
+            "Tertiary_N",
+            "Quaternary_N",
+
+            "Min_NN_Distance",
+            "Mean_NN_Distance",
+
+            "N_Cluster_Score",
+
+            "Polyamine"
+        ]
+
+        corr_rows = []
+
+        for col in descriptors:
+
+            sub = n_df[
+                ["EE",col]
+            ].dropna()
+
+            if len(sub) < 20:
+                continue
+
+            rho,p = spearmanr(
+                sub[col],
+                sub["EE"]
+            )
+
+            corr_rows.append({
+
+                "Descriptor":
+                    col,
+
+                "rho":
+                    rho,
+
+                "p":
+                    p
+            })
+
+        corr_df = pd.DataFrame(
+            corr_rows
+        )
+
+        print(
+            corr_df
+            .round(4)
+            .to_string(index=False)
+        )
+
+        corr_df.to_csv(
+            "table_nitrogen_correlations.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # REGRESSIONS
+        # =============================================================================
+
+        print("\n")
+        print("="*90)
+        print("REGRESSIONS")
+        print("="*90)
+
+        for col in descriptors:
+
+            sub = n_df[
+                ["EE",col]
+            ].dropna()
+
+            if len(sub) < 20:
+                continue
+
+            model = smf.ols(
+                f"EE ~ {col}",
+                data=sub
+            ).fit()
+
+            coef = model.params.get(
+                col,
+                np.nan
+            )
+
+            pval = model.pvalues.get(
+                col,
+                np.nan
+            )
+
+            print("\n")
+            print(col)
+
+            print(
+
+                f"R²={model.rsquared:.3f}  "
+                f"beta={coef:.3f}  "
+                f"p={pval:.5g}"
+            )
+
+
+        # =============================================================================
+        # ADJUSTED REGRESSIONS
+        # =============================================================================
+
+        print("\n")
+        print("="*90)
+        print("ADJUSTED MODELS")
+        print("="*90)
+
+        adj_rows = []
+
+        for col in descriptors:
+
+            reg = n_df[
+                [
+                    "EE",
+                    col,
+                    "MolWt",
+                    "LogP"
+                ]
+            ].dropna()
+
+            if len(reg) < 30:
+                continue
+
+            model = smf.ols(
+
+                f"""
+                EE ~ {col}
+                    + MolWt
+                    + LogP
+                """,
+
+                data=reg
+
+            ).fit()
+
+            adj_rows.append({
+
+                "Descriptor":
+                    col,
+
+                "Beta":
+                    model.params[col],
+
+                "P":
+                    model.pvalues[col],
+
+                "R2":
+                    model.rsquared
+            })
+
+        adj_df = pd.DataFrame(
+            adj_rows
+        )
+
+        print(
+            adj_df
+            .round(4)
+            .to_string(index=False)
+        )
+
+        adj_df.to_csv(
+            "table_nitrogen_adjusted_models.csv",
+            index=False
+        )
+
+
+        # =============================================================================
+        # VIF
+        # =============================================================================
+
+        print("\n")
+        print("="*90)
+        print("VIF ANALYSIS")
+        print("="*90)
+
+        for col in [
+
+            "Total_N",
+
+            "Primary_N",
+            "Secondary_N",
+            "Tertiary_N",
+
+            "N_Cluster_Score"
+
+        ]:
+
+            reg = n_df[
+                [
+                    col,
+                    "MolWt",
+                    "LogP"
+                ]
+            ].dropna()
+
+            if len(reg) < 30:
+                continue
+
+            vif_df = pd.DataFrame()
+
+            vif_df["Feature"] = reg.columns
+
+            vif_df["VIF"] = [
+
+                variance_inflation_factor(
+                    reg.values,
+                    i
+                )
+
+                for i in range(
+                    reg.shape[1]
+                )
+            ]
+
+            print("\n")
+            print(col)
+
+            print(
+                vif_df
+                .round(2)
+                .to_string(index=False)
+            )
+
+
+        # =============================================================================
+        # PARTIAL CORRELATIONS
+        # =============================================================================
+
+        if HAS_PINGOUIN:
+
+            print("\n")
+            print("="*90)
+            print("PARTIAL CORRELATIONS")
+            print("="*90)
+
+            for col in [
+
+                "Total_N",
+
+                "Primary_N",
+                "Secondary_N",
+                "Tertiary_N",
+
+                "N_Cluster_Score"
+
+            ]:
+
+                sub = n_df[
+                    [
+                        "EE",
+                        col,
+                        "MolWt",
+                        "LogP"
+                    ]
+                ].dropna()
+
+                if len(sub) < 30:
+                    continue
+
+                print("\n")
+                print(col)
+
+                pc = partial_corr(
+
+                    data=sub,
+
+                    x=col,
+
+                    y="EE",
+
+                    covar=[
+                        "MolWt",
+                        "LogP"
+                    ]
+
+                )
+
+                print(pc)
+
+
+        # =============================================================================
+        # SIMPLE SUMMARY TABLES
+        # =============================================================================
+
+        print("\n")
+        print("="*90)
+        print("TOTAL N SUMMARY")
+        print("="*90)
+
+        print(
+
+            n_df
+
+            .groupby("Total_N")
+
+            ["EE"]
+
+            .agg(
+
+                ["count",
+                "mean",
+                "median",
+                "std"]
+
+            )
+
+            .round(2)
+        )
+
+        print("\n")
+        print("="*90)
+        print("PRIMARY AMINE SUMMARY")
+        print("="*90)
+
+        print(
+
+            n_df
+
+            .groupby(
+                "Primary_N"
+            )
+
+            ["EE"]
+
+            .agg(
+
+                ["count",
+                "mean",
+                "median"]
+
+            )
+
+            .round(2)
+        )
+
+        print("\n")
+        print("="*90)
+        print("POLYAMINE SUMMARY")
+        print("="*90)
+
+        print(
+
+            n_df
+
+            .groupby(
+                "Polyamine"
+            )
+
+            ["EE"]
+
+            .agg(
+
+                ["count",
+                "mean",
+                "median"]
+
+            )
+
+            .round(2)
+        )
+
+        print("\nSaved:")
+        print(" table_nitrogen_correlations.csv")
+        print(" table_nitrogen_adjusted_models.csv")
+
+        # =============================================================================
+        # FIGURE 1
+        # ETHER / ESTER TOPOLOGY
+        # =============================================================================
+        # ----------------------------------------------------
+        # Delta EE distance bins
+        # ----------------------------------------------------
+
+        plot_df = bin_df[
+            bin_df["Feature"].isin(
+                ["Ether","Ester"]
+            )
+        ].copy()
+
+        order = [
+            "0-2",
+            "3-5",
+            "6-8",
+            ">8"
+        ]
+
+        fig, axes = plt.subplots(
+            1,
+            3,
+            figsize=(18,5)
+        )
+
+        # ====================================================
+        # Ether
+        # ====================================================
+
+        ether = plot_df[
+            plot_df.Feature=="Ether"
+        ]
+
+        sns.barplot(
+            data=ether,
+            x="Distance_bin",
+            y="Delta_EE",
+            order=order,
+            color="#4C72B0",
+            ax=axes[0]
+        )
+
+        axes[0].axhline(
+            0,
+            ls="--",
+            c="black"
+        )
+
+        axes[0].set_title(
+            "Ether Topology"
+        )
+
+        axes[0].set_ylabel(
+            "ΔEE (%)"
+        )
+
+        # ====================================================
+        # Ester
+        # ====================================================
+
+        ester = plot_df[
+            plot_df.Feature=="Ester"
+        ]
+
+        sns.barplot(
+            data=ester,
+            x="Distance_bin",
+            y="Delta_EE",
+            order=order,
+            color="#55A868",
+            ax=axes[1]
+        )
+
+        axes[1].axhline(
+            0,
+            ls="--",
+            c="black"
+        )
+
+        axes[1].set_title(
+            "Ester Topology"
+        )
+
+        axes[1].set_ylabel(
+            "ΔEE (%)"
+        )
+
+        # ====================================================
+        # Regression coefficients
+        # ====================================================
+
+        coef_df = pd.DataFrame({
+
+            "Feature":[
+                "Ether",
+                "Ester"
+            ],
+
+            "Beta":[
+                3.3412,
+                3.1863
+            ]
+        })
+
+        sns.barplot(
+            data=coef_df,
+            x="Feature",
+            y="Beta",
+            palette=[
+                "#4C72B0",
+                "#55A868"
+            ],
+            ax=axes[2]
+        )
+
+        axes[2].set_title(
+            "Adjusted Distance Effects"
+        )
+
+        axes[2].set_ylabel(
+            "Regression β"
+        )
+
+        plt.tight_layout()
+        save_pub_figure(fig, 'Figure1_Topology', width='double')
+        plt.show()
+
+        # =============================================================================
+        # FIGURE 2
+        # HYDROXYL BURDEN RATHER THAN DISTANCE DRIVES EE
+        # =============================================================================
+
+        fig, axes = plt.subplots(
+            1,
+            3,
+            figsize=(14,4)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL A
+        # -------------------------------------------------------------------------
+
+        tmp = (
+            oh_df
+            .groupby("OH_count")
+            ["EE"]
+            .agg(["mean","sem","count"])
+            .reset_index()
+        )
+
+        axes[0].errorbar(
+            tmp["OH_count"],
+            tmp["mean"],
+            yerr=tmp["sem"],
+            marker="o",
+            lw=2,
+            capsize=4,
+            color="#DD8452"
+        )
+
+        axes[0].set_title("OH Count")
+        axes[0].set_xlabel("Number of OH Groups")
+        axes[0].set_ylabel("Mean EE (%)")
+
+        axes[0].text(
+            0.05,
+            0.95,
+            r"$\rho$ = -0.377"+"\n"+"p < 0.001",
+            transform=axes[0].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL B
+        # -------------------------------------------------------------------------
+
+        tmp = (
+            oh_df
+            .groupby("Headgroup_OH_count")
+            ["EE"]
+            .agg(["mean","sem","count"])
+            .reset_index()
+        )
+
+        axes[1].errorbar(
+            tmp["Headgroup_OH_count"],
+            tmp["mean"],
+            yerr=tmp["sem"],
+            marker="o",
+            lw=2,
+            capsize=4,
+            color="#C44E52"
+        )
+
+        axes[1].set_title("Headgroup OH Count")
+        axes[1].set_xlabel("Headgroup OHs")
+        axes[1].set_ylabel("Mean EE (%)")
+
+        axes[1].text(
+            0.05,
+            0.95,
+            r"$\rho$ = -0.242"+"\n"+"p = 0.0028",
+            transform=axes[1].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL C
+        # -------------------------------------------------------------------------
+
+        sns.regplot(
+            data=oh_df,
+            x="OH_mean_distance",
+            y="EE",
+            scatter_kws={"alpha":0.5,"s":30},
+            line_kws={"color":"black"},
+            ax=axes[2]
+        )
+
+        axes[2].set_title("OH Distance")
+        axes[2].set_xlabel("Mean OH Distance")
+        axes[2].set_ylabel("EE (%)")
+
+        axes[2].text(
+            0.05,
+            0.95,
+            r"$\rho$ = 0.033"+"\n"+"p = 0.686\nn.s.",
+            transform=axes[2].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        fig.suptitle(
+            "Hydroxyl Burden Rather Than Hydroxyl Distance Influences EE",
+            y=1.05
+        )
+
+        plt.tight_layout()
+
+        save_pub_figure(
+            fig,
+            "Figure2_HydroxylBurden",
+            width="double"
+        )
+
+        plt.show()
+
+        # =============================================================================
+        # FIGURE 3
+        # NITROGEN ARCHITECTURE
+        # =============================================================================
+
+        fig, axes = plt.subplots(
+            1,
+            3,
+            figsize=(14,4)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL A
+        # PRIMARY AMINES
+        # -------------------------------------------------------------------------
+
+        tmp = (
+            n_df
+            .groupby("Primary_N")
+            ["EE"]
+            .agg(["mean","sem","count"])
+            .reset_index()
+        )
+
+        axes[0].errorbar(
+            tmp["Primary_N"],
+            tmp["mean"],
+            yerr=tmp["sem"],
+            marker="o",
+            lw=2,
+            capsize=4,
+            color="#C44E52"
+        )
+
+        axes[0].set_title("Primary Amines")
+        axes[0].set_xlabel("Primary Amine Count")
+        axes[0].set_ylabel("Mean EE (%)")
+
+        axes[0].text(
+            0.05,
+            0.95,
+            r"$\rho$ = -0.401"+"\n"
+            "p < 0.001\n"
+            r"$\beta$ = -13.85",
+            transform=axes[0].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL B
+        # TOTAL N
+        # -------------------------------------------------------------------------
+
+        tmp = (
+            n_df
+            .groupby("Total_N")
+            ["EE"]
+            .agg(["mean","sem","count"])
+            .reset_index()
+        )
+
+        axes[1].errorbar(
+            tmp["Total_N"],
+            tmp["mean"],
+            yerr=tmp["sem"],
+            marker="o",
+            lw=2,
+            capsize=4,
+            color="#8172B3"
+        )
+
+        axes[1].set_title("Nitrogen Content")
+        axes[1].set_xlabel("Total N Count")
+        axes[1].set_ylabel("Mean EE (%)")
+
+        axes[1].text(
+            0.05,
+            0.95,
+            r"$\rho$ = -0.309"+"\n"
+            "p < 0.001\n"
+            r"$\beta$ = -5.24",
+            transform=axes[1].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        # -------------------------------------------------------------------------
+        # PANEL C
+        # CLUSTERING
+        # -------------------------------------------------------------------------
+
+        sns.regplot(
+            data=n_df,
+            x="N_Cluster_Score",
+            y="EE",
+            scatter_kws={"alpha":0.45,"s":30},
+            line_kws={"color":"black"},
+            ax=axes[2]
+        )
+
+        axes[2].set_title("Nitrogen Clustering")
+        axes[2].set_xlabel("Cluster Score")
+        axes[2].set_ylabel("EE (%)")
+
+        axes[2].text(
+            0.05,
+            0.95,
+            r"$\rho$ = -0.309"+"\n"
+            "p < 0.001\n"
+            r"$\beta$ = -6.21",
+            transform=axes[2].transAxes,
+            va="top",
+            bbox=dict(fc="white", alpha=0.8)
+        )
+
+        fig.suptitle(
+            "Nitrogen Architecture Influences Encapsulation Efficiency",
+            y=1.05
+        )
+
+        plt.tight_layout()
+
+        save_pub_figure(
+            fig,
+            "Figure3_NitrogenArchitecture",
+            width="double"
+        )
+
+        plt.show()
+
+        # =============================================================================
+        # FIGURE 4
+        # MECHANISTIC DESIGN RULES (DELTA EE)
+        # =============================================================================
+
+        summary_df = pd.DataFrame({
+
+            "Feature":[
+
+                "OH-rich headgroup",
+                "Primary amine",
+                "Nitrogen clustering",
+                "Polyamine architecture",
+                "High nitrogen count",
+
+                "Secondary amine",
+
+                "Distal ester",
+                "Distal ether"
+            ],
+
+            "Delta_EE":[
+
+                -12.3,     # OH headgroup
+
+                -13.9,     # primary amines
+
+                -6.2,      # clustering
+
+                -7.4,      # polyamines
+
+                -5.2,      # total N
+
+                7.7,      # secondary amines
+
+                11.0,     # distal ester
+
+                21.0      # distal ether
+            ],
+
+            "P":[
+
+                0.0028,
+
+                1e-10,
+
+                1e-7,
+
+                0.0187,
+
+                1e-8,
+
+                1e-4,
+
+                1e-3,
+
+                1e-10
+            ]
+
+        })
+
+        # ---------------------------------------------------------------------
+        # Significance stars
+        # ---------------------------------------------------------------------
+
+        def p_to_stars(p):
+
+            if p < 0.001:
+                return "***"
+
+            elif p < 0.01:
+                return "**"
+
+            elif p < 0.05:
+                return "*"
+
+            return ""
+
+        summary_df["Stars"] = (
+            summary_df["P"]
+            .apply(p_to_stars)
+        )
+
+        # ---------------------------------------------------------------------
+        # Sort by effect size
+        # ---------------------------------------------------------------------
+
+        summary_df = summary_df.sort_values(
+            "Delta_EE"
+        )
+
+        # ---------------------------------------------------------------------
+        # Plot
+        # ---------------------------------------------------------------------
+
+        fig, ax = plt.subplots(
+            figsize=(8,6)
+        )
+
+        colors = [
+
+            "#E3A167" if x < 0
+            else "#A8C8DD"
+
+            for x in summary_df["Delta_EE"]
+        ]
+
+        bars = ax.barh(
+
+            summary_df["Feature"],
+            summary_df["Delta_EE"],
+
+            color=colors,
+
+            edgecolor="white",
+
+            linewidth=2
+        )
+
+        # ---------------------------------------------------------------------
+        # Central reference line
+        # ---------------------------------------------------------------------
+
+        ax.axvline(
+            0,
+            color="black",
+            lw=2
+        )
+
+        # ---------------------------------------------------------------------
+        # Significance stars
+        # ---------------------------------------------------------------------
+
+        for bar, (_, row) in zip(
+            bars,
+            summary_df.iterrows()
+        ):
+
+            effect = row["Delta_EE"]
+
+            x_loc = (
+                effect + 0.8
+                if effect > 0
+                else effect - 0.8
+            )
+
+            ax.text(
+
+                x_loc,
+
+                bar.get_y()
+                + bar.get_height()/2,
+
+                row["Stars"],
+
+                fontsize=14,
+
+                fontweight="bold",
+
+                va="center",
+
+                ha="left"
+                if effect > 0
+                else "right"
+            )
+
+        # ---------------------------------------------------------------------
+        # Labels
+        # ---------------------------------------------------------------------
+
+        ax.set_xlabel(
+            r"$\Delta$EE (%)",
+            fontsize=14
+        )
+
+        ax.set_ylabel(
+            "Chemical Design Rule",
+            fontsize=14
+        )
+
+        ax.set_title(
+            "Mechanistic Determinants of Encapsulation Efficiency",
+            fontsize=15,
+            pad=15
+        )
+
+        # ---------------------------------------------------------------------
+        # Limits
+        # ---------------------------------------------------------------------
+
+        ax.set_xlim(-18, 24)
+
+        # ---------------------------------------------------------------------
+        # Footnote
+        # ---------------------------------------------------------------------
+
+        ax.text(
+
+            0.98,
+            -0.12,
+
+            "* p<0.05   ** p<0.01   *** p<0.001",
+
+            transform=ax.transAxes,
+
+            ha="right",
+
+            fontsize=11,
+
+            style="italic"
+        )
+
+        plt.tight_layout()
+
+        save_pub_figure(
+            fig,
+            "Figure4_MechanisticDesignRules_DeltaEE",
+            width="single"
+        )
+
+        plt.show()
+
+        
         # --- SHAP-Guided Design Case Study ----------------------------------------
         ester_smarts   = Chem.MolFromSmarts('C(=O)O')
         ether_template = Chem.MolFromSmiles('CO')
@@ -3446,9 +7536,9 @@ class Chemistry:
 
         # --- Ratio Optimiser ----------------------------------------
         def optimise_ratio(ionizable_smiles, helper_smiles, sterol_smiles, peg_smiles,
-                           bundle, il_range=(30,66,2), peg_range=(1,4,0.5)):
+                           bundle, il_range=(25, 50, 2.5), peg_range=(1,3,0.5)):
             rows = []
-            for il in range(*il_range):
+            for il in np.arange(*il_range):
                 for peg in np.arange(*peg_range):
                     rem = 100 - il - peg
                     if rem < 10: continue
@@ -3971,7 +8061,6 @@ class FeedbackLoop:
         results_df = self.state.results_df
         gkf = self.state.gkf
 
-        # --- cell 64 ----------------------------------------
         FEEDBACK_LOG = 'lnp_feedback_log.jsonl'
         MIN_NEW_SAMPLES_FOR_RETRAIN = 20   # don't retrain on tiny feedback batches
         AUC_REGRESSION_TOLERANCE = 0.01    # candidate must not lose more than this vs. current reference
@@ -4057,6 +8146,9 @@ class FeedbackLoop:
                   'as outcomes come in (prioritize formulations with low conformal confidence -- '
                   'see Section 17 -- for verification, active-learning style), and re-run this cell periodically.')
 
+        print("\n=== Conformal Diagnostics ===")
+        print(f"q_hat = {self.state.q_hat}")
+
         print('\n=== Active Learning Demonstration ===')
         clean_df = self.state.clean_df
 
@@ -4096,6 +8188,7 @@ class FeedbackLoop:
             candidate_pools,
             ignore_index=True
         )
+        print(f"Candidate pool size: {len(candidate_pool)}")
         shortlist = self.suggest_next_candidates(
             candidate_pool,
             n_suggestions=10
@@ -4114,6 +8207,55 @@ class FeedbackLoop:
             .to_string(index=False)
         )
         print(shortlist.head(10).to_string(index=False))
+
+        # --------------------------------------------------
+        # Prospective validation candidates
+        # --------------------------------------------------
+
+        winners, losers, uncertain = (
+            self.rank_candidates_for_validation(
+                candidate_pool,
+                top_n=10
+            )
+        )
+
+        print("\n=== TOP PREDICTED WINNERS ===")
+        print(
+            winners[
+                [
+                    'prob_high_EE',
+                    'molar_ratio',
+                    'knn_distance'
+                ]
+            ]
+            .to_string(index=False)
+        )
+
+        print("\n=== TOP PREDICTED LOSERS ===")
+
+        print(
+            losers[
+                [
+                    'prob_high_EE',
+                    'molar_ratio',
+                    'knn_distance'
+                ]
+            ]
+            .to_string(index=False)
+        )
+
+        print("\n=== MOST UNCERTAIN CANDIDATES ===")
+
+        print(
+            uncertain[
+                [
+                    'prob_high_EE',
+                    'molar_ratio',
+                    'knn_distance'
+                ]
+            ]
+            .to_string(index=False)
+        )
         return self.state
 
     # -------------------------------------------------------------------
@@ -4126,11 +8268,11 @@ class FeedbackLoop:
         helper_smiles,
         sterol_smiles,
         peg_smiles,
-        il_range=(30,66,2),
-        peg_range=(1,4,0.5)):
+        il_range=(25, 50, 2.5),
+        peg_range=(1, 3, 0.5)):
         rows = []
 
-        for il in range(*il_range):
+        for il in np.arange(*il_range):
             for peg in np.arange(*peg_range):
 
                 rem = 100 - il - peg
@@ -4418,6 +8560,179 @@ class FeedbackLoop:
               f'{n_excluded_ad} excluded as outside the applicability domain).')
         return shortlist
 
+    def rank_candidates_for_validation(
+        self,
+        candidate_pool,
+        top_n=10):
+        """
+        Generate prospective validation candidates.
+        Returns:
+            top_winners
+            top_losers
+            uncertain_candidates
+        """
+        predict_lnp = self.state.predict_lnp
+        conformal_predict_set = self.state.conformal_predict_set
+        q_hat = self.state.q_hat
+        knn = self.state.knn
+        ion_fp_cols = self.state.ion_fp_cols
+        ad_threshold = self.state.ad_threshold
+        count_fp_array = self.state.count_fp_array
+        bundle = self.state.bundle
+
+        active_bit_indices = [
+            int(c.replace('ionizable_fp', ''))
+            for c in ion_fp_cols
+        ]
+
+        rows = []
+
+        for _, cand in candidate_pool.iterrows():
+
+            result = predict_lnp(
+                cand['ionizable_smiles'],
+                cand['helper_smiles'],
+                cand['sterol_smiles'],
+                cand['peg_smiles'],
+                molar_ratio=cand['molar_ratio'],
+                model_bundle=bundle
+            )
+
+            if not result.get("valid", True):
+                continue
+
+            ion_arr = count_fp_array(
+                cand['ionizable_smiles']
+            )
+
+            ion_fp_vec = ion_arr[active_bit_indices]
+
+            dist, _ = knn.kneighbors(
+                (ion_fp_vec > 0).reshape(1, -1),
+                n_neighbors=5
+            )
+
+            knn_dist = float(dist[0].mean())
+
+            pset = conformal_predict_set(
+                result["prob_high_EE"],
+                q_hat
+            )
+
+            rows.append({
+
+                **cand.to_dict(),
+
+                "prob_high_EE":
+                    result["prob_high_EE"],
+
+                "conformal_set":
+                    pset,
+
+                "in_AD":
+                    knn_dist <= ad_threshold,
+
+                "knn_distance":
+                    knn_dist,
+
+                "uncertainty":
+                    abs(
+                        result["prob_high_EE"] - 0.5
+                    )
+            })
+
+        df = pd.DataFrame(rows)
+
+        # only keep AD compounds
+        df = df[df["in_AD"]].copy()
+        print("\n=== Probability Distribution ===")
+        print(df["prob_high_EE"].describe())
+
+        print(f"\nCandidates inside AD = {len(df)}")
+
+        # --------------------------------------------------
+        # Likely winners
+        # --------------------------------------------------
+
+        top_winners = (
+            df
+            .sort_values(
+                "prob_high_EE",
+                ascending=False
+            )
+            .head(top_n)
+        )
+
+        # --------------------------------------------------
+        # Likely losers
+        # --------------------------------------------------
+
+        top_losers = (
+            df
+            .sort_values(
+                "prob_high_EE",
+                ascending=True
+            )
+            .head(top_n)
+        )
+
+        # --------------------------------------------------
+        # Most uncertain
+        # --------------------------------------------------
+
+        uncertain_candidates = (
+            df
+            .sort_values(
+                "uncertainty",
+                ascending=True
+            )
+            .head(top_n)
+        )
+
+        top_winners.to_csv(
+            "prospective_winners.csv",
+            index=False
+        )
+
+        top_losers.to_csv(
+            "prospective_losers.csv",
+            index=False
+        )
+
+        uncertain_candidates.to_csv(
+            "prospective_uncertain.csv",
+            index=False
+        )
+
+        print("\nSaved:")
+        print("  prospective_winners.csv")
+        print("  prospective_losers.csv")
+        print("  prospective_uncertain.csv")
+
+        print("\n=== Probability Distribution ===")
+        print(df["prob_high_EE"].describe())
+
+        print("\nTop 20 probabilities")
+        print(
+            df["prob_high_EE"]
+            .sort_values(ascending=False)
+            .head(20)
+            .to_string(index=False)
+        )
+
+        print("\nBottom 20 probabilities")
+        print(
+            df["prob_high_EE"]
+            .sort_values(ascending=True)
+            .head(20)
+            .to_string(index=False)
+        )
+
+        return (
+            top_winners,
+            top_losers,
+            uncertain_candidates
+        )
 
 # ============================================================================
 # Orchestration

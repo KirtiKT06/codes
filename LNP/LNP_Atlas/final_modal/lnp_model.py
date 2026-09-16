@@ -1,7 +1,7 @@
 """
 lnp_model.py
 ============
-
+Knowledge-guided Unified Model for Understanding Design and encapsulation efficiency of Lipid Nanoparticles (KUMUD)
 A small, standalone module for USING the already-trained LNP encapsulation-
 efficiency classifier -- as opposed to `lnp_pipeline.py`, which is the big
 script that BUILDS it (data cleaning, feature engineering, ablations, SHAP,
@@ -35,9 +35,9 @@ Quick start
 
     # The thing you actually came here for:
     result = model.predict(
-        ionizable_smiles="O=C(OCCC(OC(=O)CCCCCCC/C=C\\CCCCCCCC)COCCN(CC)CC)CCCCCCC/C=C\\CCCCCCCC",  # MC3
-        helper_smiles="CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[NH3+])OC(=O)CCCCCCCCCCCCCCCC",       # DSPC
-        sterol_smiles="OC1CCC2(C)C(CCC3C2CC=C2C3(C)CCC(C(C)CCCC(C)C)C2)C1",                            # Cholesterol
+        ionizable_smiles="O=C(OCCC(OC(=O)CCCCCCC/C=C\\CCCCCCCC)COCCN(CC)CC)CCCCCCC/C=C\\CCCCCCCC",      # MC3
+        helper_smiles="CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[NH3+])OC(=O)CCCCCCCCCCCCCCCC",        # DSPC
+        sterol_smiles="OC1CCC2(C)C(CCC3C2CC=C2C3(C)CCC(C(C)CCCC(C)C)C2)C1",                             # Cholesterol
         peg_smiles="CCCCCCCCCCCCCCCCCC(=O)OCC(OC(=O)CCCCCCCCCCCCCCCCC)COC(=O)OCC(O)COCCOCCOCCOCC"
                     "OCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCC",                                          # DMG-PEG2000
         molar_ratio="50:10:38.5:1.5",

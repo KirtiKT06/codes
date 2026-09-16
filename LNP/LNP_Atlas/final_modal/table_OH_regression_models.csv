@@ -1,0 +1,5 @@
+Model,R2
+OH_count,0.188013496499445
+OH_distance,0.029697786523791847
+OH_distance + OH_count,0.26530330968875737
+OH_distance + OH_count + MolWt + LogP,0.2704902174952567
