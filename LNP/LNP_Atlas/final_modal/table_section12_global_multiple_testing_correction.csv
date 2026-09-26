@@ -1,0 +1,141 @@
+analysis,feature,p,q_fdr_global,p_bonf_global,sig_fdr_global,sig_bonf_global
+mwu_design_rule,Ether linkage,0.0,0.0,0.0,True,True
+mwu_design_rule,Primary amine,0.0,0.0,0.0,True,True
+mwu_design_rule,RingCount,0.0,0.0,0.0,True,True
+mechanistic_design_rule_summary,Primary amine,0.0,0.0,0.0,True,True
+point_biserial_functional_group,RingCount,2.58824151803402e-22,7.247076250495257e-21,3.623538125247628e-20,True,True
+spearman_functional_group,RingCount,3.624986361860886e-22,8.458301511008735e-21,5.0749809066052405e-20,True,True
+nitrogen_correlation,Primary_N,6.665796250388018e-19,1.1665143438179032e-17,9.332114750543225e-17,True,True
+spearman_functional_group,Primary amine,6.665796250388018e-19,1.1665143438179032e-17,9.332114750543225e-17,True,True
+point_biserial_functional_group,Primary amine,2.6892584241510854e-18,4.1832908820128e-17,3.76496179381152e-16,True,True
+topology_distance_bin,Ether_6-8,2.4086911166414056e-16,3.372167563297968e-15,3.3721675632979676e-14,True,True
+molar_ratio_spearman,peg_frac,8.322480580137506e-16,1.05922480110841e-14,1.1651472812192509e-13,True,True
+Ether_topology_correlation,Ether_mean_dist,3.2025576658316966e-13,3.736317276803646e-12,4.483580732164375e-11,True,True
+Ether_topology_correlation,Ether_tail_count,8.293076361618534e-12,8.931005312512267e-11,1.1610306906265947e-09,True,True
+headgroup_linker_tail_region,Ether_Linker,1.4175712010884443e-11,1.417571201088444e-10,1.984599681523822e-09,True,True
+nitrogen_correlation,N_Cluster_Score,1.852848636611324e-11,1.6871587265794135e-10,2.5939880912558533e-09,True,True
+nitrogen_correlation,Total_N,1.9361182986161975e-11,1.6871587265794135e-10,2.7105656180626764e-09,True,True
+Ether_adjusted_regression,Ether_mean_dist,2.0486927394178592e-11,1.6871587265794135e-10,2.868169835185003e-09,True,True
+headgroup_linker_tail_presence,Ether_Tail,4.014756594215506e-11,3.073630022211153e-10,5.6206592319017085e-09,True,True
+Ether_topology_correlation,Ether_min_dist,4.390900031730218e-11,3.073630022211153e-10,6.147260044422305e-09,True,True
+topology_distance_spearman,Ether,4.390900031730218e-11,3.073630022211153e-10,6.147260044422305e-09,True,True
+nitrogen_correlation,Polyamine,1.7463040632047095e-10,1.1642027088031398e-09,2.4448256884865932e-08,True,True
+nitrogen_adjusted_regression,Primary_N,3.154371830155766e-10,2.007327528280942e-09,4.416120562218073e-08,True,True
+mechanistic_design_rule_summary,Polyamine architecture,4.0981687893989085e-10,2.3905984604826965e-09,5.737436305158472e-08,True,True
+mechanistic_design_rule_summary,High nitrogen count,4.0981687893989085e-10,2.3905984604826965e-09,5.737436305158472e-08,True,True
+topology_adjusted_regression,Amide,5.627320049053287e-10,3.1512992274698404e-09,7.878248068674601e-08,True,True
+topology_adjusted_regression,Ether,1.6906183533462045e-09,9.1033295949411e-09,2.3668656946846862e-07,True,True
+mechanistic_design_rule_summary,Nitrogen clustering,3.442165794728578e-09,1.784826708377781e-08,4.819032112620009e-07,True,True
+Ester_adjusted_regression,Ester_mean_dist,4.629020965141405e-09,2.3145104825707023e-08,6.480629351197967e-07,True,True
+headgroup_linker_tail_presence,Ether_Linker,1.1699510208168068e-08,5.6480394108397566e-08,1.6379314291435295e-06,True,True
+topology_adjusted_regression,Ester,2.835001996159922e-08,1.323000931541297e-07,3.969002794623891e-06,True,True
+OH_model1_ols,OH_count,2.9776388266394005e-08,1.3447401152565036e-07,4.168694357295161e-06,True,True
+nitrogen_adjusted_regression,Total_N,4.7300291306137894e-08,2.0693877446435328e-07,6.622040782859305e-06,True,True
+topology_distance_bin,Ester_3-5,1.0406166604492552e-07,4.4147373473604764e-07,1.4568633246289573e-05,True,True
+molar_ratio_spearman,ion_frac,1.6000680720205743e-07,6.588515590672953e-07,2.240095300828804e-05,True,True
+nitrogen_adjusted_regression,N_Cluster_Score,2.5620564865049105e-07,1.0248225946019642e-06,3.5868790811068745e-05,True,True
+nitrogen_adjusted_regression,Tertiary_N,4.228774805611548e-07,1.6445235355156021e-06,5.920284727856167e-05,True,True
+OH_correlation,OH_count,2.0507343077240024e-06,7.555336923193694e-06,0.0002871028030813603,True,True
+OH_deep_dive_correlation,OH_count,2.0507343077240024e-06,7.555336923193694e-06,0.0002871028030813603,True,True
+Ester_topology_correlation,Ester_mean_dist,2.882162993565636e-06,1.0346226130748436e-05,0.000403502819099189,True,True
+OH_count_kruskal,OH_count,1.4422434174365318e-05,5.047851961027861e-05,0.0020191407844111445,True,True
+topology_distance_bin,Ester_0-2,2.4458408524067743e-05,8.351651691145082e-05,0.003424177193369484,True,True
+headgroup_linker_tail_region,Ether_Tail,2.8891223589714436e-05,9.192662051272775e-05,0.004044771302560021,True,True
+mechanistic_design_rule_summary,Distal ether,2.8891223589714436e-05,9.192662051272775e-05,0.004044771302560021,True,True
+topology_distance_bin,Ether_>8,2.8891223589714436e-05,9.192662051272775e-05,0.004044771302560021,True,True
+nitrogen_correlation,Quaternary_N,4.268336061901984e-05,0.00013279267748139505,0.0059756704866627776,True,True
+point_biserial_functional_group,Tertiary amine,5.755834469056047e-05,0.00017517757079735797,0.008058168256678466,True,True
+spearman_functional_group,Tertiary amine,5.9324384440605296e-05,0.00017671093237627111,0.008305413821684742,True,True
+nitrogen_correlation,Tertiary_N,6.85595457347539e-05,0.00019996534172636555,0.009598336402865545,True,True
+smarts_enrichment,Disulfide/thioether,9.576814784400313e-05,0.00027362327955429466,0.013407540698160438,True,True
+nitrogen_adjusted_regression,Secondary_N,0.00014021637177996375,0.0003926058409838985,0.019630292049194926,True,True
+mwu_design_rule,Ester linkage,0.0002,0.0005490196078431374,0.028,True,True
+smarts_enrichment,Ether linker,0.00020733163882629793,0.0005575075143451076,0.02902642943568171,True,True
+smarts_enrichment,Hydroxyl group,0.00021765264234580413,0.0005575075143451076,0.030471369928412578,True,True
+point_biserial_functional_group,Aliphatic OH,0.00021812975854530874,0.0005575075143451076,0.030538166196343225,True,True
+headgroup_linker_tail_region,Ether_Headgroup,0.00022300300573804306,0.0005575075143451076,0.03122042080332603,True,True
+headgroup_linker_tail_presence,Ether_Headgroup,0.00022300300573804306,0.0005575075143451076,0.03122042080332603,True,True
+mwu_design_rule,Carbonyl (C=O),0.0004,0.0009824561403508772,0.056,True,False
+spearman_functional_group,Aliphatic OH,0.000502251691745443,0.0012123316697303797,0.07031523684436203,True,False
+topology_distance_spearman,Ester,0.0005716512547893304,0.001333852927841771,0.08003117567050626,True,False
+Ester_topology_correlation,Ester_min_dist,0.0005716512547893304,0.001333852927841771,0.08003117567050626,True,False
+smarts_enrichment,Branched sp3 carbon,0.0006626268932572403,0.0015207830337051417,0.09276776505601365,True,False
+Ether_topology_correlation,Ether_head_count,0.0014753209888688338,0.0033313699748651086,0.20654493844163674,True,False
+mwu_design_rule,Unbranched alkyl chain,0.0017,0.0037777777777777775,0.238,True,False
+headgroup_linker_tail_presence,Ester_Tail,0.0018933706588456262,0.004141748316224807,0.2650718922383877,True,False
+molar_ratio_spearman,sterol_frac,0.0025884472148489848,0.0053863452146901206,0.36238261007885786,True,False
+spearman_functional_group,Amide,0.0026781837415299384,0.0053863452146901206,0.3749457238141914,True,False
+topology_distance_bin,OH_6-8,0.0026904793515344096,0.0053863452146901206,0.37666710921481733,True,False
+headgroup_linker_tail_presence,Amide_Headgroup,0.002753212305265857,0.0053863452146901206,0.38544972273722,True,False
+topology_distance_bin,Amide_0-2,0.002753212305265857,0.0053863452146901206,0.38544972273722,True,False
+headgroup_linker_tail_region,Amide_Headgroup,0.002753212305265857,0.0053863452146901206,0.38544972273722,True,False
+mwu_design_rule,Amide,0.0028,0.0053863452146901206,0.392,True,False
+OH_deep_dive_correlation,Headgroup_OH_count,0.0028085942905169917,0.0053863452146901206,0.39320320067237885,True,False
+OH_correlation,Headgroup_OH_count,0.0028085942905169917,0.0053863452146901206,0.39320320067237885,True,False
+nitrogen_adjusted_regression,Quaternary_N,0.003159680482106575,0.005977773885066493,0.4423552674949205,True,False
+Ester_topology_correlation,Ester_tail_count,0.0033466034104490303,0.00624699303283819,0.46852447746286424,True,False
+mechanistic_design_rule_summary,OH-rich headgroup,0.0036013922436054307,0.00646403736031744,0.5041949141047603,True,False
+headgroup_linker_tail_region,OH_Headgroup,0.0036013922436054307,0.00646403736031744,0.5041949141047603,True,False
+headgroup_linker_tail_presence,OH_Headgroup,0.0036013922436054307,0.00646403736031744,0.5041949141047603,True,False
+headgroup_linker_tail_region,OH_Linker,0.004890575880245051,0.008558507790428839,0.6846806232343071,True,False
+headgroup_linker_tail_presence,OH_Linker,0.004890575880245051,0.008558507790428839,0.6846806232343071,True,False
+mwu_design_rule,Aliphatic OH,0.005,0.008575765227990664,0.7000000000000001,True,False
+topology_distance_bin,OH_3-5,0.00502294820496596,0.008575765227990664,0.7032127486952344,True,False
+OH_deep_dive_correlation,OH_burden,0.005801232017987904,0.00976662353243029,0.8121724825183065,True,False
+nitrogen_adjusted_regression,Min_NN_Distance,0.005859974119458174,0.00976662353243029,0.8203963767241443,True,False
+topology_distance_bin,Ether_3-5,0.006240695468310096,0.010278792536040159,0.8736973655634134,True,False
+spearman_functional_group,Secondary amine,0.006460991405038731,0.010517892984946771,0.9045387967054224,True,False
+nitrogen_correlation,Mean_NN_Distance,0.009563109365214094,0.015388911622183598,1.0,True,False
+mwu_design_rule,Tertiary amine,0.0104,0.016545454545454544,1.0,True,False
+mwu_design_rule,Secondary amine,0.0111,0.01720039554515826,1.0,True,False
+mechanistic_design_rule_summary,Secondary amine,0.0111,0.01720039554515826,1.0,True,False
+nitrogen_correlation,Secondary_N,0.011180257104352869,0.01720039554515826,1.0,True,False
+nitrogen_adjusted_regression,Polyamine,0.0186545398777131,0.028387343292172112,1.0,True,False
+headgroup_linker_tail_region,Ester_Headgroup,0.019061365247222472,0.02838926738948028,1.0,True,False
+headgroup_linker_tail_presence,Ester_Headgroup,0.019061365247222472,0.02838926738948028,1.0,True,False
+spearman_functional_group,Ether linkage,0.020583820905702,0.03001807215414875,1.0,True,False
+Ether_topology_correlation,Ether_count,0.020583820905702,0.03001807215414875,1.0,True,False
+spearman_functional_group,Carbonyl (C=O),0.023766745818125542,0.034302519737500786,1.0,True,False
+molar_ratio_spearman,helper_frac,0.02458258148553777,0.03511797355076824,1.0,True,False
+Ether_topology_correlation,Ether_linker_count,0.028642036369817905,0.0405038898159041,1.0,True,False
+Ester_topology_correlation,Ester_head_count,0.030100241724360537,0.04214033841410475,1.0,True,False
+OH_model2_ols,OH_distance,0.03496571654789954,0.0484673298683756,1.0,True,False
+topology_distance_bin,Ether_0-2,0.04240365883331548,0.058201100359452626,1.0,False,False
+topology_adjusted_regression,OH,0.049414058658649174,0.0671647399243775,1.0,False,False
+Ester_topology_correlation,Ester_count,0.05615592978466186,0.07559452086396788,1.0,False,False
+spearman_functional_group,Ester linkage,0.0641380990842287,0.0847637249809201,1.0,False,False
+nitrogen_correlation,Min_NN_Distance,0.06417824891412521,0.0847637249809201,1.0,False,False
+point_biserial_functional_group,Amide,0.09590057790373153,0.12509242732525927,1.0,False,False
+smarts_enrichment,Ester linker,0.09649987250805717,0.12509242732525927,1.0,False,False
+point_biserial_functional_group,Secondary amine,0.10738740290115215,0.1379287743684523,1.0,False,False
+smarts_enrichment,Amide linker,0.1233750634503683,0.1570228080277415,1.0,False,False
+point_biserial_functional_group,LogP,0.1285465809090991,0.1621308227682331,1.0,False,False
+headgroup_linker_tail_presence,Ester_Linker,0.1311077548079609,0.16388469350995113,1.0,False,False
+spearman_functional_group,MolWt,0.1387292031775805,0.1718768888925776,1.0,False,False
+point_biserial_functional_group,MolWt,0.16213083449356866,0.19910804236052293,1.0,False,False
+smarts_enrichment,Terminal alkene (unsaturated tail),0.23714352330855615,0.28869646315824227,1.0,False,False
+mechanistic_design_rule_summary,Distal ester,0.28771660592495285,0.34724417956459824,1.0,False,False
+point_biserial_functional_group,Aromatic N,0.2921209758706751,0.34954646685379925,1.0,False,False
+headgroup_linker_tail_region,Ester_Linker,0.31317907350857954,0.37156839229831473,1.0,False,False
+smarts_enrichment,Secondary amine (aliphatic),0.35563371189163395,0.4183926022254517,1.0,False,False
+spearman_functional_group,LogP,0.36046809064350466,0.42054610575075546,1.0,False,False
+Ether_topology_correlation,Ether_burden,0.38360059567911875,0.44383539995931093,1.0,False,False
+spearman_functional_group,Unbranched alkyl chain,0.390136066858762,0.44769712590349736,1.0,False,False
+point_biserial_functional_group,Unbranched alkyl chain,0.4186580801738206,0.4765213920677633,1.0,False,False
+topology_distance_bin,Ester_6-8,0.4608945568916719,0.520364822297049,1.0,False,False
+point_biserial_functional_group,Ether linkage,0.47331880296982287,0.5301170593262016,1.0,False,False
+smarts_enrichment,Tertiary amine (aliphatic),0.48336326308050714,0.5370702923116746,1.0,False,False
+nitrogen_adjusted_regression,Mean_NN_Distance,0.5235552515338366,0.5771475213758829,1.0,False,False
+Ester_topology_correlation,Ester_burden,0.5637233351500244,0.6165723978203391,1.0,False,False
+OH_deep_dive_correlation,Linker_OH_count,0.5687313452289197,0.6172278165275098,1.0,False,False
+spearman_functional_group,RotBonds,0.6414247355172474,0.6907650997878049,1.0,False,False
+topology_distance_spearman,OH,0.6857780294635936,0.7164845083947993,1.0,False,False
+OH_deep_dive_correlation,OH_min_distance,0.6857780294635936,0.7164845083947993,1.0,False,False
+OH_correlation,OH_distance,0.6857780294635936,0.7164845083947993,1.0,False,False
+OH_deep_dive_correlation,OH_mean_distance,0.6857780294635936,0.7164845083947993,1.0,False,False
+spearman_functional_group,Aromatic N,0.7191067291186352,0.7457403116785846,1.0,False,False
+point_biserial_functional_group,Carbonyl (C=O),0.8998511633925942,0.9263173740806117,1.0,False,False
+Ester_topology_correlation,Ester_linker_count,0.923237572710684,0.9434544538649325,1.0,False,False
+point_biserial_functional_group,RotBonds,0.9477069755863899,0.9614418592905405,1.0,False,False
+point_biserial_functional_group,Ester linkage,0.95749886021093,0.9643873412196418,1.0,False,False
+smarts_enrichment,Cyclic headgroup (N in ring),1.0,1.0,1.0,False,False

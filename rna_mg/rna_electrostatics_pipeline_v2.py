@@ -67,7 +67,7 @@ Requirements:
 
 Usage:
     python rna_electrostatics_pipeline_v2.py --pdb-ids 1EHZ 4V9F ... --outdir /data/rna_mg/cutoff_8
-    python rna_electrostatics_pipeline_v2.py --nonredundant-csv nrlist.csv --outdir /data/rna_mg/cutoff_8 --n-workers 8
+    python rna_electrostatics_pipeline_v2.py --nonredundant-csv nrlist.csv --outdir /data/rna_mg/res_phi --n-workers 8
 """
 
 from __future__ import annotations
@@ -656,7 +656,7 @@ def parse_pqr_residues(pqr_path: Path) -> pd.DataFrame:
             rows.append({
                 "chain": chain, "resnum": resnum, "resname": resname,
                 "atom_name": name, "x": float(x), "y": float(y), "z": float(z),
-                "charge": float(q),
+                "charge": float(q), "radius": float(r),
             })
     return pd.DataFrame(
     rows,
@@ -669,6 +669,7 @@ def parse_pqr_residues(pqr_path: Path) -> pd.DataFrame:
         "y",
         "z",
         "charge",
+        "radius",  # additive: existing callers that don't reference it are unaffected
     ],
 )
 

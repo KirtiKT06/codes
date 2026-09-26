@@ -881,84 +881,84 @@ class FeatureAblation:
         save_pub_figure(fig, 'fig_sec6_ablation', width='double')
         plt.show()
 
-        # # --------------------------- Inject Gaussian noise into EE% labels ---------------------------
-        # # Regression R² collapses; classification AUC stays
-        # noise_levels = [0, 2, 4, 6, 8, 10, 11, 12, 14, 16, 18, 20]     # % noise sigma to add
-        # n_monte_carlo = 20                                             # repeats per noise level
+        # --------------------------- Inject Gaussian noise into EE% labels ---------------------------
+        # Regression R² collapses; classification AUC stays
+        noise_levels = [0, 2, 4, 6, 8, 10, 11, 12, 14, 16, 18, 20]     # % noise sigma to add
+        n_monte_carlo = 20                                             # repeats per noise level
 
-        # mc_auc_means, mc_auc_stds = [], []
-        # mc_r2_means,  mc_r2_stds  = [], []
+        mc_auc_means, mc_auc_stds = [], []
+        mc_r2_means,  mc_r2_stds  = [], []
 
-        # np.random.seed(42)
-        # for sigma in noise_levels:
-        #     aucs_mc, r2s_mc = [], []
-        #     for trial in range(n_monte_carlo):
-        #         # Add Gaussian noise to EE%
-        #         noisy_ee = clean_df['EE'].values + np.random.normal(0, sigma, len(clean_df))
-        #         noisy_ee = np.clip(noisy_ee, 0, 100)
-        #         y_noisy  = (noisy_ee >= 80).astype(int)
+        np.random.seed(42)
+        for sigma in noise_levels:
+            aucs_mc, r2s_mc = [], []
+            for trial in range(n_monte_carlo):
+                # Add Gaussian noise to EE%
+                noisy_ee = clean_df['EE'].values + np.random.normal(0, sigma, len(clean_df))
+                noisy_ee = np.clip(noisy_ee, 0, 100)
+                y_noisy  = (noisy_ee >= 80).astype(int)
 
-        #         # Classification AUC
-        #         rfc_mc = RandomForestClassifier(n_estimators=500, class_weight='balanced',
-        #                                          random_state=42, n_jobs=-1)
-        #         aucs_fold = []
-        #         for tr, te in gkf.split(X_D, y_noisy, groups):
-        #             rfc_mc.fit(X_D.iloc[tr], y_noisy[tr])
-        #             prob_mc = rfc_mc.predict_proba(X_D.iloc[te])[:,1]
-        #             try:
-        #                 aucs_fold.append(roc_auc_score(y_noisy[te], prob_mc))
-        #             except:
-        #                 pass
-        #         aucs_mc.append(np.mean(aucs_fold))
+                # Classification AUC
+                rfc_mc = RandomForestClassifier(n_estimators=500, class_weight='balanced',
+                                                 random_state=42, n_jobs=-1)
+                aucs_fold = []
+                for tr, te in gkf.split(X_D, y_noisy, groups):
+                    rfc_mc.fit(X_D.iloc[tr], y_noisy[tr])
+                    prob_mc = rfc_mc.predict_proba(X_D.iloc[te])[:,1]
+                    try:
+                        aucs_fold.append(roc_auc_score(y_noisy[te], prob_mc))
+                    except:
+                        pass
+                aucs_mc.append(np.mean(aucs_fold))
 
-        #         # Regression R²
-        #         rfr_mc = RandomForestRegressor(n_estimators=500, random_state=42, n_jobs=-1)
-        #         r2s_fold = []
-        #         for tr, te in gkf.split(X_D, noisy_ee, groups):
-        #             rfr_mc.fit(X_D.iloc[tr], noisy_ee[tr])
-        #             pred_mc = rfr_mc.predict(X_D.iloc[te])
-        #             r2s_fold.append(r2_score(noisy_ee[te], pred_mc))
-        #         r2s_mc.append(np.mean(r2s_fold))
+                # Regression R²
+                rfr_mc = RandomForestRegressor(n_estimators=500, random_state=42, n_jobs=-1)
+                r2s_fold = []
+                for tr, te in gkf.split(X_D, noisy_ee, groups):
+                    rfr_mc.fit(X_D.iloc[tr], noisy_ee[tr])
+                    pred_mc = rfr_mc.predict(X_D.iloc[te])
+                    r2s_fold.append(r2_score(noisy_ee[te], pred_mc))
+                r2s_mc.append(np.mean(r2s_fold))
 
-        #     mc_auc_means.append(np.mean(aucs_mc))
-        #     mc_auc_stds.append(np.std(aucs_mc))
-        #     mc_r2_means.append(np.mean(r2s_mc))
-        #     mc_r2_stds.append(np.std(r2s_mc))
-        #     print(f"$\\sigma$={sigma:>2}%  AUC={np.mean(aucs_mc):.3f}±{np.std(aucs_mc):.3f}  R²={np.mean(r2s_mc):.3f}±{np.std(r2s_mc):.3f}")
+            mc_auc_means.append(np.mean(aucs_mc))
+            mc_auc_stds.append(np.std(aucs_mc))
+            mc_r2_means.append(np.mean(r2s_mc))
+            mc_r2_stds.append(np.std(r2s_mc))
+            print(f"$\\sigma$={sigma:>2}%  AUC={np.mean(aucs_mc):.3f}±{np.std(aucs_mc):.3f}  R²={np.mean(r2s_mc):.3f}±{np.std(r2s_mc):.3f}")
 
-        # mc_auc_means = np.array(mc_auc_means); mc_auc_stds = np.array(mc_auc_stds)
-        # mc_r2_means  = np.array(mc_r2_means);  mc_r2_stds  = np.array(mc_r2_stds)
+        mc_auc_means = np.array(mc_auc_means); mc_auc_stds = np.array(mc_auc_stds)
+        mc_r2_means  = np.array(mc_r2_means);  mc_r2_stds  = np.array(mc_r2_stds)
 
         # --------------------------- Plot Monte Carlo noise injection results ---------------------------
-        # fig, ax = plt.subplots(figsize=(7, 3))
-        # colors = PUB_PALETTE[8:16]
-        # ax2 = ax.twinx()
+        fig, ax = plt.subplots(figsize=(7, 3))
+        colors = PUB_PALETTE[8:16]
+        ax2 = ax.twinx()
 
-        # ax.plot(noise_levels, mc_auc_means, '^--', color=colors[8], lw=1.5, ms=4, label='Classification AUC (left)')
-        # ax.fill_between(noise_levels, mc_auc_means-mc_auc_stds, mc_auc_means+mc_auc_stds, alpha=0.08, color=colors[8])
-        # ax.axhline(0.5, ls='--', color=colors[5], lw=1, alpha=0.8)
-        # ax.set_ylabel('ROC-AUC (classification)', color=colors[8])
-        # ax.tick_params(axis='y', labelcolor=colors[8])
-        # ax.set_ylim([0.4, 0.80])
+        ax.plot(noise_levels, mc_auc_means, '^--', color=colors[8], lw=1.5, ms=4, label='Classification AUC (left)')
+        ax.fill_between(noise_levels, mc_auc_means-mc_auc_stds, mc_auc_means+mc_auc_stds, alpha=0.08, color=colors[8])
+        ax.axhline(0.5, ls='--', color=colors[5], lw=1, alpha=0.8)
+        ax.set_ylabel('ROC-AUC (classification)', color=colors[8])
+        ax.tick_params(axis='y', labelcolor=colors[8])
+        ax.set_ylim([0.4, 0.80])
 
-        # ax2.plot(noise_levels, mc_r2_means, 's--', color=colors[4], lw=1.5, ms=4, label='Regression $R^2$ (right)')
-        # ax2.fill_between(noise_levels, mc_r2_means-mc_r2_stds, mc_r2_means+mc_r2_stds, alpha=0.08, color=colors[4])
-        # ax2.axhline(0.0, ls='--', color=colors[4], lw=1, alpha=0.8)
-        # ax2.set_ylabel('$R^2$ (regression)', color=colors[4])
-        # ax2.tick_params(axis='y', labelcolor=colors[4])
+        ax2.plot(noise_levels, mc_r2_means, 's--', color=colors[4], lw=1.5, ms=4, label='Regression $R^2$ (right)')
+        ax2.fill_between(noise_levels, mc_r2_means-mc_r2_stds, mc_r2_means+mc_r2_stds, alpha=0.08, color=colors[4])
+        ax2.axhline(0.0, ls='--', color=colors[4], lw=1, alpha=0.8)
+        ax2.set_ylabel('$R^2$ (regression)', color=colors[4])
+        ax2.tick_params(axis='y', labelcolor=colors[4])
 
-        # # Mark the empirical noise floor
-        # ax.axvline(bl_df['std_EE'].median(), ls=':', color=colors[7], lw=1,
-        #            label=f'Median between-lab EE standard deviation ({bl_df['std_EE'].median():.1f}%)')
+        # Mark the empirical noise floor
+        ax.axvline(bl_df['std_EE'].median(), ls=':', color=colors[7], lw=1,
+                   label=f'Median between-lab EE standard deviation ({bl_df['std_EE'].median():.1f}%)')
 
-        # ax.set_xlabel('Added Gaussian noise $\\sigma$ (% EE)')
-        # lines1, labels1 = ax.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax.legend(lines1+lines2, labels1+labels2, loc='upper right')
-        # plt.tight_layout()
-        # save_pub_figure(fig, 'fig_sec4_monte_carlo_noise', width='double')
-        # plt.show()
-
+        ax.set_xlabel('Added Gaussian noise $\\sigma$ (% EE)')
+        lines1, labels1 = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines1+lines2, labels1+labels2, loc='upper right')
+        plt.tight_layout()
+        save_pub_figure(fig, 'fig_sec4_monte_carlo_noise', width='double')
+        plt.show()
+    
         # expose to later sections
         self.state.gkf = gkf
         return self.state
@@ -1079,24 +1079,6 @@ class FingerprintBenchmark:
                                       'AUC_mean': np.mean(aucs), 'AUC_std': np.std(aucs),
                                       'AP_mean': np.mean(aps), 'AP_std': np.std(aps)})
 
-        # --- Pretrained embedding baseline: ChemBERTa (frozen, mean-pooled) --------------
-        # "why fixed fingerprints instead of a pretrained molecular language model's embeddings?"
-        # We answer it empirically here rather than by citation alone -- benchmark a
-        # frozen, off-the-shelf ChemBERTa embedding under the EXACT SAME GroupKFold
-        # protocol as every representation above, so it's a fair, apples-to-apples row
-        # in the same table.
-
-        # Deliberately NOT fine-tuned: at n~452 formulations, fine-tuning a transformer
-        # risks overfitting far more than it risks under-using the pretrained signal, so
-        # "frozen embedding + RF" is the correct comparison point against "frozen
-        # fingerprint + RF" used everywhere else in this section -- fine-tuning would be
-        # comparing a different kind of model, not a different representation.
-
-        # Requires `pip install transformers torch` and a working internet connection
-        # (to download the pretrained checkpoint from HuggingFace Hub) the first time it
-        # runs. If either is unavailable, this block prints a clear message and the rest
-        # of the benchmark (and the whole pipeline) proceeds unaffected -- this row is a
-        # nice-to-have for the paper's rebuttal-readiness, not a dependency of anything else.
         try:
             import torch
             from transformers import AutoTokenizer, AutoModel
@@ -1109,10 +1091,7 @@ class FingerprintBenchmark:
 
             @torch.no_grad()
             def chemberta_embed_array(smiles):
-                """Mean-pooled last-hidden-state embedding for one SMILES string.
-                Mean pooling over non-padding tokens is the standard frozen-feature
-                extraction choice for BERT-family models when there's no [CLS]-token
-                fine-tuning objective to lean on."""
+                """Mean-pooled last-hidden-state embedding for one SMILES string."""
                 mol = Chem.MolFromSmiles(str(smiles))
                 if mol is None:
                     return np.zeros(_chemberta.config.hidden_size, dtype=np.float32)
@@ -1147,16 +1126,9 @@ class FingerprintBenchmark:
 
         except ImportError:
             print('\ntransformers/torch not installed -- skipping the pretrained-embedding '
-                  'benchmark row (pip install transformers torch). This comparison directly '
-                  'answers a likely reviewer question ("why fixed fingerprints, not learned '
-                  'embeddings?") with evidence rather than citation, so it is worth running '
-                  'at least once before submission even though nothing else in the pipeline '
-                  'depends on it.')
+                  'benchmark row (pip install transformers torch).')
         except Exception as e:
-            print(f'\nChemBERTa embedding benchmark failed ({type(e).__name__}: {e}) -- most '
-                  f'likely a network issue (no internet access, or HuggingFace Hub unreachable '
-                  f'for the first-time checkpoint download). Skipping this row; every other '
-                  f'benchmark result above and below is unaffected.')
+            print(f'\nChemBERTa embedding benchmark failed ({type(e).__name__}: {e}) -- skipping this row.')
 
         fp_bench_df = pd.DataFrame(fp_bench_results).sort_values('AUC_mean', ascending=False).reset_index(drop=True)
         print('\n' + fp_bench_df.round(3).to_string(index=False))
@@ -1256,11 +1228,37 @@ class BitWidthComparison:
 class PrimaryModel:
     """
     Primary model: 5-fold GroupKFold-by-lipid classification, ROC/PR curves, and the confusion matrix at the optimal threshold.
+
+    THRESHOLD SELECTION (double/nested cross-validation, pooled): the decision
+    threshold used for the confusion matrix / sensitivity / specificity / PPV / NPV
+    is selected without ever looking at any sample's own held-out test-fold label.
+    For every outer fold, an inner 5-fold GroupKFold is run on that fold's TRAINING
+    data only, producing inner out-of-fold (OOF) probabilities for the samples in
+    that training set. These inner-OOF (probability, true-label) pairs are pooled
+    across all 5 outer folds -- since each sample sits in the training set of 4 of
+    the 5 outer folds, this pools roughly 4x452 inner-OOF observations, i.e. far
+    more data than any single fold's ~90 test samples -- and ONE global
+    balanced-accuracy-optimal threshold is chosen from that pooled set. This single
+    threshold is then applied uniformly to the outer OOF test predictions to compute
+    the confusion matrix. A per-fold diagnostic threshold is also reported (kept
+    from the previous version of this analysis) purely to illustrate how much a
+    threshold estimated from ~90 samples alone would vary fold-to-fold; it is NOT
+    used for the reported operating point. AUC/AP are unaffected by any of this --
+    they are threshold-free and were already computed on genuinely out-of-fold
+    probabilities in the original version of this pipeline.
+
     Reads from state:  PUB_PALETTE, save_pub_figure, X_D, y, groups, gkf
     Writes to state:   results_df, all_y_true, all_y_prob, best_t
     """
     def __init__(self, state: PipelineState):
         self.state = state
+
+    @staticmethod
+    def _balanced_acc_optimal_threshold(y_true, y_prob, thresholds=None):
+        if thresholds is None:
+            thresholds = np.linspace(0.1, 0.9, 80)
+        baccs = [balanced_accuracy_score(y_true, (y_prob >= t).astype(int)) for t in thresholds]
+        return thresholds[np.argmax(baccs)]
 
     def run(self):
         PUB_PALETTE = self.state.PUB_PALETTE
@@ -1276,6 +1274,11 @@ class PrimaryModel:
         # Store OOF predictions in ORIGINAL dataframe order
         all_y_true = np.zeros(len(y), dtype=int)
         all_y_prob = np.zeros(len(y), dtype=float)
+        # Per-fold diagnostic thresholds (small-sample, reported only to show
+        # instability -- the actual operating point is the pooled threshold below)
+        fold_thresholds = []
+        pooled_inner_true = []
+        pooled_inner_prob = []
 
         for fold, (tr, te) in enumerate(gkf.split(X_D, y, groups)):
             rfc.fit(X_D.iloc[tr], y[tr])
@@ -1286,13 +1289,30 @@ class PrimaryModel:
             bacc = balanced_accuracy_score(y[te], pred)
             n_lip_tr = len(np.unique(groups[tr]))
             n_lip_te = len(np.unique(groups[te]))
+
+            # --- Inner CV on the TRAINING split only, feeds the pooled threshold below ---
+            inner_gkf = GroupKFold(n_splits=min(5, len(np.unique(groups[tr]))))
+            inner_y_true = np.zeros(len(tr), dtype=int)
+            inner_y_prob = np.zeros(len(tr), dtype=float)
+            rfc_inner = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
+            for itr, ite in inner_gkf.split(X_D.iloc[tr], y[tr], groups[tr]):
+                rfc_inner.fit(X_D.iloc[tr].iloc[itr], y[tr][itr])
+                inner_y_prob[ite] = rfc_inner.predict_proba(X_D.iloc[tr].iloc[ite])[:, 1]
+                inner_y_true[ite] = y[tr][ite]
+            fold_threshold = self._balanced_acc_optimal_threshold(inner_y_true, inner_y_prob)
+            fold_thresholds.append(fold_threshold)
+            pooled_inner_true.append(inner_y_true)
+            pooled_inner_prob.append(inner_y_prob)
+
             fold_results.append({'fold':fold+1,'AUC':auc,'AP':ap,'BalAcc':bacc,
                                  'n_train':len(tr),'n_test':len(te),
-                                 'lips_train':n_lip_tr,'lips_test':n_lip_te})
+                                 'lips_train':n_lip_tr,'lips_test':n_lip_te,
+                                 'fold_diagnostic_threshold':round(float(fold_threshold),3)})
             all_y_true[te] = y[te]
             all_y_prob[te] = prob
             print(f'  Fold {fold+1}: AUC={auc:.3f} AP={ap:.3f} BalAcc={bacc:.3f} '
-                  f'| train={len(tr)}({n_lip_tr} lipids) test={len(te)}({n_lip_te} lipids)')
+                  f'| train={len(tr)}({n_lip_tr} lipids) test={len(te)}({n_lip_te} lipids) '
+                  f'| fold-only diagnostic threshold={fold_threshold:.3f} (small-sample; not used for reporting)')
 
         results_df   = pd.DataFrame(fold_results)
         assert len(all_y_true) == len(y)
@@ -1330,15 +1350,43 @@ class PrimaryModel:
         save_pub_figure(fig, 'fig_sec9_roc_pr', width='double')
         plt.show()
 
-        # Confusion matrix and optimal threshold
-        thresholds = np.linspace(0.1, 0.9, 80)
-        baccs = [balanced_accuracy_score(all_y_true, (all_y_prob>=t).astype(int)) for t in thresholds]
-        best_t = thresholds[np.argmax(baccs)]
+        # --- Single pooled threshold, chosen on inner-CV OOF predictions only ---
+        # (see class docstring). This replaces two earlier, less satisfactory designs:
+        # (1) a threshold picked on the same pooled test predictions being reported
+        #     (optimistic, leaked); (2) five separate per-fold thresholds applied
+        #     sample-by-sample (leak-free, but noisy and unstable: ~90 samples per
+        #     fold produced a 0.45-0.69 range that overstated how uncertain the
+        #     "true" operating point actually is). Pooling every fold's inner-CV OOF
+        #     predictions into one set before choosing the threshold uses ~4x more
+        #     data per estimate and yields a single, honestly-derived operating point.
+        pooled_inner_true = np.concatenate(pooled_inner_true)
+        pooled_inner_prob = np.concatenate(pooled_inner_prob)
+        best_t = float(self._balanced_acc_optimal_threshold(pooled_inner_true, pooled_inner_prob))
+
+        # Bootstrap 95% CI on the pooled threshold itself, so its own uncertainty is
+        # reported honestly rather than presented as a single exact-looking decimal.
+        rng = np.random.RandomState(42)
+        n_pool = len(pooled_inner_true)
+        boot_thresholds = []
+        for _ in range(500):
+            idx = rng.choice(n_pool, n_pool, replace=True)
+            if len(np.unique(pooled_inner_true[idx])) < 2:
+                continue
+            boot_thresholds.append(self._balanced_acc_optimal_threshold(pooled_inner_true[idx], pooled_inner_prob[idx]))
+        boot_thresholds = np.array(boot_thresholds)
+        t_lo, t_hi = np.percentile(boot_thresholds, [2.5, 97.5])
+
+        print(f'\nFold-only diagnostic thresholds (each from ~90 test-fold-sized samples, '
+              f'shown to illustrate small-sample instability): {[round(t,3) for t in fold_thresholds]}')
+        print(f'Pooled nested threshold (selected on {n_pool} inner-CV out-of-fold predictions '
+              f'pooled across all 5 outer folds): {best_t:.3f}')
+        print(f'Bootstrap 95% CI on the pooled threshold ({len(boot_thresholds)} resamples): '
+              f'[{t_lo:.3f}, {t_hi:.3f}]')
+
         y_pred_opt = (all_y_prob >= best_t).astype(int)
         cm = confusion_matrix(all_y_true, y_pred_opt)
 
         TP,TN,FP,FN = cm[1,1],cm[0,0],cm[0,1],cm[1,0]
-        print(f'Optimal threshold: {best_t:.2f}')
         print(f'Sensitivity:  {TP/(TP+FN):.3f}')
         print(f'Specificity:  {TN/(TN+FP):.3f}')
         print(f'PPV:          {TP/(TP+FP):.3f}')
@@ -1385,48 +1433,29 @@ class FQS:
         clean_df = self.state.clean_df
         all_y_prob = self.state.all_y_prob
 
-        # --------------------------- Desirability functions ---------------------------
-
         def d_EE(P, r=3):
-            """Derringer-Suich (1980) larger-the-better desirability function.
-            r=1 recovers the original linear d_EE; r>1 penalizes low-confidence
-            formulations and rewards near-certain High-EE calls increasingly steeply."""
             P = np.clip(P, 0, 1)
             return P ** r
 
         def d_size(size_nm):
-            """
-            Particle size desirability. Trapezoidal function.
-            - Optimal plateau:  50-120 nm  (d = 1.0)
-            - Lower ramp:       30-50 nm   (d = 0 -> 1)
-            - Upper ramp:       120-150 nm (d = 1 -> 0)
-            - Outside 30/150:   d = 0.0
-            """
             if pd.isna(size_nm):
                 return np.nan
             s = float(size_nm)
             if s <= 30:   return 0.0
-            if s <= 50:   return (s - 30) / 20.0   # linear rise 30->50
-            if s <= 120:  return 1.0               # optimal plateau
-            if s <= 150:  return (150 - s) / 30.0  # linear fall 120->150
+            if s <= 50:   return (s - 30) / 20.0
+            if s <= 120:  return 1.0
+            if s <= 150:  return (150 - s) / 30.0
             return 0.0
 
         def d_PDI(pdi):
-            """
-            PDI desirability. Linear decrease.
-            - PDI <= 0.2:  d = 1.0  (target range: excellent, monodisperse)
-            - PDI  = 0.3:  d = 0.0  (FDA outer acceptable limit)
-            - PDI >  0.3:  d = 0.0  (unacceptable, broad distribution)
-            """
             if pd.isna(pdi):
                 return np.nan
             p = float(pdi)
             if p <= 0.20:  return 1.0
-            if p <= 0.30:  return (0.30 - p) / 0.10   # linear fall 0.2->0.3
+            if p <= 0.30:  return (0.30 - p) / 0.10
             return 0.0
 
         def compute_FQS(prob_ee, size_nm=None, pdi=None):
-            """Geometric mean of available desirability components, scaled 0-100."""
             comps, labels = [d_EE(prob_ee)], ['EE']
             ds = d_size(size_nm) if (size_nm is not None and not pd.isna(size_nm)) else None
             dp = d_PDI(pdi)      if (pdi is not None and not pd.isna(pdi))          else None
@@ -1438,7 +1467,6 @@ class FQS:
                     'd_size': round(ds,4) if ds is not None else None,
                     'd_PDI':  round(dp,4) if dp is not None else None}
 
-        # --------------------------- Plot desirability functions ---------------------------
         fig, axes = plt.subplots(1, 3, figsize=(8, 3))
         colors = PUB_PALETTE[:8]
         sizes = np.linspace(0, 200, 300)
@@ -1449,7 +1477,7 @@ class FQS:
         axes[0].fill_between(probs, [d_EE(p) for p in probs], alpha=0.08, color=colors[0])
         axes[0].set_xlabel('P(EE≥80%)')
         axes[0].set_ylabel('Desirability Score')
-        axes[0].set_title('$d_{EE}$', fontsize=11)
+        # axes[0].set_title('$d_{EE}$', fontsize=11)
 
         axes[1].plot(sizes, [d_size(s) for s in sizes], lw=2, color=colors[1])
         axes[1].axvspan(50, 120, alpha=0.08, color=colors[1], label='Optimal: 50-120 nm')
@@ -1457,7 +1485,7 @@ class FQS:
         axes[1].set_xlabel('Particle Size (nm)')
         axes[1].set_ylabel('Desirability Score')
         axes[1].set_xlim(25, 175)
-        axes[1].set_title('$d_{size}$', fontsize=11)
+        # axes[1].set_title('$d_{size}$', fontsize=11)
         axes[1].legend()
 
         axes[2].plot(pdis, [d_PDI(p) for p in pdis], lw=2, color=colors[3])
@@ -1466,7 +1494,7 @@ class FQS:
         axes[2].set_xlabel('PDI')
         axes[2].set_ylabel('Desirability Score')
         axes[2].set_xlim(0.0, 0.4)
-        axes[2].set_title('$d_{PDI}$', fontsize=11)
+        # axes[2].set_title('$d_{PDI}$', fontsize=11)
         axes[2].legend()
 
         for ax in axes:
@@ -1477,10 +1505,10 @@ class FQS:
         save_pub_figure(fig, 'fig_sec10_desirability_functions', width='double')
         plt.show()
 
-        # Reuse OOF probabilities already computed in Section 6 — consistent with ROC/PR curves
+        # Reuse OOF probabilities already computed in Section 9 (PrimaryModel) --
+        # consistent with the ROC/PR curves plotted there.
         clean_df['prob_high_EE'] = all_y_prob
 
-        # Compute FQS for all formulations
         fqs_records = [compute_FQS(row['prob_high_EE'], row['size_nm'], row['PDI_val'])
                        for _, row in clean_df.iterrows()]
         fqs_df = pd.DataFrame(fqs_records)
@@ -1495,7 +1523,6 @@ class FQS:
         print(f'FQS distribution:')
         print(full3['FQS'].describe().round(1))
 
-        # Validation: Spearman correlation FQS vs each property
         rho_EE,  p_EE   = stats.spearmanr(full3['FQS'], full3['EE'])
         rho_sz,  p_sz   = stats.spearmanr(full3['FQS'], -full3['size_nm'])
         rho_PDI, p_PDI  = stats.spearmanr(full3['FQS'], -full3['PDI_val'])
@@ -1512,7 +1539,6 @@ class FQS:
 
         ax.set_xlabel(f'P(EE$\\geq$80%)')
         ax.set_ylabel('Desirability Score')
-        # ax.set_title(r'$d_{EE}$ (USP/FDA threshold: EE≥80%)')
         ax.legend(fontsize=6, loc='upper left')
         ax.set_xlim([0, 1]); ax.set_ylim([0, 1.05])
 
@@ -1526,7 +1552,6 @@ class FQS:
         ax.plot(P_range, P_range, ls='--', color='grey', lw=1, label='r=1 (linear)')
         for i in range(2,10):
             ax.plot(P_range, d_EE(P_range, r=i), color=PUB_PALETTE[i], lw=1.5, label=f'r={i}')
-            # ax.fill_between(P_range, 0, d_EE(P_range, r=i), color=PUB_PALETTE[0], alpha=0.15)
 
         ax.set_xlabel(f'P(EE$\\geq$80%)')
         ax.set_ylabel('Desirability Score')
@@ -1618,20 +1643,10 @@ class ModelComparison:
                 aps.append(average_precision_score(y[te], prob))
             print(f'{name:<32}  {np.mean(aucs):.3f}±{np.std(aucs):.3f}     {np.mean(aps):.3f}±{np.std(aps):.3f}')
 
-        # --------------------------- Bootstrap confidence intervals for all key metrics ---------------------------
-        def bootstrap_ci(y_true, y_prob, metric_fn, n_boot=1000, ci=95, seed=42):
-            rng = np.random.RandomState(seed)
-            n = len(y_true)
-            scores = []
-            for _ in range(n_boot):
-                idx = rng.choice(n, n, replace=True)
-                try:
-                    scores.append(metric_fn(y_true[idx], y_prob[idx]))
-                except:
-                    pass
-            lo = np.percentile(scores, (100-ci)/2)
-            hi = np.percentile(scores, 100-(100-ci)/2)
-            return np.mean(scores), lo, hi
+        # NOTE: an unused `bootstrap_ci()` pooled-probability helper previously lived
+        # here. It has been removed: pooling raw probabilities across GroupKFold folds
+        # with different per-fold calibration is invalid (see the note below), and the
+        # function was dead code -- `bootstrap_ci_from_folds` below is what's actually used.
 
         # Get XGBoost OOF probs for comparison
         try:
@@ -1649,7 +1664,6 @@ class ModelComparison:
             xgb_probs = all_y_prob  # fallback
             print('XGBoost not installed — using RF as comparison')
 
-        # ExtraTrees OOF (ExtraTreesClassifier already imported at module level)
         et = ExtraTreesClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
         et_probs = np.zeros(len(y))
         for tr, te in gkf.split(X_D, y, groups):
@@ -1657,12 +1671,6 @@ class ModelComparison:
             et_probs[te] = et.predict_proba(X_D.iloc[te])[:,1]
 
         # --------------------------- Bootstrap CIs: per-fold (NOT pooled) ---------------------------
-        # Pooling raw OOF probabilities across heterogeneous GroupKFold folds is invalid
-        # here — ExtraTrees/XGBoost's per-fold probability scale drifts (randomized splits /
-        # per-fold scale_pos_weight recalibration), so concatenating and ranking the pool
-        # together collapses AUC toward chance even though each fold discriminates fine on
-        # its own (see Section 8's correct mean-of-fold numbers). We bootstrap over FOLD-LEVEL
-        # AUCs instead of pooled probabilities, which is valid regardless of cross-fold scale.
         def fold_aucs(model, X, y, groups, gkf):
             aucs = []
             for tr, te in gkf.split(X, y, groups):
@@ -1688,43 +1696,38 @@ class ModelComparison:
             m, lo, hi = bootstrap_ci_from_folds(scores)
             print(f'{name:<20}  AUC={m:.3f} [{lo:.3f}–{hi:.3f}]  (per-fold: {np.round(scores,3).tolist()})')
 
-        # --------------------------- Paired significance test on the 5 matched folds ---------------------------
         print('\n=== Paired Wilcoxon signed-rank test on matched per-fold AUCs ===')
         for name, scores in [('ExtraTrees', et_fold_aucs), ('XGBoost' if has_xgb else 'XGB/RF', xgb_fold_aucs)]:
             diff = rf_fold_aucs - scores
             try:
                 stat, p = wilcoxon(diff)
             except ValueError:
-                stat, p = np.nan, np.nan  # all-zero differences etc.
+                stat, p = np.nan, np.nan
             print(f'RF vs {name}: mean $\\Delta$AUC={diff.mean():+.3f}, Wilcoxon p={p:.3f}  '
                   f'(n=5 folds -- treat as indicative, not a high-powered test)')
         print('(p<0.05 = statistically significant difference; p>0.05 = not significant)')
 
-        # --------------------------- McNemar's test (unaffected by the pooling issue -- kept as-is, uses full OOF preds) ---------------------------
         pred_rf = (all_y_prob >= 0.5).astype(int)
         pred_et = (et_probs   >= 0.5).astype(int)
-        b = ((pred_rf==1) & (pred_et==0)).sum()  # RF correct, ET wrong
-        c = ((pred_rf==0) & (pred_et==1)).sum()  # RF wrong, ET correct
+        b = ((pred_rf==1) & (pred_et==0)).sum()
+        c = ((pred_rf==0) & (pred_et==1)).sum()
         mcnemar_stat = (abs(b-c)-1)**2 / (b+c) if (b+c) > 0 else 0
         mcnemar_p = 1 - stats.chi2.cdf(mcnemar_stat, df=1)
         print(f'\n=== McNemar Test (RF vs ExtraTrees at threshold=0.5, pooled thresholded predictions) ===')
         print(f'Disagreements: RF-correct/ET-wrong={b}, RF-wrong/ET-correct={c}')
         print(f'McNemar χ²={mcnemar_stat:.2f}, p={mcnemar_p:.3f}')
-        print('Note: McNemar compares thresholded (0/1) predictions, which is robust to the pooling issue above -- unlike raw pooled AUC.')
 
         # --------------------------- Data leakage proof ---------------------------
         n_repeats_leak = 20
         random_aucs, group_aucs, group_shuffle_aucs = [], [], []
         rfc_leak = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
         for rep in range(n_repeats_leak):
-            # 1. Stratified random split
             skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=rep)
             aucs_r = []
             for tr, te in skf.split(X_D, y):
                 rfc_leak.fit(X_D.iloc[tr], y[tr])
                 aucs_r.append(roc_auc_score(y[te], rfc_leak.predict_proba(X_D.iloc[te])[:,1]))
             random_aucs.append(np.mean(aucs_r))
-            # 2. GroupKFold
             aucs_g = []
             for tr, te in gkf.split(X_D, y, groups):
                 rfc_leak.fit(X_D.iloc[tr], y[tr])
@@ -1743,14 +1746,12 @@ class ModelComparison:
 
         fig, axes = plt.subplots(1, 2, figsize=(7, 3))
         color = PUB_PALETTE[:8]
-        # Box plot comparison
         data_box = [random_aucs, group_aucs]
         bp = axes[0].boxplot(data_box, labels=['Random\n(StratifiedKFold)\n(WRONG)','GroupKFold\n(lipid-held-out)\n(CORRECT)'],
                              patch_artist=True, notch=True)
         bp['boxes'][0].set_facecolor(color[5]); bp['boxes'][0].set_alpha(0.6)
         bp['boxes'][1].set_facecolor(color[1]); bp['boxes'][1].set_alpha(0.6)
         axes[0].set_ylabel('ROC-AUC (20 repeats)')
-        # Paired scatter
         axes[1].scatter(random_aucs, group_aucs, alpha=0.7, s=40, color=color[4], zorder=3)
         lims = [min(min(random_aucs),min(group_aucs))-0.02, max(max(random_aucs),max(group_aucs))+0.02]
         axes[1].plot(lims, lims, 'k--', lw=1.5, label='y=x (no inflation)')
@@ -1762,7 +1763,7 @@ class ModelComparison:
         save_pub_figure(fig, 'fig_sec11B_leakage_proof', width='double')
         plt.show()
 
-        # --------------------------- Baseline Classifiers (Context for AUC/AP) ---------------------------
+        # --------------------------- Baseline Classifiers ---------------------------
         def cv_eval(X, y, groups, model):
             aucs, aps = [], []
             for tr, te in gkf.split(X, y, groups):
@@ -1786,18 +1787,10 @@ class ModelComparison:
               f"(baseline AUC is 0.5 by construction).")
 
         # --------------------------- Leave-One-Publication-Out Validation ---------------------------
-        """
-        The main model uses `GroupKFold` grouped by ionizable lipid — a formulation's
-        lipid never appears in both train and test, but formulations from the same publication (same lab,
-        same instruments, same protocol) still can. This repeats the same GroupKFold procedure grouped by
-        publication instead, plus a true leave-one-publication-out sweep, to test whether performance
-        holds up across labs and not just across chemistry.
-        """
         paper_key = clean_df['paper_doi'].fillna(clean_df['paper_title']).values
         n_papers = len(set(paper_key))
         print(f'{n_papers} unique publications in the curated dataset')
 
-        # --------------------------- 5-fold GroupKFold grouped by publication (directly comparable to the main result) ---------------------------
         gkf_paper = GroupKFold(n_splits=5)
         rfc_paper = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
         aucs_p, aps_p = [], []
@@ -1810,7 +1803,6 @@ class ModelComparison:
         print(f'(Main model, GroupKFold by LIPID):   AUC={results_df["AUC"].mean():.3f}±{results_df["AUC"].std():.3f}  '
               f'AP={results_df["AP"].mean():.3f}±{results_df["AP"].std():.3f}')
 
-        # --------------------------- True leave-one-publication-out (pooled OOF, skipping folds with a single class in train) ---------------------------
         logo = LeaveOneGroupOut()
         all_t2, all_p2, n_folds_used = [], [], 0
         for tr, te in logo.split(X_D, y, paper_key):
@@ -1823,8 +1815,7 @@ class ModelComparison:
         auc_logo = roc_auc_score(all_t2, all_p2); ap_logo = average_precision_score(all_t2, all_p2)
         print(f'\nTrue leave-one-publication-out ({n_folds_used}/{n_papers} publications used): '
               f'pooled AUC={auc_logo:.3f}, AP={ap_logo:.3f}')
-        
-        # --------------------------- Bootstraping the pooled leave-one-publication-out AUC ---------------------------
+
         n_boot = 2000
         boot_aucs = []
         rng = np.random.RandomState(42)
@@ -1841,7 +1832,6 @@ class ModelComparison:
             f"a pooled ROC-AUC of {auc_logo:.3f} "
             f"(95% CI: {ci_low:.3f}-{ci_high:.3f}).")
 
-        # --------------------------- Plotting the comparison of AUCs ---------------------------
         fig, ax = plt.subplots(figsize=(7, 3))
         labels = ['By ionizable\nlipid (main)', 'By publication\n(5-fold)', 'By publication\n(true LOO)']
         vals = [results_df['AUC'].mean(), np.mean(aucs_p), auc_logo]
@@ -1862,37 +1852,43 @@ class ModelComparison:
             f"lab/protocol-specific signal (e.g. size/PDI measurement conventions, batch effects) that the "
             f"model is partly relying on, beyond pure lipid chemistry. Report both numbers in the manuscript "
             f"and discuss the gap honestly rather than only citing the more favorable lipid-grouped AUC.")
-        
-        # --------------------------- Compare groupings ---------------------------
-        """"
-        Complements the lipid- and publication-grouped cross-validation above with a chronological split: 
-        train on older publications, test on the most recent ones. 
-        This is a stricter, more prospective-like test than leave-one-publication-out, 
-        since the model has no access to any formulation chemistry or lab practice that postdates its training window.
-        """
 
         # --------------------------- Temporal Holdout Validation ---------------------------
+        # FIX: sanity-bound any year parsed via regex fallback. A DOI or title can
+        # contain an incidental 4-digit substring (article/journal IDs, etc.) that
+        # looks like a year but isn't -- e.g. matching a DOI suffix. We restrict
+        # accepted years to a plausible publication window and flag/drop anything
+        # outside it rather than silently feeding a wrong year into the temporal
+        # drift analysis.
+        YEAR_MIN, YEAR_MAX = 1990, 2026
         YEAR_CANDIDATES = ['publication_year', 'pub_year', 'year', 'paper_year']
         year_col = next((c for c in YEAR_CANDIDATES if c in clean_df.columns), None)
         if year_col is None:
-            # Fallback: parse a 4-digit year from title/DOI text if no explicit year column exists.
             def extract_year(row):
                 for field in ['paper_title', 'paper_doi']:
                     if field in clean_df.columns and pd.notna(row.get(field)):
-                        m = re.search(r'(19|20)\d{2}', str(row[field]))
-                        if m: return int(m.group(0))
+                        for m in re.finditer(r'(19|20)\d{2}', str(row[field])):
+                            candidate = int(m.group(0))
+                            if YEAR_MIN <= candidate <= YEAR_MAX:
+                                return candidate
                 return np.nan
             clean_df['pub_year_parsed'] = clean_df.apply(extract_year, axis=1)
             year_col = 'pub_year_parsed'
             n_recovered = clean_df[year_col].notna().sum()
-            print(f'No explicit year column found -- parsed {n_recovered}/{len(clean_df)} years from title/DOI text.')
+            print(f'No explicit year column found -- parsed {n_recovered}/{len(clean_df)} years from title/DOI text '
+                  f'(regex matches outside [{YEAR_MIN}, {YEAR_MAX}] were rejected as likely DOI/ID artifacts, not years).')
             print('If this recovers too few rows, point year_col at the correct column from the raw LNP_Atlas_DB CSV.')
+        else:
+            n_out_of_range = (~clean_df[year_col].between(YEAR_MIN, YEAR_MAX) & clean_df[year_col].notna()).sum()
+            if n_out_of_range > 0:
+                print(f'WARNING: {n_out_of_range} rows in "{year_col}" fall outside [{YEAR_MIN}, {YEAR_MAX}] -- '
+                      f'these are set to NaN before the temporal analysis rather than trusted as-is.')
+                clean_df.loc[~clean_df[year_col].between(YEAR_MIN, YEAR_MAX), year_col] = np.nan
 
         print(clean_df[year_col].describe())
 
-        # --------------------------- Chronological split: train on older publications, test on the most recent ---------------------------
         valid = clean_df[year_col].notna()
-        cutoff = clean_df.loc[valid, year_col].quantile(0.50)  # 50th percentile cutoff for temporal holdout
+        cutoff = clean_df.loc[valid, year_col].quantile(0.50)
         print(f'\nTemporal cutoff (50th percentile of publication year): {cutoff:.0f}')
         train_idx = clean_df[valid & (clean_df[year_col] <= cutoff)].index
         test_idx  = clean_df[valid & (clean_df[year_col]  > cutoff)].index
@@ -1910,8 +1906,6 @@ class ModelComparison:
         else:
             print('\nTest set too small or single-class after filtering -- widen the cutoff quantile or check year parsing.')
 
-
-        # ---------------------------Temporal drift analysis ---------------------------
         print("\n=== Temporal Drift Analysis ===")
         quantiles = [0.20, 0.30, 0.40, 0.50, 0.60, 0.70]
         temporal_results = []
@@ -1924,14 +1918,12 @@ class ModelComparison:
             if not (0 < y[test_idx].sum() < len(test_idx)):
                 continue
 
-            # --------------------------- AUC / AP ---------------------------
             rf_temp = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
             rf_temp.fit(X_D.loc[train_idx], y[train_idx])
             prob_temp = rf_temp.predict_proba(X_D.loc[test_idx])[:, 1]
             auc_temp = roc_auc_score(y[test_idx], prob_temp)
             ap_temp = average_precision_score(y[test_idx], prob_temp)
 
-            # --------------------------- Chemical novelty ---------------------------
             train_lipids = clean_df.loc[train_idx, 'ionizable_lipid_smiles'].unique()
             test_lipids = clean_df.loc[test_idx, 'ionizable_lipid_smiles'].unique()
             train_fp = np.vstack([self.state.count_fp_array(x) for x in train_lipids])
@@ -1941,7 +1933,6 @@ class ModelComparison:
             dist, _ = nn.kneighbors(test_fp > 0)
             mean_novelty = float(dist.mean())
 
-            # --------------------------- Number of lipids ---------------------------
             train_n_lipids = (clean_df.loc[train_idx, 'ionizable_lipid_smiles'].nunique())
             test_n_lipids = (clean_df.loc[test_idx, 'ionizable_lipid_smiles'].nunique())
             temporal_results.append({
@@ -1961,14 +1952,11 @@ class ModelComparison:
         print(f"Novelty-AUC correlation: "
             f"rho={rho:.3f}, p={p:.3f}")
 
-        # --------------------------- plot temporal drift ---------------------------
         fig, axes = plt.subplots(1, 2, figsize=(10,3))
-        # --------------------------- Panel A ---------------------------
         axes[0].plot(temporal_df['cutoff_year'], temporal_df['AUC'], marker='o', lw=1.5, color=PUB_PALETTE[0])
         axes[0].set_xlabel('Latest publication year in training set')
         axes[0].set_ylabel('Temporal holdout ROC-AUC')
         axes[0].set_ylim([0.5, 1.0])
-        # --------------------------- Panel B ---------------------------
         axes[1].plot(temporal_df['cutoff_year'], temporal_df['mean_novelty'], marker='s', lw=1.5, color=PUB_PALETTE[1])
         axes[1].set_xlabel('Latest publication year in training set')
         axes[1].set_ylabel('Mean chemical novelty')
@@ -1977,7 +1965,7 @@ class ModelComparison:
         save_pub_figure(fig, 'fig_temporal_drift', width='double')
         plt.show()
 
-        # --------------------------- Publication-grouped control (target ~122 train samples) ---------------------------
+        # --------------------------- Publication-grouped control ---------------------------
         target_train_size = 122
         paper_groups = clean_df['paper_doi'].fillna(clean_df['paper_title'])
         aucs = []
@@ -2003,7 +1991,7 @@ class ModelComparison:
             print(f'AUC = {np.mean(aucs):.3f} ± {np.std(aucs):.3f}')
             print(f'AP  = {np.mean(aps):.3f} ± {np.std(aps):.3f}')
 
-        # --------------------------- Sigmoid (Platt) Calibration vs. Isotonic vs. Uncalibrated ---------------------------
+        # --------------------------- Calibration ---------------------------
         def ece_score(y_true, y_prob, n_bins=10):
             bins = np.linspace(0, 1, n_bins + 1)
             ece, n_total = 0.0, len(y_true)
@@ -2014,7 +2002,6 @@ class ModelComparison:
             return ece
 
         def oof_calibrated_probs(method):
-            """Nested-CV calibrated OOF probabilities, mirroring Section B's isotonic setup."""
             probs = np.zeros(len(y))
             for tr, te in gkf.split(X_D, y, groups):
                 cal_clf = CalibratedClassifierCV(
@@ -2025,26 +2012,22 @@ class ModelComparison:
                 probs[te] = cal_clf.predict_proba(X_D.iloc[te])[:, 1]
             return probs
 
-        # --------------------------- Uncalibrated (reuses Section 6's OOF predictions) ---------------------------
         brier_uncal = brier_score_loss(all_y_true, all_y_prob)
         ece_uncal   = ece_score(all_y_true, all_y_prob)
         ptrue_uncal, ppred_uncal = calibration_curve(all_y_true, all_y_prob, n_bins=10, strategy='quantile')
 
-        # --------------------------- Isotonic ---------------------------
         print('Fitting isotonic calibration (nested CV) ...')
         prob_isotonic = oof_calibrated_probs('isotonic')
         brier_iso = brier_score_loss(y, prob_isotonic)
         ece_iso   = ece_score(y, prob_isotonic)
         ptrue_iso, ppred_iso = calibration_curve(y, prob_isotonic, n_bins=10, strategy='quantile')
 
-        # --------------------------- Sigmoid / Platt -------------------------------------------------------------
         print('Fitting sigmoid (Platt) calibration (nested CV) ...')
         prob_sigmoid = oof_calibrated_probs('sigmoid')
         brier_sig = brier_score_loss(y, prob_sigmoid)
         ece_sig   = ece_score(y, prob_sigmoid)
         ptrue_sig, ppred_sig = calibration_curve(y, prob_sigmoid, n_bins=10, strategy='quantile')
 
-        # --------------------------- Summary table -------------------------------------------------------------
         calib_summary = pd.DataFrame([
             {'Method': 'Uncalibrated (native RF)', 'Brier': brier_uncal, 'ECE': ece_uncal},
             {'Method': 'Isotonic',                  'Brier': brier_iso,  'ECE': ece_iso},
@@ -2055,7 +2038,6 @@ class ModelComparison:
         best = calib_summary.iloc[0]['Method']
         print(f'Best by Brier score: {best}')
 
-        # --------------------------- Reliability diagram: all three ---------------------------
         fig, axes = plt.subplots(1, 2, figsize=(7, 3))
         axes[0].plot([0, 1], [0, 1], 'k--', lw=1, label='Perfect calibration')
         axes[0].plot(ppred_uncal, ptrue_uncal, 'd', color=PUB_PALETTE[0], ms=4, label=f'Uncalibrated (ECE={ece_uncal:.3f})')
@@ -2097,10 +2079,6 @@ class SaveAndPredictAPI:
         best_t = self.state.best_t
         compute_FQS = self.state.compute_FQS
 
-        # Train final model on full data (used for prediction on NEW formulations)
-        # Note: for calibrated probabilities, we use the OOF probs already computed
-        # (all_y_prob) — those ARE calibrated by nature of being OOF.
-        # The final model below is trained on all data for deployment.
         clf_final = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
         print('Training final model on full dataset...')
         clf_final.fit(X_D, y)
@@ -2117,10 +2095,10 @@ class SaveAndPredictAPI:
             'fp_radius':        3,
             'fp_nbits':         512,
             'ee_threshold':     80,
-            # Balanced-accuracy-optimal cutoff on OOF predictions (Section 9.2), not an
-            # arbitrary default. Chosen on the same OOF set used to report performance,
-            # so treat as an operating point rather than a guaranteed-optimal threshold
-            # on future data -- AUC/AP (threshold-free) remain the primary reported metrics.
+            # Nested-CV-selected balanced-accuracy-optimal cutoff (Section 9), not an
+            # arbitrary default and not picked on the same pooled test set it's reported
+            # against (see PrimaryModel docstring). Still an operating point, not a
+            # guaranteed-optimal threshold on future data -- AUC/AP remain primary.
             'decision_threshold': round(float(best_t), 3),
             'lipid_order':      ['ionizable','helper','sterol','peg'],
             'training_n':       len(X_D),
@@ -2137,19 +2115,6 @@ class SaveAndPredictAPI:
                         model_bundle=None, model_path='lnp_classifier.pkl'):
             '''
             Predict EE% class and Formulation Quality Score for a new LNP.
-
-            Parameters
-            ----------
-            ionizable_smiles, helper_smiles, sterol_smiles, peg_smiles : str
-                SMILES strings for each lipid component.
-            molar_ratio : str
-                Format 'IL:PEG:sterol:helper', e.g. '50:1.5:38.5:10'
-            size_nm, pdi : float, optional
-                If provided, FQS uses all 3 components. Otherwise EE-only FQS.
-
-            Returns
-            -------
-            dict with prob_high_EE, prediction, confidence, FQS, FQS_grade, d_EE, d_size, d_PDI
             '''
             if model_bundle is None:
                 with open(model_path,'rb') as f: model_bundle = pickle.load(f)
@@ -2157,7 +2122,6 @@ class SaveAndPredictAPI:
             clf       = model_bundle['model']
             active_fp = model_bundle['active_fp_cols']
 
-            # --------------------------- Validate SMILES ---------------------------
             smiles_map = {'ionizable':ionizable_smiles,'helper':helper_smiles,
                           'sterol':sterol_smiles,'peg':peg_smiles}
             mols = {}
@@ -2166,7 +2130,6 @@ class SaveAndPredictAPI:
                 if mol is None: return {'valid':False,'error':f'Invalid SMILES for {name}: {smi}'}
                 mols[name] = mol
 
-            # --------------------------- Parse ratio ---------------------------
             try:
                 parts = [float(x) for x in str(molar_ratio).strip().split(':')]
                 assert len(parts)==4
@@ -2175,7 +2138,6 @@ class SaveAndPredictAPI:
             except Exception as e:
                 return {'valid':False,'error':f'Invalid molar ratio: {e}'}
 
-            # --------------------------- Fingerprints ---------------------------
             fpgen_local = rdFingerprintGenerator.GetMorganGenerator(
                 radius=model_bundle['fp_radius'], fpSize=model_bundle['fp_nbits'])
 
@@ -2193,13 +2155,11 @@ class SaveAndPredictAPI:
             feat.update({'ion_frac':ion_f,'peg_frac':peg_f,'sterol_frac':ste_f,'helper_frac':hel_f})
             X_new = pd.DataFrame([feat])[model_bundle['feature_names']]
 
-            # --------------------------- Predict ---------------------------
             prob = float(clf.predict_proba(X_new)[0,1])
             is_high = prob >= model_bundle['decision_threshold']
             dist = abs(prob - 0.5)
             conf = 'High' if dist>0.25 else ('Moderate' if dist>0.10 else 'Low')
 
-            # --------------------------- FQS ---------------------------
             fqs_r = compute_FQS(prob, size_nm=size_nm, pdi=pdi)
             fqs   = fqs_r['FQS']
             grade = 'Excellent' if fqs>=75 else ('Good' if fqs>=55 else ('Moderate' if fqs>=35 else 'Poor'))
@@ -2217,13 +2177,12 @@ class SaveAndPredictAPI:
                 'valid':        True, 'error': None,
             }
 
-        # --------------------------- Demo predictions ---------------------------
         CHOLESTEROL = 'OC1CCC2(C)C(CCC3C2CC=C2C3(C)CCC(C(C)CCCC(C)C)C2)C1'
         DSPC        = 'CCCCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[NH3+])OC(=O)CCCCCCCCCCCCCCCC'
         DMG_PEG     = 'CCCCCCCCCCCCCCCCCC(=O)OCC(OC(=O)CCCCCCCCCCCCCCCCC)COC(=O)OCC(O)COCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCCOCC'
         MC3         = 'O=C(OCCC(OC(=O)CCCCCCC/C=C\\CCCCCCCC)COCCN(CC)CC)CCCCCCC/C=C\\CCCCCCCC'
 
-        bundle = model_bundle  # already in memory
+        bundle = model_bundle
         print('Demo Prediction')
         print('=== MC3 — standard mRNA-LNP formulation ===')
         r = predict_lnp(MC3, DSPC, CHOLESTEROL, DMG_PEG, '50:1.5:38.5:10',
@@ -2235,7 +2194,6 @@ class SaveAndPredictAPI:
                          size_nm=220.0, pdi=0.45, model_bundle=bundle)
         for k,v in r2.items(): print(f'  {k}: {v}')
 
-        # expose to later sections
         self.state.MC3 = MC3
         self.state.DSPC = DSPC
         self.state.CHOLESTEROL = CHOLESTEROL
@@ -2257,20 +2215,15 @@ class ConformalPrediction:
         self.state = state
 
     def run(self):
-        """Execute this section (notebook cells [33]) and update shared state."""
         all_y_true = self.state.all_y_true
         all_y_prob = self.state.all_y_prob
         predict_lnp = self.state.predict_lnp
-        alpha = 0.10  # target 90% coverage
+        alpha = 0.10
 
-        # Uses the OOF probabilities from (all_y_true, all_y_prob) -- genuinely
-        # out-of-fold, so splitting them further into calibration/test is a valid conformal
-        # procedure and introduces no additional leakage.
         oof_idx = np.arange(len(all_y_true))
         calib_idx, conftest_idx = train_test_split(oof_idx, test_size=0.5, random_state=42, stratify=all_y_true)
 
         def nonconformity(y_true, prob_pos):
-            """1 - P(true class): standard binary nonconformity score."""
             p_true = np.where(y_true == 1, prob_pos, 1 - prob_pos)
             return 1 - p_true
 
@@ -2281,10 +2234,9 @@ class ConformalPrediction:
         print(f'Conformal threshold q_hat = {q_hat:.3f} at alpha={alpha} (target coverage {1-alpha:.0%})')
 
         def conformal_predict_set(prob_pos, q_hat):
-            """Return the set of labels {0,1} whose nonconformity <= q_hat."""
             labels = []
-            if (1 - prob_pos) <= q_hat: labels.append(1)  # High EE not rejected
-            if prob_pos <= q_hat:       labels.append(0)  # Low EE not rejected
+            if (1 - prob_pos) <= q_hat: labels.append(1)
+            if prob_pos <= q_hat:       labels.append(0)
             return labels
 
         test_probs = all_y_prob[conftest_idx]
@@ -2303,7 +2255,6 @@ class ConformalPrediction:
             print(f'Accuracy on confident (singleton) predictions: {singleton_acc:.3f}')
 
         def predict_lnp_conformal(*args, q_hat=q_hat, **kwargs):
-            """Wraps predict_lnp with a conformal prediction set at the calibrated q_hat."""
             result = predict_lnp(*args, **kwargs)
             if not result.get('valid', True):
                 return result
@@ -2313,7 +2264,6 @@ class ConformalPrediction:
             result['conformal_confident'] = len(pset) == 1
             return result
 
-        # expose to later sections (needed by FeedbackLoop's active-learning acquisition function)
         self.state.q_hat = q_hat
         self.state.conformal_predict_set = conformal_predict_set
         return self.state
@@ -2340,8 +2290,6 @@ class ErrorAnalysis:
         all_y_prob = self.state.all_y_prob
         best_t = self.state.best_t
 
-        # --------------------------- Compute AD/kNN distance FIRST and assign to clean_df before ---------------------------
-        # slicing TP/TN/FP/FN, so the profiling below actually sees 'knn_dist' ──
         ion_fp_cols = [c for c in fp_matrix.columns if c.startswith('ionizable_')]
         X_ion = fp_matrix[ion_fp_cols].values
 
@@ -2352,9 +2300,8 @@ class ErrorAnalysis:
         knn_dists = dists[:, 1:].mean(axis=1)
         ad_threshold = np.percentile(knn_dists, 95)
 
-        clean_df['knn_dist'] = knn_dists  # <-- now populated before FP/FN are sliced
+        clean_df['knn_dist'] = knn_dists
 
-        # --------------------------- Classify OOF predictions ---------------------------
         clean_df['pred_label']   = (all_y_prob >= best_t).astype(int)
         clean_df['true_label']   = all_y_true
         clean_df['pred_prob']    = all_y_prob
@@ -2390,7 +2337,6 @@ class ErrorAnalysis:
                 print(f'  Mean kNN dist:     {FN["knn_dist"].mean():.4f}')
             print(f'  Unique ionizable lipids: {FN["ionizable_lipid_smiles"].nunique()}')
 
-        # --------------------------- Visualise error patterns ---------------------------
         fig, axes = plt.subplots(1, 3, figsize=(8, 3))
         colors = PUB_PALETTE[:16]
         axes[0].hist(TP['pred_prob'], bins=20, alpha=0.6, color=colors[0], edgecolor='white', label=f'TP (n={len(TP)})', density=True)
@@ -2405,7 +2351,6 @@ class ErrorAnalysis:
         axes[1].axvline(80, color='black', lw=1.5, ls='--', label='EE threshold')
         axes[1].set_xlabel('True EE%'); axes[1].set_ylabel('Count')
         axes[1].legend()
-        # --------------------------- kNN distance for errors vs correct ---------------------------
         error_mask = clean_df['true_label'] != clean_df['pred_label']
         axes[2].hist(clean_df.loc[~error_mask, 'knn_dist'], bins=20, alpha=0.6, color=colors[6], label='Correct', density=True, edgecolor='white')
         axes[2].hist(clean_df.loc[error_mask, 'knn_dist'], bins=20, alpha=0.6, color=colors[5], label='Misclassified', density=True, edgecolor='white')
@@ -2441,16 +2386,11 @@ class LearningCurve:
         y = self.state.y
         groups = self.state.groups
 
-        # --------------------------- Learning curve using GroupShuffleSplit ---------------------------
-        # Can't use sklearn's built-in learning_curve with GroupKFold easily,
-        # so we implement a custom version respecting lipid groups
-
         train_sizes_pct = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
         n_repeats = 10
         lc_results = {sz: [] for sz in train_sizes_pct}
         rfc_lc = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
 
-        # Fixed test set: 20% of lipids, held out for all runs
         gss_outer = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
         train_pool_idx, test_idx = next(gss_outer.split(X_D, y, groups))
         X_pool, y_pool, g_pool = X_D.iloc[train_pool_idx], y[train_pool_idx], groups[train_pool_idx]
@@ -2502,6 +2442,13 @@ class LearningCurve:
 # ============================================================================
 # Section12 SHAP
 # ============================================================================
+# FIX: one shared ester SMARTS pattern, used everywhere in this section instead of
+# three slightly different ad hoc patterns ('[CX3](=O)[OX2H0][#6]' in the SMARTS
+# enrichment library, 'C(=O)O[#6]' in the headgroup/linker/tail GROUPS dict, and the
+# bare 'C(=O)O' used by the SHAP case-study edit). All three should be counting the
+# same functional group.
+ESTER_SMARTS = 'C(=O)O[#6]'
+
 class SHAP:
     """
     SHAP interpretability: important bits, their chemistry, functional-group correlations, SMARTS enrichment, and a SHAP-guided design case study.
@@ -2519,6 +2466,12 @@ class SHAP:
         y = self.state.y
         predict_lnp = self.state.predict_lnp
 
+        # Running collector for the GLOBAL multiple-testing correction at the end of
+        # this section (FIX: previously each sub-analysis table corrected its own
+        # p-values in isolation, which understates the true false-discovery rate when
+        # dozens of overlapping tests are run across the section as a whole).
+        global_pvals = []   # list of dicts: {'analysis': ..., 'feature': ..., 'p': ...}
+
         rf_final = RandomForestClassifier(n_estimators=500, class_weight='balanced', random_state=42, n_jobs=-1)
         rf_final.fit(X_D, y)
 
@@ -2530,18 +2483,14 @@ class SHAP:
         print('Computing SHAP values...')
         shap_values = explainer.shap_values(X_sample)
 
-        #--------------------------- Handle SHAP output shape ---------------------------
         if isinstance(shap_values, list):
-            # --------------------------- Old API: list[n_classes] of (n_samples, n_features) ---------------------------
-            shap_high = np.array(shap_values[1])  # shape: (n_samples, n_features)
+            shap_high = np.array(shap_values[1])
         elif shap_values.ndim == 3:
-            # --------------------------- New API: (n_samples, n_features, n_classes) ---------------------------
-            shap_high = shap_values[:, :, 1]      # shape: (n_samples, n_features)
+            shap_high = shap_values[:, :, 1]
         else:
-            # --------------------------- Already 2D (regression or binary shorthand) ---------------------------
             shap_high = shap_values
 
-        print(f'SHAP matrix: {shap_high.shape}. Done.')  # should be (200, 824)
+        print(f'SHAP matrix: {shap_high.shape}. Done.')
 
         def assign_component(col):
             if col == 'ion_frac':
@@ -2557,28 +2506,22 @@ class SHAP:
                     return f'{prefix} FP'
             return 'Other'
 
-        # mean_abs_shap: mean over samples → 1D array of length n_features
         mean_abs_shap = pd.Series(np.abs(shap_high).mean(axis=0), index=X_D.columns)
         comp_shap = mean_abs_shap.groupby(mean_abs_shap.index.map(assign_component)).sum().sort_values(ascending=False)
         print('\nMean |SHAP| by component:')
         print(comp_shap.round(4))
 
-        # --------------------------- Top 20 summary plot ---------------------------
         top20_idx  = mean_abs_shap.sort_values(ascending=False).head(20).index
         X_top20    = X_sample[top20_idx]
         shap_top20 = shap_high[:, [X_D.columns.get_loc(c) for c in top20_idx]]
 
-        # shap.summary_plot(shap_top20, X_top20, feature_names=list(top20_idx),
-        #                   show=False, plot_type='violin', color=plt.get_cmap('viridis'))
-
-        fig = plt.figure(figsize=(5, 10)) # Explicitly define dimensions if needed
+        fig = plt.figure(figsize=(5, 10))
         shap.summary_plot(shap_top20, X_top20, feature_names=list(top20_idx), show=False, plot_type='violin', color=plt.get_cmap('viridis'))
 
-        # --------------------------- Aesthetic Overrides ---------------------------
         ax = plt.gca()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#cccccc') # Lighten remaining borders
+        ax.spines['left'].set_color('#cccccc')
         ax.spines['bottom'].set_color('#cccccc')
         plt.xlabel('SHAP value | impact on model output', fontsize=7)
         plt.ylabel('Feature', fontsize=7)
@@ -2588,44 +2531,29 @@ class SHAP:
         save_pub_figure(fig, 'fig_sec12_shap_summary', width='double')
         plt.show()
 
-        # --------------------------- SHAP component bar chart ---------------------------
         fig, ax = plt.subplots(figsize=(7, 3))
         colors = PUB_PALETTE[1:5]
         comp_shap.sort_values().plot.barh(ax=ax, color=colors, edgecolor='white', alpha=0.6)
         ax.set_xlabel('Mean |SHAP value|')
-        # ax.set_title('SHAP Importance by Lipid Component', fontsize=11)
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec12_shap_components', width='double')
         plt.show()
 
-        # --------------------------- Get top SHAP features ---------------------------
         top_ion_shap = (
             mean_abs_shap[mean_abs_shap.index.str.startswith('ionizable_fp')]
             .sort_values(ascending=False)
             .head(20)
         )
 
-        # --------------------------- For each top bit: find which molecules activate it, then characterise ---------------------------
-        # We compute a named chemical feature profile for each top bit
-
         def characterise_bit(bit_col, df, lipid_col='ionizable_lipid_smiles', top_n=5):
-            """
-            For a fingerprint bit column name (e.g. 'ionizable_fp213'),
-            find formulations where this bit is activated (count > 0),
-            extract the lipid SMILES, and characterise what structural features they share.
-            """
             bit_idx = int(bit_col.split('fp')[1])
-
-            # --------------------------- Get ionizable FP values for this bit ---------------------------
             ion_fp_col = fp_matrix[[c for c in fp_matrix.columns if c.startswith('ionizable_')]]
             bit_vals = ion_fp_col[bit_col] if bit_col in ion_fp_col.columns else pd.Series(np.zeros(len(df)))
             active_mask = bit_vals > 0
             n_active = active_mask.sum()
             active_ee_mean = df.loc[active_mask.values[:len(df)], 'EE'].mean() if n_active > 0 else np.nan
             inactive_ee_mean = df.loc[~active_mask.values[:len(df)], 'EE'].mean()
-            # --------------------------- Sample active SMILES ---------------------------
             active_smiles = df.loc[active_mask.values[:len(df)], lipid_col].unique()[:top_n]
-            # --------------------------- Compute Fragments for active molecules ---------------------------
             fragment_counts = {}
             frag_names = [
                 ('fr_NH2', 'Primary amine'), ('fr_NH1', 'Secondary amine'), ('fr_NH0', 'Tertiary amine'),
@@ -2639,7 +2567,6 @@ class SHAP:
                     val = getattr(Fragments, attr)(mol)
                     fragment_counts[name] = fragment_counts.get(name, 0) + val
 
-            # ---------------------------Top fragments ---------------------------
             top_frags = sorted(fragment_counts.items(), key=lambda x: -x[1])
             top_frag_str = ', '.join([f'{n}({v})' for n, v in top_frags[:4] if v > 0])
 
@@ -2653,7 +2580,6 @@ class SHAP:
                 'top_fragments': top_frag_str if top_frag_str else 'No common fragments',
             }
 
-        # --------------------------- Run characterisation on top 15 ionizable FP bits ---------------------------
         print('Characterising top SHAP fingerprint bits...')
         char_results = []
         for bit_col in top_ion_shap.index[:15]:
@@ -2667,9 +2593,6 @@ class SHAP:
         print(char_df[['bit','shap','pct_active','active_mean_EE','inactive_mean_EE','delta_EE','top_fragments']].to_string(index=False))
         print('\n\\Delta EE = mean EE when bit active MINUS mean EE when inactive')
         print('Positive \\Delta EE = this substructure correlates with higher EE%')
-
-        # --------------------------- Named functional group analysis across all ionizable lipids ---------------------------
-        # Compute fragment counts for ALL ionizable lipids and correlate with EE%
 
         frag_defs = [
             ('fr_NH0',       'Tertiary amine'),
@@ -2691,7 +2614,6 @@ class SHAP:
             entry = {'EE': row['EE'], 'label': int(row['EE'] >= 80)}
             for attr, name in frag_defs:
                 entry[name] = getattr(Fragments, attr)(mol)
-            # Also: rotatable bonds, ring count, MolWt
             entry['RotBonds'] = Lipinski.NumRotatableBonds(mol)
             entry['RingCount'] = Lipinski.RingCount(mol)
             entry['LogP'] = Descriptors.MolLogP(mol)
@@ -2700,7 +2622,6 @@ class SHAP:
 
         frag_df = pd.DataFrame(frag_data)
 
-        # --------------------------- Point-biserial correlation of each feature with high-EE label ---------------------------
         feature_cols = [name for _, name in frag_defs] + ['RotBonds', 'RingCount', 'LogP', 'MolWt']
         corr_results = []
         for col in feature_cols:
@@ -2711,7 +2632,6 @@ class SHAP:
                                   'low_EE_mean':  frag_df.loc[frag_df['label']==0, col].mean()})
         corr_df = pd.DataFrame(corr_results).sort_values('r', ascending=False)
 
-        # --------------------------- Benjamini-Hochberg False Discovery Rate correction ---------------------------
         corr_df['q_fdr'] = multipletests(corr_df['p'], method='fdr_bh')[1]
         corr_df['FDR_sig'] = corr_df['q_fdr'] < 0.05
         print('=== Functional Group Correlation with High EE% (point-biserial r) ===')
@@ -2720,8 +2640,9 @@ class SHAP:
         print(
             f"\n{n_sig} of {len(corr_df)} features remain "
             f"significant after FDR correction.")
+        global_pvals += [{'analysis': 'point_biserial_functional_group', 'feature': r['Feature'], 'p': r['p']}
+                          for _, r in corr_df.iterrows()]
 
-        # --------------------------- Plot FDR corrected correlations ---------------------------
         fig, ax = plt.subplots(figsize=(7, 3))
         color = PUB_PALETTE[:8]
         colors = [color[0] if r > 0 else color[1] for r in corr_df['r']]
@@ -2730,9 +2651,7 @@ class SHAP:
         ax.set_yticklabels(corr_df['Feature'])
         ax.axvline(0, color='black', lw=2)
         ax.set_xlabel('Point-Biserial Correlation with High EE% (r)')
-        # --------------------------- Significance markers ---------------------------
         for i, (_, row) in enumerate(corr_df.iterrows()):
-            # sig = '***' if row['p'] < 0.001 else ('**' if row['p'] < 0.01 else ('*' if row['p'] < 0.05 else ''))
             q = row['q_fdr']
             sig = (
                 '***' if q < 0.001 else
@@ -2742,14 +2661,13 @@ class SHAP:
             )
             if sig:
                 x = row['r'] + (0.01 if row['r'] >= 0 else -0.03)
-                ax.text(x, i, sig, va='center', fontsize=11, color='black')
+                ax.text(x, i, sig, va='center', color='black')
 
         ax.text(0.5, -0.18, '* q<0.05   ** q<0.01   *** q<0.001 (FDR corrected)', transform=ax.transAxes, ha='center', fontsize=8, color='dimgray', style='italic')
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec12A1_chemistry_correlation', width='double')
         plt.show()
 
-        # --------------------------- Spearman correlation with continuous EE ---------------------------
         spearman_results = []
         for col in feature_cols:
             if frag_df[col].std() == 0:
@@ -2764,11 +2682,12 @@ class SHAP:
         spearman_df = (pd.DataFrame(spearman_results).sort_values('rho', ascending=False))
         spearman_df['q_fdr'] = multipletests(spearman_df['p'], method='fdr_bh')[1]
         spearman_df['FDR_sig'] = spearman_df['q_fdr'] < 0.05
+        global_pvals += [{'analysis': 'spearman_functional_group', 'feature': r['Feature'], 'p': r['p']}
+                          for _, r in spearman_df.iterrows()]
 
         print(f'\n=== Functional Group Correlation with Continuous EE (Spearman $\\rho$) ===')
         print(spearman_df[['Feature','rho','p','q_fdr','FDR_sig']].sort_values('q_fdr').to_string(index=False))
 
-        #--------------------------- Plot FDR corrected Spearman correlations ---------------------------
         fig, ax = plt.subplots(figsize=(7, 3))
         colors = [PUB_PALETTE[0] if rho > 0 else PUB_PALETTE[1] for rho in spearman_df['rho']]
         ax.barh(range(len(spearman_df)), spearman_df['rho'], color=colors, alpha=0.6, edgecolor='white')
@@ -2777,7 +2696,6 @@ class SHAP:
         ax.axvline(0, color='black', lw=2)
         ax.set_xlabel(f'Spearman Correlation with EE ($\\rho$)')
 
-        # --------------------------- Significance markers ---------------------------
         for i, (_, row) in enumerate(spearman_df.iterrows()):
             q = row['q_fdr']
             sig = (
@@ -2788,7 +2706,7 @@ class SHAP:
                     )
             if sig:
                 x = row['rho'] + (0.01 if row['rho'] >= 0 else -0.03)
-                ax.text(x, i, sig, va='center', fontsize=11)
+                ax.text(x, i, sig, va='center')
         ax.text(0.5, -0.18, '* q<0.05   ** q<0.01   *** q<0.001 (FDR corrected)', transform=ax.transAxes, ha='center', fontsize=8, color='dimgray', style='italic')
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec12A2_chemistry_spearman', width='double')
@@ -2796,11 +2714,6 @@ class SHAP:
 
         combined_df = corr_df[['Feature', 'r', 'p']].merge(spearman_df[['Feature', 'rho']], on='Feature')
         print(combined_df.sort_values('rho', ascending=False))
-
-        # --------------------------- Build design rules from functional group correlations + SHAP ---------------------------
-        # Method: for each significant feature, compute:
-        # - mean EE when feature present vs absent
-        # - statistical test (Mann-Whitney U, non-parametric)
 
         print('=== Chemical Design Rules for High EE% LNP Formulation ===\n')
 
@@ -2825,6 +2738,8 @@ class SHAP:
         rules_df = pd.DataFrame(rules).sort_values('delta', ascending=False)
         rules_df['q_fdr'] = multipletests(rules_df['p_mwu'], method='fdr_bh')[1]
         rules_df['FDR_sig'] = rules_df['q_fdr'] < 0.05
+        global_pvals += [{'analysis': 'mwu_design_rule', 'feature': r['Feature'], 'p': r['p_mwu']}
+                          for _, r in rules_df.iterrows()]
         print("\n=== MWU Design Rules After FDR Correction ===")
         print(rules_df[['Feature','delta','p_mwu','q_fdr','FDR_sig']].sort_values('q_fdr').to_string(index=False))
         print(
@@ -2832,7 +2747,6 @@ class SHAP:
             f"{len(rules_df)} rules remain significant after FDR correction."
         )
 
-        # --------------------------- Print as English rules ---------------------------
         print('POSITIVE RULES (presence → higher EE%):')
         pos_rules = rules_df[(rules_df['delta'] > 2) & (rules_df['FDR_sig'])].head(6)
         for _, r in pos_rules.iterrows():
@@ -2846,13 +2760,12 @@ class SHAP:
             print(f'  ✗ Presence of {r["Feature"]:22s}: mean EE {r["present_mean"]}% vs {r["absent_mean"]}%  \\Delta ={r["delta"]:+.1f}%  {sig}')
 
         print('\n=== Molar Ratio Rules ===')
-        # --------------------------- Spearman correlations between fractions and EE% ---------------------------
         for frac in ['ion_frac', 'peg_frac', 'sterol_frac', 'helper_frac']:
             r, p = stats.spearmanr(clean_df[frac], clean_df['EE'])
             direction = 'higher' if r > 0 else 'lower'
             print(f'  {frac:<15}: $\\rho$={r:+.3f} (p={p}) — {direction} fraction → {direction} EE%')
+            global_pvals.append({'analysis': 'molar_ratio_spearman', 'feature': frac, 'p': p})
 
-        # --------------------------- Significant MWU rules ---------------------------
         plot_df = rules_df.copy()
         fig, ax = plt.subplots(figsize=(7, 4))
         colors = [PUB_PALETTE[0] if x > 0 else PUB_PALETTE[1] for x in plot_df['delta']]
@@ -2861,7 +2774,6 @@ class SHAP:
         ax.set_xlabel(r'$\Delta$EE (%) = EE$_{present}$ - EE$_{absent}$')
         ax.set_ylabel('Functional Group')
 
-        # --------------------------- Significance markers ---------------------------
         for i, (_, row) in enumerate(plot_df.iterrows()):
             q = row['q_fdr']
             sig = (
@@ -2879,7 +2791,6 @@ class SHAP:
         save_pub_figure(fig, 'fig_sec12_mwu_deltaEE', width='double')
         plt.show()
 
-        # --------------------------- Volcano plot of MWU rules ---------------------------
         plot_df = rules_df.copy()
         plot_df['neglog10p'] = -np.log10(plot_df['p_mwu'])
         fig, ax = plt.subplots(figsize=(6,4))
@@ -2896,18 +2807,11 @@ class SHAP:
         save_pub_figure(fig, 'fig_sec12_volcano_mwu', width='double')
         plt.show()
 
-        # --------------------------- Systematic SMARTS Substructure Enrichment (Bonferroni-corrected) ---------------------------
-        """
-        Section above mapped SHAP bits to `Fragments`-module counts and computed point-biserial
-        correlations. Here we run the complementary, chemist-facing analysis the review explicitly asked
-        for: a **fixed library of SMARTS-defined motifs** relevant to LNP ionizable-lipid design, each
-        tested for enrichment in the High-EE (≥80%) group with a chi-square test and Bonferroni
-        correction for multiple comparisons.
-        """
+        # --------------------------- Systematic SMARTS Substructure Enrichment ---------------------------
         SMARTS_LIB = {
             'Tertiary amine (aliphatic)':          '[NX3;H0;!$(N=*);!$(N-a)]([#6])([#6])[#6]',
             'Secondary amine (aliphatic)':         '[NX3;H1;!$(N=*);!$(N-a)]',
-            'Ester linker':                        '[CX3](=O)[OX2H0][#6]',
+            'Ester linker':                        ESTER_SMARTS,
             'Amide linker':                        '[CX3](=O)[NX3]',
             'Ether linker':                        '[OD2]([#6])[#6]',
             'Branched sp3 carbon':                 '[CX4;H0,H1;!R]([#6])([#6])[#6]',
@@ -2926,7 +2830,7 @@ class SHAP:
         for name, smarts in SMARTS_LIB.items():
             present = clean_df['ionizable_lipid_smiles'].apply(lambda s: match_present(s, smarts))
             n_present = present.sum()
-            if n_present < 5 or n_present > len(clean_df) - 5: continue  # skip near-constant motifs
+            if n_present < 5 or n_present > len(clean_df) - 5: continue
             high = clean_df['EE'] >= 80
             ct = pd.crosstab(present, high)
             if ct.shape != (2, 2): continue
@@ -2938,11 +2842,12 @@ class SHAP:
                          'chi2': round(chi2, 2), 'p': p})
         smarts_df = pd.DataFrame(rows).sort_values('p').reset_index(drop=True)
         smarts_df['p_bonferroni'] = np.minimum(smarts_df['p'] * len(smarts_df), 1.0)
+        global_pvals += [{'analysis': 'smarts_enrichment', 'feature': r['Motif'], 'p': r['p']}
+                          for _, r in smarts_df.iterrows()]
         smarts_df['p'] = smarts_df['p'].round(5); smarts_df['p_bonferroni'] = smarts_df['p_bonferroni'].round(4)
         print('=== SMARTS Substructure Enrichment in High-EE (>=80%) Ionizable Lipids ===')
         print(smarts_df.to_string(index=False))
 
-        #--------------------------- Plot SMARTS enrichment ---------------------------
         fig, ax = plt.subplots(figsize=(7, 3))
         color = PUB_PALETTE[:8]
         sig = smarts_df['p_bonferroni'] < 0.05
@@ -2951,7 +2856,6 @@ class SHAP:
         ax.barh(smarts_df['Motif'], smarts_df['delta_EE'], color=colors, edgecolor='white', alpha=0.6)
         ax.axvline(0, color=color[7], lw=1.5, ls='--')
         ax.set_xlabel(r'$\Delta$EE (%) = EE$_{present}$ − EE$_{absent}$')
-        # ax.set_title('SMARTS Substructure Enrichment vs EE%\n(colour = Bonferroni-significant, p<0.05)', fontsize=11)
         plt.tight_layout()
         plt.legend(handles=[plt.Line2D([0], [0], color=color[0], lw=6, label='Positive $\\Delta$EE (Bonferroni p<0.05)'),
                             plt.Line2D([0], [0], color=color[1], lw=6, label='Negative $\\Delta$EE (Bonferroni p<0.05)'),
@@ -2960,31 +2864,13 @@ class SHAP:
         plt.show()
 
         # --------------------------- HEADGROUP / LINKER / TAIL ANALYSIS ---------------------------
-        """
-        The following analysis classifies functional groups into three regions of the ionizable lipid molecule:"
-        Functional groups are assigned relative to the nearest nitrogen atom:
-        
-        0-4 bonds   -> Headgroup
-        5-8 bonds   -> Linker
-        >8 bonds    -> Tail
-        
-        Statistics:
-          • Spearman rho (continuous EE)
-          • Mann-Whitney U \\DeltaEE
-          • Chi-square
-          • Phi coefficient
-          • FDR correction
-          • Bonferroni correction
-        """
-        # --------------------------- Functional groups ---------------------------
         GROUPS = {
             "OH": "[OX2H]",
             "Ether": "[#6]-O-[#6]",
-            "Ester": "C(=O)O[#6]",
+            "Ester": ESTER_SMARTS,
             "Amide": "C(=O)N",
         }
 
-        # --------------------------- Region classification ---------------------------
         def classify_distance(dist):
             if dist <= 4:
                 return "Headgroup"
@@ -2993,35 +2879,18 @@ class SHAP:
             else:
                 return "Tail"
 
-        # --------------------------- Count locations ---------------------------
         def count_group_locations(smiles, smarts):
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                return {
-                    "Headgroup": 0,
-                    "Linker": 0,
-                    "Tail": 0
-                }
+                return {"Headgroup": 0, "Linker": 0, "Tail": 0}
             patt = Chem.MolFromSmarts(smarts)
             matches = mol.GetSubstructMatches(patt)
             if len(matches) == 0:
-                return {
-                    "Headgroup": 0,
-                    "Linker": 0,
-                    "Tail": 0
-                }
+                return {"Headgroup": 0, "Linker": 0, "Tail": 0}
             nitrogen_atoms = [atom.GetIdx() for atom in mol.GetAtoms() if atom.GetAtomicNum() == 7]
             if len(nitrogen_atoms) == 0:
-                return {
-                    "Headgroup": 0,
-                    "Linker": 0,
-                    "Tail": 0
-                }
-            result = {
-                "Headgroup": 0,
-                "Linker": 0,
-                "Tail": 0
-            }
+                return {"Headgroup": 0, "Linker": 0, "Tail": 0}
+            result = {"Headgroup": 0, "Linker": 0, "Tail": 0}
             for match in matches:
                 anchor = match[0]
                 nearest = 999
@@ -3030,11 +2899,7 @@ class SHAP:
                         dist = 0
                     else:
                         try:
-                            path = Chem.rdmolops.GetShortestPath(
-                                mol,
-                                n,
-                                anchor
-                            )
+                            path = Chem.rdmolops.GetShortestPath(mol, n, anchor)
                             dist = len(path) - 1
                         except:
                             continue
@@ -3042,8 +2907,6 @@ class SHAP:
                 region = classify_distance(nearest)
                 result[region] += 1
             return result
-
-        # --------------------------- Build feature matrix ---------------------------
 
         loc_df = pd.DataFrame()
         loc_df["EE"] = clean_df["EE"]
@@ -3061,41 +2924,27 @@ class SHAP:
             loc_df[f"{group_name}_Linker"] = linker_vals
             loc_df[f"{group_name}_Tail"] = tail_vals
 
-        # --------------------------- Statistics ---------------------------
         EE = loc_df["EE"].values
         HIGH_EE = loc_df["HIGH_EE"].values
         results = []
-        feature_cols = [
-            c for c in loc_df.columns
-            if c not in [
-                "EE",
-                "HIGH_EE"
-            ]
-        ]
+        feature_cols = [c for c in loc_df.columns if c not in ["EE", "HIGH_EE"]]
         for feature in feature_cols:
             x = loc_df[feature].values
-            # --------------------------- skip constant features ---------------------------
             if len(np.unique(x)) < 2:
                 continue
             n_present = int(np.sum(x))
             prevalence = 100 * np.mean(x)
-
-            # --------------------------- Spearman ---------------------------
             try:
                 rho, p_rho = spearmanr(x, EE)
             except:
                 rho = np.nan
                 p_rho = np.nan
-
-            # --------------------------- Delta EE + MWU ---------------------------
             ee_present = EE[x == 1]
             ee_absent = EE[x == 0]
             if (len(ee_present) < 3 or len(ee_absent) < 3):
                 continue
             delta_EE = (np.mean(ee_present) - np.mean(ee_absent))
             _, p_mwu = mannwhitneyu(ee_present, ee_absent, alternative="two-sided")
-
-            # --------------------------- Chi-square + Phi ---------------------------
             contingency = pd.crosstab(x, HIGH_EE)
             try:
                 chi2, p_chi2, _, _ = chi2_contingency(contingency)
@@ -3107,49 +2956,27 @@ class SHAP:
                 phi = np.nan
 
             results.append({
-                "Feature": feature,
-                "n_present": n_present,
-                "Prevalence_%": prevalence,
-                "Phi": phi,
-                "Chi2": chi2,
-                "p_chi2": p_chi2,
-                "rho_spearman": rho,
-                "p_spearman":p_rho,
-                "Delta_EE": delta_EE,
-                "p_mwu": p_mwu
+                "Feature": feature, "n_present": n_present, "Prevalence_%": prevalence,
+                "Phi": phi, "Chi2": chi2, "p_chi2": p_chi2,
+                "rho_spearman": rho, "p_spearman":p_rho, "Delta_EE": delta_EE, "p_mwu": p_mwu
             })
 
         results_df = pd.DataFrame(results)
-
-        # --------------------------- Remove very rare features ---------------------------
         MIN_COUNT = 10
         results_df = results_df[results_df["n_present"] >= MIN_COUNT].copy()
-
-        # --------------------------- Multiple testing correction ---------------------------
         results_df["q_fdr"] = multipletests(results_df["p_mwu"], method="fdr_bh")[1]
         results_df["p_bonf"] = multipletests(results_df["p_mwu"], method="bonferroni")[1]
         results_df["FDR_sig"] = (results_df["q_fdr"] < 0.05)
         results_df["Bonf_sig"] = (results_df["p_bonf"] < 0.05)
-
-        # Sort
+        global_pvals += [{'analysis': 'headgroup_linker_tail_presence', 'feature': r['Feature'], 'p': r['p_mwu']}
+                          for _, r in results_df.iterrows()]
         results_df = results_df.sort_values("Delta_EE", ascending=False)
 
         print("\n")
         print("=" * 120)
         print("HEADGROUP / LINKER / TAIL ANALYSIS")
         print("=" * 120)
-        display_cols = [
-            "Feature",
-            "n_present",
-            "Prevalence_%",
-            "Phi",
-            "rho_spearman",
-            "Delta_EE",
-            "q_fdr",
-            "p_bonf",
-            "FDR_sig",
-            "Bonf_sig"
-        ]
+        display_cols = ["Feature","n_present","Prevalence_%","Phi","rho_spearman","Delta_EE","q_fdr","p_bonf","FDR_sig","Bonf_sig"]
         print(results_df[display_cols].round(3).to_string(index=False))
         results_df.to_csv("table_headgroup_linker_tail_analysis.csv", index=False)
         print("\nSaved: table_headgroup_linker_tail_analysis.csv")
@@ -3157,25 +2984,16 @@ class SHAP:
         # --------------------------- MECHANISTIC TOPOLOGY ANALYSIS ---------------------------
         HIGH_EE_THRESHOLD = 80
         MIN_COUNT = 10
-        GROUPS = {
-            "OH": "[OX2H]",
-            "Ether": "[#6]-O-[#6]",
-            "Ester": "C(=O)O[#6]",
-            "Amide": "C(=O)N",
-        }
-        # Helper functions
+        GROUPS = {"OH": "[OX2H]", "Ether": "[#6]-O-[#6]", "Ester": ESTER_SMARTS, "Amide": "C(=O)N"}
 
         def nearest_distance(smiles, smarts):
             mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return np.nan
+            if mol is None: return np.nan
             patt = Chem.MolFromSmarts(smarts)
             matches = mol.GetSubstructMatches(patt)
-            if len(matches) == 0:
-                return np.nan
+            if len(matches) == 0: return np.nan
             N_atoms = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 7]
-            if len(N_atoms) == 0:
-                return np.nan
+            if len(N_atoms) == 0: return np.nan
             best = 999
             for match in matches:
                 anchor = match[0]
@@ -3192,28 +3010,18 @@ class SHAP:
             return best
 
         def distance_bin(x):
-            if pd.isna(x):
-                return np.nan
-            if x <= 2:
-                return "0-2"
-            elif x <= 5:
-                return "3-5"
-            elif x <= 8:
-                return "6-8"
-            else:
-                return ">8"
+            if pd.isna(x): return np.nan
+            if x <= 2: return "0-2"
+            elif x <= 5: return "3-5"
+            elif x <= 8: return "6-8"
+            else: return ">8"
 
         def region(x):
-            if pd.isna(x):
-                return np.nan
-            if x <= 4:
-                return "Headgroup"
-            elif x <= 8:
-                return "Linker"
-            else:
-                return "Tail"
+            if pd.isna(x): return np.nan
+            if x <= 4: return "Headgroup"
+            elif x <= 8: return "Linker"
+            else: return "Tail"
 
-        # Build dataframe with distances, bins, and regions for each functional group
         topo_df = pd.DataFrame()
         topo_df["EE"] = clean_df["EE"]
         topo_df["HIGH_EE"] = (clean_df["EE"] >= HIGH_EE_THRESHOLD).astype(int)
@@ -3224,33 +3032,26 @@ class SHAP:
             topo_df[f"{group}_bin"] = (topo_df[f"{group}_dist"].apply(distance_bin))
             topo_df[f"{group}_region"] = (topo_df[f"{group}_dist"].apply(region))
 
-        # --------------------------- Spearman correlations between distances and EE% ---------------------------
         corr_rows = []
         for group in GROUPS:
             col = f"{group}_dist"
             subset = topo_df[["EE", col]].dropna()
-            if len(subset) < 15:
-                continue
+            if len(subset) < 15: continue
             rho,p = spearmanr(subset[col], subset["EE"])
-            corr_rows.append({
-                "Feature":group,
-                "n":len(subset),
-                "rho":rho,
-                "p":p
-            })
+            corr_rows.append({"Feature":group, "n":len(subset), "rho":rho, "p":p})
         corr_df = pd.DataFrame(corr_rows)
+        global_pvals += [{'analysis': 'topology_distance_spearman', 'feature': r['Feature'], 'p': r['p']}
+                          for _, r in corr_df.iterrows()]
         corr_df.to_csv("table_graph_distance_correlations.csv", index=False)
         print("\n=== CONTINUOUS DISTANCE CORRELATIONS ===")
         print(corr_df.round(3))
 
-        # --------------------------- Distance Bin Analysis ---------------------------
         bin_results = []
         for group in GROUPS:
             for b in ["0-2","3-5","6-8",">8"]:
                 indicator = (topo_df[f"{group}_bin"] == b).astype(int)
                 n_present = int(indicator.sum())
-                if n_present < MIN_COUNT:
-                    continue
+                if n_present < MIN_COUNT: continue
                 ee_present = topo_df.loc[indicator==1, "EE"]
                 ee_absent = topo_df.loc[indicator==0, "EE"]
                 delta = (ee_present.mean() - ee_absent.mean())
@@ -3258,36 +3059,27 @@ class SHAP:
                 contingency = pd.crosstab(indicator, topo_df["HIGH_EE"])
                 chi2,p_chi2,_,_ = (chi2_contingency(contingency))
                 phi = np.sqrt(chi2 / contingency.values.sum())
-                bin_results.append({
-                    "Feature": group,
-                    "Distance_bin": b,
-                    "n_present": n_present,
-                    "Mean_EE": ee_present.mean(),
-                    "Median_EE": ee_present.median(),
-                    "Delta_EE": delta,
-                    "Phi": phi,
-                    "p_chi2": p_chi2,
-                    "p_mwu": p_mwu
-                })
+                bin_results.append({"Feature": group, "Distance_bin": b, "n_present": n_present,
+                                     "Mean_EE": ee_present.mean(), "Median_EE": ee_present.median(),
+                                     "Delta_EE": delta, "Phi": phi, "p_chi2": p_chi2, "p_mwu": p_mwu})
 
         bin_df = pd.DataFrame(bin_results)
         bin_df["q_fdr"] = multipletests(bin_df["p_mwu"], method="fdr_bh")[1]
         bin_df["p_bonf"] = multipletests(bin_df["p_mwu"], method="bonferroni")[1]
         bin_df["FDR_sig"] = (bin_df["q_fdr"] < 0.05)
         bin_df["Bonf_sig"] = (bin_df["p_bonf"] < 0.05)
+        global_pvals += [{'analysis': 'topology_distance_bin', 'feature': f"{r['Feature']}_{r['Distance_bin']}", 'p': r['p_mwu']}
+                          for _, r in bin_df.iterrows()]
         bin_df.to_csv("table_distance_bins.csv", index=False)
         print("\n=== DISTANCE BIN ANALYSIS ===")
         print(bin_df.sort_values("Delta_EE", ascending=False).round(3))
 
-        # --------------------------- Headgroup / Linker / Tail Analysis ---------------------------
         region_results = []
         for group in GROUPS:
             for reg in ["Headgroup", "Linker", "Tail"]:
                 indicator = (topo_df[f"{group}_region"] == reg).astype(int)
                 n_present = int(indicator.sum())
-                if n_present < MIN_COUNT:
-                    continue
-
+                if n_present < MIN_COUNT: continue
                 ee_present = topo_df.loc[indicator==1, "EE"]
                 ee_absent = topo_df.loc[indicator==0, "EE"]
                 delta = (ee_present.mean() - ee_absent.mean())
@@ -3296,43 +3088,28 @@ class SHAP:
                 chi2,p_chi2,_,_ = (chi2_contingency(contingency))
                 phi = np.sqrt(chi2 / contingency.values.sum())
                 rho,p_rho = spearmanr(indicator, topo_df["EE"])
-                region_results.append({
-                    "Feature": f"{group}_{reg}",
-                    "n_present": n_present,
-                    "Prevalence_%": 100*np.mean(indicator),
-                    "Phi": phi,
-                    "rho_spearman": rho,
-                    "Delta_EE": delta,
-                    "p_mwu": p_mwu
-                })
+                region_results.append({"Feature": f"{group}_{reg}", "n_present": n_present,
+                                        "Prevalence_%": 100*np.mean(indicator), "Phi": phi,
+                                        "rho_spearman": rho, "Delta_EE": delta, "p_mwu": p_mwu})
 
         region_df = pd.DataFrame(region_results)
         region_df["q_fdr"] = multipletests(region_df["p_mwu"], method="fdr_bh")[1]
         region_df["p_bonf"] = multipletests(region_df["p_mwu"], method="bonferroni")[1]
+        global_pvals += [{'analysis': 'headgroup_linker_tail_region', 'feature': r['Feature'], 'p': r['p_mwu']}
+                          for _, r in region_df.iterrows()]
         region_df.to_csv("table_headgroup_linker_tail.csv", index=False)
 
-        # --------------------------- Confounding Analysis ---------------------------
         confound_rows = []
         for group in GROUPS:
             dcol = f"{group}_dist"
             subset = topo_df[[dcol,"MolWt"]].dropna()
             if len(subset) > 15:
                 rho,p = spearmanr(subset[dcol], subset["MolWt"])
-                confound_rows.append({
-                    "Feature":group,
-                    "Confounder":"MolWt",
-                    "rho":rho,
-                    "p":p
-                })
+                confound_rows.append({"Feature":group, "Confounder":"MolWt", "rho":rho, "p":p})
             subset = topo_df[[dcol,"LogP"]].dropna()
             if len(subset) > 15:
                 rho,p = spearmanr(subset[dcol],subset["LogP"])
-                confound_rows.append({
-                    "Feature":group,
-                    "Confounder":"LogP",
-                    "rho":rho,
-                    "p":p
-                })
+                confound_rows.append({"Feature":group, "Confounder":"LogP", "rho":rho, "p":p})
 
         confound_df = pd.DataFrame(confound_rows)
         confound_df.to_csv("table_distance_confounding.csv", index=False)
@@ -3344,30 +3121,18 @@ class SHAP:
         for group in GROUPS:
             dcol = f"{group}_dist"
             tmp = topo_df[["EE", dcol, "MolWt", "LogP"]].dropna()
-            if len(tmp) < 20:
-                continue
-            model = smf.ols(
-                f"""
-                EE ~ {dcol}
-                    + MolWt
-                    + LogP
-                """,
-                data=tmp).fit()
-            reg_results.append({
-                "Feature": group,
-                "Beta_distance": model.params[dcol],
-                "p_distance": model.pvalues[dcol],
-                "R2": model.rsquared
-            })
+            if len(tmp) < 20: continue
+            model = smf.ols(f"EE ~ {dcol} + MolWt + LogP", data=tmp).fit()
+            reg_results.append({"Feature": group, "Beta_distance": model.params[dcol],
+                                 "p_distance": model.pvalues[dcol], "R2": model.rsquared})
 
         reg_df = pd.DataFrame(reg_results)
         reg_df["q_fdr"] = multipletests(reg_df["p_distance"],method="fdr_bh")[1]
+        global_pvals += [{'analysis': 'topology_adjusted_regression', 'feature': r['Feature'], 'p': r['p_distance']}
+                          for _, r in reg_df.iterrows()]
         reg_df.to_csv("table_adjusted_regression.csv",index=False)
         print("\n=== ADJUSTED REGRESSION ===")
         print(reg_df.round(4))
-
-
-        # --------------------------- Plot ΔEE by Distance Bin ---------------------------
 
         order = ["0-2", "3-5", "6-8", ">8"]
         fig, ax = plt.subplots(figsize=(7, 3))
@@ -3386,28 +3151,20 @@ class SHAP:
         print(" fig_distance_bin_analysis.png")
 
         # --------------------------- RIGOROUS OH MECHANISTIC ANALYSIS ---------------------------
-        # OH SMARTS
         OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
 
-        # Count OH groups
         def count_oh(smiles):
             mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return np.nan
+            if mol is None: return np.nan
             return len(mol.GetSubstructMatches(OH_PATTERN))
-
-        # --------------------------- Closest OH distance to N ---------------------------
 
         def nearest_oh_distance(smiles):
             mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return np.nan
+            if mol is None: return np.nan
             oh_matches = mol.GetSubstructMatches(OH_PATTERN)
-            if len(oh_matches) == 0:
-                return np.nan
+            if len(oh_matches) == 0: return np.nan
             N_atoms = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 7]
-            if len(N_atoms) == 0:
-                return np.nan
+            if len(N_atoms) == 0: return np.nan
             best = 999
             for match in oh_matches:
                 O_idx = match[0]
@@ -3420,17 +3177,13 @@ class SHAP:
                         continue
             return best
 
-        # --------------------------- Headgroup OH count ---------------------------
         def headgroup_oh_count(smiles):
             mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return np.nan
+            if mol is None: return np.nan
             oh_matches = mol.GetSubstructMatches(OH_PATTERN)
             N_atoms = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 7]
-            if len(oh_matches) == 0:
-                return 0
-            if len(N_atoms) == 0:
-                return 0
+            if len(oh_matches) == 0: return 0
+            if len(N_atoms) == 0: return 0
             count = 0
             for match in oh_matches:
                 O_idx = match[0]
@@ -3442,12 +3195,10 @@ class SHAP:
                         nearest = min(nearest, dist)
                     except:
                         continue
-                # headgroup definition
                 if nearest <= 4:
                     count += 1
             return count
 
-        # --------------------------- Build dataframe ---------------------------
         oh_df = pd.DataFrame()
         oh_df["EE"] = clean_df["EE"]
         oh_df["MolWt"] = (clean_df["ionizable_lipid_smiles"].apply(lambda s: Descriptors.MolWt(Chem.MolFromSmiles(s))))
@@ -3456,159 +3207,82 @@ class SHAP:
         oh_df["OH_distance"] = (clean_df["ionizable_lipid_smiles"].apply(nearest_oh_distance))
         oh_df["Headgroup_OH_count"] = (clean_df["ionizable_lipid_smiles"].apply(headgroup_oh_count))
 
-        # Only OH-containing lipids
         oh_df = oh_df[oh_df["OH_count"] > 0].copy()
 
-        # --------------------------- Spearman correlations ---------------------------
-        print("\n")
-        print("="*80)
-        print("OH CORRELATIONS")
-        print("="*80)
-
+        print("\n"); print("="*80); print("OH CORRELATIONS"); print("="*80)
         for col in ["OH_count", "OH_distance", "Headgroup_OH_count"]:
             rho,p = spearmanr(oh_df[col], oh_df["EE"])
-            print(
-                f"{col:20s}"
-                f" rho={rho:+.3f}"
-                f" p={p:.5f}"
-            )
+            print(f"{col:20s} rho={rho:+.3f} p={p:.5f}")
+            global_pvals.append({'analysis': 'OH_correlation', 'feature': col, 'p': p})
 
-        # --------------------------- OH COUNT EFFECT ---------------------------
-        print("\n")
-        print("="*80)
-        print("OH COUNT EFFECT")
-        print("="*80)
+        print("\n"); print("="*80); print("OH COUNT EFFECT"); print("="*80)
         summary = (oh_df.groupby("OH_count")["EE"].agg(["count","mean","median","std"]))
         print(summary.round(2))
 
-        # Kruskal-Wallis
-        groups = [g["EE"].values for _,g in oh_df.groupby("OH_count") if len(g) >= 3]
-        if len(groups) >= 2:
-            H,p = kruskal(*groups)
-            print(
-                f"\nKruskal-Wallis: "
-                f"H={H:.3f} "
-                f"p={p:.5g}"
-            )
+        groups_kw = [g["EE"].values for _,g in oh_df.groupby("OH_count") if len(g) >= 3]
+        if len(groups_kw) >= 2:
+            H,p = kruskal(*groups_kw)
+            print(f"\nKruskal-Wallis: H={H:.3f} p={p:.5g}")
+            global_pvals.append({'analysis': 'OH_count_kruskal', 'feature': 'OH_count', 'p': p})
 
-        # --------------------------- DISTANCE EFFECT ON OH GROUP ---------------------------
-        print("\n")
-        print("="*80)
-        print("DISTANCE EFFECT")
-        print("="*80)
+        print("\n"); print("="*80); print("DISTANCE EFFECT"); print("="*80)
         print(oh_df.groupby(pd.cut(oh_df["OH_distance"], bins=[0,2,5,8,20]))["EE"].agg(["count","mean","median","std"]))
 
-        # REGRESSION 1
-        print("\n")
-        print("="*80)
-        print("MODEL 1")
-        print("EE ~ OH_COUNT")
-        print("="*80)
-        m1 = smf.ols(
-            """
-            EE ~ OH_count
-            """, data=oh_df).fit()
+        print("\n"); print("="*80); print("MODEL 1"); print("EE ~ OH_COUNT"); print("="*80)
+        m1 = smf.ols("EE ~ OH_count", data=oh_df).fit()
         print(m1.summary())
+        global_pvals.append({'analysis': 'OH_model1_ols', 'feature': 'OH_count', 'p': m1.pvalues.get('OH_count', np.nan)})
 
-        # REGRESSION 2
-        print("\n")
-        print("="*80)
-        print("MODEL 2")
-        print("EE ~ OH_DISTANCE")
-        print("="*80)
-        m2 = smf.ols(
-            """
-            EE ~ OH_distance
-            """, data=oh_df).fit()
+        print("\n"); print("="*80); print("MODEL 2"); print("EE ~ OH_DISTANCE"); print("="*80)
+        m2 = smf.ols("EE ~ OH_distance", data=oh_df).fit()
         print(m2.summary())
+        global_pvals.append({'analysis': 'OH_model2_ols', 'feature': 'OH_distance', 'p': m2.pvalues.get('OH_distance', np.nan)})
 
-        # REGRESSION 3
-        print("\n")
-        print("="*80)
-        print("MODEL 3")
-        print("EE ~ OH_DISTANCE + OH_COUNT")
-        print("="*80)
-        m3 = smf.ols(
-            """
-            EE ~ OH_distance
-            + OH_count
-            """, data=oh_df).fit()
+        print("\n"); print("="*80); print("MODEL 3"); print("EE ~ OH_DISTANCE + OH_COUNT"); print("="*80)
+        m3 = smf.ols("EE ~ OH_distance + OH_count", data=oh_df).fit()
         print(m3.summary())
 
-        # REGRESSION 4 (MOST IMPORTANT)
-        print("\n")
-        print("="*80)
-        print("MODEL 4")
-        print("EE ~ OH_DISTANCE + OH_COUNT + MolWt + LogP")
-        print("="*80)
-        m4 = smf.ols(
-            """
-            EE ~ OH_distance
-            + OH_count
-            + MolWt
-            + LogP
-            """, data=oh_df).fit()
+        print("\n"); print("="*80); print("MODEL 4"); print("EE ~ OH_DISTANCE + OH_COUNT + MolWt + LogP"); print("="*80)
+        m4 = smf.ols("EE ~ OH_distance + OH_count + MolWt + LogP", data=oh_df).fit()
         print(m4.summary())
 
-        # --------------------------- VIF analysis ---------------------------
+        # --------------------------- VIF analysis (FIX: add intercept before computing VIF) ---------------------------
+        # variance_inflation_factor() assumes the matrix passed to it ALREADY contains an
+        # intercept/constant column; without one it computes VIF-through-the-origin, which
+        # inflates every value and makes the usual ">5" / ">10" collinearity thresholds
+        # meaningless. sm.add_constant() fixes this -- the constant's own VIF row is dropped
+        # from the printed table since it isn't a real predictor.
         from statsmodels.stats.outliers_influence import variance_inflation_factor
         X = oh_df[["OH_distance", "OH_count", "MolWt", "LogP"]].dropna()
+        X_vif = sm.add_constant(X)
         vif_df = pd.DataFrame()
-        vif_df["Feature"] = X.columns
-        vif_df["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+        vif_df["Feature"] = X_vif.columns
+        vif_df["VIF"] = [variance_inflation_factor(X_vif.values, i) for i in range(X_vif.shape[1])]
+        vif_df = vif_df[vif_df["Feature"] != "const"].reset_index(drop=True)
         print(vif_df)
 
-        # --------------------------- SUMMARY TABLE ---------------------------
         summary_table = pd.DataFrame({
-            "Model":[
-                "OH_count",
-                "OH_distance",
-                "OH_distance + OH_count",
-                "OH_distance + OH_count + MolWt + LogP"
-            ],
-            "R2":[
-                m1.rsquared,
-                m2.rsquared,
-                m3.rsquared,
-                m4.rsquared
-            ]
+            "Model":["OH_count","OH_distance","OH_distance + OH_count","OH_distance + OH_count + MolWt + LogP"],
+            "R2":[m1.rsquared, m2.rsquared, m3.rsquared, m4.rsquared]
         })
-
         summary_table.to_csv("table_OH_regression_models.csv", index=False)
         print("\nSaved: table_OH_regression_models.csv")
 
         # --------------------------- OH DEEP-DIVE ANALYSIS ---------------------------
-
         OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
 
         def get_oh_metrics(smiles):
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                return pd.Series({
-                    "OH_count": np.nan,
-                    "Headgroup_OH_count": np.nan,
-                    "Linker_OH_count": np.nan,
-                    "Tail_OH_count": np.nan,
-                    "OH_min_distance": np.nan,
-                    "OH_mean_distance": np.nan,
-                    "OH_burden": np.nan
-                })
+                return pd.Series({"OH_count": np.nan, "Headgroup_OH_count": np.nan, "Linker_OH_count": np.nan,
+                                   "Tail_OH_count": np.nan, "OH_min_distance": np.nan, "OH_mean_distance": np.nan,
+                                   "OH_burden": np.nan})
             OH_matches = mol.GetSubstructMatches(OH_PATTERN)
             N_atoms = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 7]
             if len(N_atoms) == 0:
-                return pd.Series({
-                    "OH_count": 0,
-                    "Headgroup_OH_count": 0,
-                    "Linker_OH_count": 0,
-                    "Tail_OH_count": 0,
-                    "OH_min_distance": np.nan,
-                    "OH_mean_distance": np.nan,
-                    "OH_burden": np.nan
-                })
-            distances = []
-            head = 0
-            linker = 0
-            tail = 0
+                return pd.Series({"OH_count": 0, "Headgroup_OH_count": 0, "Linker_OH_count": 0, "Tail_OH_count": 0,
+                                   "OH_min_distance": np.nan, "OH_mean_distance": np.nan, "OH_burden": np.nan})
+            distances = []; head = 0; linker = 0; tail = 0
             for match in OH_matches:
                 O_idx = match[0]
                 nearest = 999
@@ -3620,32 +3294,19 @@ class SHAP:
                     except:
                         pass
                 distances.append(nearest)
-                if nearest <= 4:
-                    head += 1
-                elif nearest <= 8:
-                    linker += 1
-                else:
-                    tail += 1
+                if nearest <= 4: head += 1
+                elif nearest <= 8: linker += 1
+                else: tail += 1
 
             if len(distances) == 0:
-                min_dist = np.nan
-                mean_dist = np.nan
-                burden = 0
+                min_dist = np.nan; mean_dist = np.nan; burden = 0
             else:
-                min_dist = np.min(distances)
-                mean_dist = np.mean(distances)
+                min_dist = np.min(distances); mean_dist = np.mean(distances)
                 burden = np.sum([1/d for d in distances])
-            return pd.Series({
-                "OH_count": len(distances),
-                "Headgroup_OH_count": head,
-                "Linker_OH_count": linker,
-                "Tail_OH_count": tail,
-                "OH_min_distance": min_dist,
-                "OH_mean_distance": mean_dist,
-                "OH_burden": burden
-            })
+            return pd.Series({"OH_count": len(distances), "Headgroup_OH_count": head, "Linker_OH_count": linker,
+                               "Tail_OH_count": tail, "OH_min_distance": min_dist, "OH_mean_distance": mean_dist,
+                               "OH_burden": burden})
 
-        # --------------------------- BUILD OH DATAFRAME ---------------------------
         oh_df = pd.DataFrame()
         oh_df["EE"] = clean_df["EE"]
         oh_df["MolWt"] = (clean_df["ionizable_lipid_smiles"].apply(lambda x: Descriptors.MolWt(Chem.MolFromSmiles(x))))
@@ -3654,122 +3315,61 @@ class SHAP:
         oh_df = pd.concat([oh_df, metrics], axis=1)
         oh_df = oh_df[oh_df["OH_count"] > 0].copy()
 
-        # --------------------------- SPEARMAN ANALYSIS ---------------------------
-        print("\n")
-        print("="*80)
-        print("OH DESCRIPTOR CORRELATIONS")
-        print("="*80)
+        print("\n"); print("="*80); print("OH DESCRIPTOR CORRELATIONS"); print("="*80)
         corr_rows = []
-        for col in [
-            "OH_count",
-            "Headgroup_OH_count",
-            "Linker_OH_count",
-            "Tail_OH_count",
-            "OH_min_distance",
-            "OH_mean_distance",
-            "OH_burden"
-        ]:
+        for col in ["OH_count","Headgroup_OH_count","Linker_OH_count","Tail_OH_count",
+                    "OH_min_distance","OH_mean_distance","OH_burden"]:
             rho,p = spearmanr(oh_df[col], oh_df["EE"])
-            corr_rows.append({
-                "Descriptor": col,
-                "rho": rho,
-                "p": p
-            })
+            corr_rows.append({"Descriptor": col, "rho": rho, "p": p})
         corr_df = pd.DataFrame(corr_rows)
         print(corr_df.round(4).to_string(index=False))
+        global_pvals += [{'analysis': 'OH_deep_dive_correlation', 'feature': r['Descriptor'], 'p': r['p']}
+                          for _, r in corr_df.iterrows()]
         corr_df.to_csv("table_OH_correlations.csv", index=False)
+        # Keep a stable reference to THIS specific correlation table -- 'corr_df' as a
+        # variable name gets reassigned by later sub-analyses in this method, so Figure2
+        # (below) needs its own copy to plot real numbers instead of typed-in ones.
+        oh_deepdive_corr_df = corr_df.copy()
 
-        # --------------------------- REGRESSION MODELS ---------------------------
-        print("\n")
-        print("="*80)
-        print("REGRESSION COMPARISON")
-        print("="*80)
-        models = {
-            "OH_count":
-                """
-                EE ~ OH_count
-                """,
-            "Headgroup_OH":
-                """
-                EE ~ Headgroup_OH_count
-                """,
-            "OH_burden":
-                """
-                EE ~ OH_burden
-                """,
-            "Burden+Count":
-                """
-                EE ~ OH_burden
-                + OH_count
-                """,
-            "Burden+Headgroup":
-                """
-                EE ~ OH_burden
-                + Headgroup_OH_count
-                """,
-            "Full":
-                """
-                EE ~ OH_burden
-                + OH_count
-                + Headgroup_OH_count
-                + MolWt
-                + LogP
-                """
+        print("\n"); print("="*80); print("REGRESSION COMPARISON"); print("="*80)
+        models_oh = {
+            "OH_count": "EE ~ OH_count",
+            "Headgroup_OH": "EE ~ Headgroup_OH_count",
+            "OH_burden": "EE ~ OH_burden",
+            "Burden+Count": "EE ~ OH_burden + OH_count",
+            "Burden+Headgroup": "EE ~ OH_burden + Headgroup_OH_count",
+            "Full": "EE ~ OH_burden + OH_count + Headgroup_OH_count + MolWt + LogP"
         }
-
         reg_results = []
-        for name, formula in models.items():
+        for name, formula in models_oh.items():
             model = smf.ols(formula, data=oh_df).fit()
-            reg_results.append({
-                "Model": name,
-                "R2": model.rsquared,
-                "Adj_R2": model.rsquared_adj,
-                "AIC": model.aic 
-            })
-            print("\n")
-            print("-"*80)
-            print(name)
-            print("-"*80)
+            reg_results.append({"Model": name, "R2": model.rsquared, "Adj_R2": model.rsquared_adj, "AIC": model.aic})
+            print("\n"); print("-"*80); print(name); print("-"*80)
             print(model.summary())
 
         reg_df = pd.DataFrame(reg_results)
         reg_df.to_csv("table_OH_model_comparison.csv", index=False)
 
-        # --------------------------- VIF ANALYSIS ---------------------------
-        print("\n")
-        print("="*80)
-        print("VIF ANALYSIS")
-        print("="*80)
-        X = oh_df[
-            [
-                "OH_burden",
-                "OH_count",
-                "Headgroup_OH_count",
-                "MolWt",
-                "LogP"
-            ]].dropna()
+        # --------------------------- VIF ANALYSIS (FIX: add intercept) ---------------------------
+        print("\n"); print("="*80); print("VIF ANALYSIS"); print("="*80)
+        X = oh_df[["OH_burden","OH_count","Headgroup_OH_count","MolWt","LogP"]].dropna()
+        X_vif = sm.add_constant(X)
         vif_df = pd.DataFrame()
-        vif_df["Feature"] = X.columns
-        vif_df["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+        vif_df["Feature"] = X_vif.columns
+        vif_df["VIF"] = [variance_inflation_factor(X_vif.values, i) for i in range(X_vif.shape[1])]
+        vif_df = vif_df[vif_df["Feature"] != "const"].reset_index(drop=True)
         print(vif_df.round(2).to_string(index=False))
         vif_df.to_csv("table_OH_VIF.csv", index=False)
 
-        # PARTIAL CORRELATIONS
         try:
             from pingouin import partial_corr
-            print("\n")
-            print("="*80)
-            print("PARTIAL CORRELATIONS")
-            print("="*80)
-
+            print("\n"); print("="*80); print("PARTIAL CORRELATIONS"); print("="*80)
             pc1 = partial_corr(data=oh_df, x="OH_burden", y="EE", covar=["MolWt","LogP"])
             print("\nOH burden vs EE controlling MolWt+LogP")
             print(pc1)
-
             pc2 = partial_corr(data=oh_df, x="Headgroup_OH_count", y="EE", covar=["MolWt","LogP"])
             print("\nHeadgroup OH count vs EE controlling MolWt+LogP")
             print(pc2)
-
         except Exception as e:
             print("\nPartial correlation skipped:", e)
 
@@ -3779,55 +3379,33 @@ class SHAP:
         print(" table_OH_VIF.csv")
 
         # --------------------------- SCAFFOLD-STRATIFIED OH ANALYSIS ---------------------------
-
         OH_PATTERN = Chem.MolFromSmarts("[OX2H]")
         def count_oh(smiles):
             mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return np.nan
+            if mol is None: return np.nan
             return len(mol.GetSubstructMatches(OH_PATTERN))
 
-        # --------------------------- Build dataframe ---------------------------
         tmp = pd.DataFrame()
         tmp["EE"] = clean_df["EE"]
         tmp["lipid"] = clean_df["ionizable_lipid"]
         tmp["smiles"] = clean_df["ionizable_lipid_smiles"]
         tmp["OH_count"] = (tmp["smiles"].apply(count_oh))
 
-        print("\n")
-        print("="*90)
-        print("OH COUNT DISTRIBUTION")
-        print("="*90)
+        print("\n"); print("="*90); print("OH COUNT DISTRIBUTION"); print("="*90)
         print(tmp.groupby("OH_count")["EE"].agg(["count","mean","median","std"]).round(2))
 
-        # --------------------------- scaffold summary ---------------------------
-        print("\n")
-        print("="*90)
-        print("SCAFFOLD SUMMARY")
-        print("="*90)
+        print("\n"); print("="*90); print("SCAFFOLD SUMMARY"); print("="*90)
         scaffold_summary = (tmp.groupby("lipid").agg(n=("EE","size"), mean_EE=("EE","mean"), sd_EE=("EE","std"), OH_count=("OH_count","mean")).sort_values("n", ascending=False))
         print(scaffold_summary.round(2).to_string())
         scaffold_summary.to_csv("table_scaffold_oh_summary.csv")
 
-        # --------------------------- Within-scaffold correlations ---------------------------
-        print("\n")
-        print("="*90)
-        print("WITHIN-SCAFFOLD OH EFFECTS")
-        print("="*90)
+        print("\n"); print("="*90); print("WITHIN-SCAFFOLD OH EFFECTS"); print("="*90)
         rows = []
         for lipid, sub in tmp.groupby("lipid"):
-            if len(sub) < 5:
-                continue
-            if sub["OH_count"].nunique() < 2:
-                continue
+            if len(sub) < 5: continue
+            if sub["OH_count"].nunique() < 2: continue
             rho,p = spearmanr(sub["OH_count"], sub["EE"])
-            rows.append({
-                "lipid": lipid,
-                "n": len(sub),
-                "rho": rho,
-                "p": p,
-                "mean_EE": sub["EE"].mean()
-            })
+            rows.append({"lipid": lipid, "n": len(sub), "rho": rho, "p": p, "mean_EE": sub["EE"].mean()})
 
         within_df = pd.DataFrame(rows)
         if len(within_df) > 0:
@@ -3836,38 +3414,20 @@ class SHAP:
         else:
             print("\nNo scaffold contains sufficient OH-count variation.")
 
-        # --------------------------- Which scaffolds drive the OH signal? ---------------------------
-
-        print("\n")
-        print("="*90)
-        print("TOP HIGH-OH SCAFFOLDS")
-        print("="*90)
-
+        print("\n"); print("="*90); print("TOP HIGH-OH SCAFFOLDS"); print("="*90)
         high_oh = (scaffold_summary.sort_values("OH_count", ascending=False).head(20))
         print(high_oh.round(2).to_string())
 
-        # --------------------------- Between-scaffold correlation ---------------------------
-        print("\n")
-        print("="*90)
-        print("BETWEEN-SCAFFOLD ANALYSIS")
-        print("="*90)
+        print("\n"); print("="*90); print("BETWEEN-SCAFFOLD ANALYSIS"); print("="*90)
         rho,p = spearmanr(scaffold_summary["OH_count"],scaffold_summary["mean_EE"])
-        print(
-            f"\nScaffold mean OH count vs scaffold mean EE\n"
-            f"rho = {rho:.3f}\n"
-            f"p   = {p:.5g}")
+        print(f"\nScaffold mean OH count vs scaffold mean EE\nrho = {rho:.3f}\np   = {p:.5g}")
 
-        # --------------------------- Variance decomposition ---------------------------
         overall_var = np.var(tmp["EE"])
         between_var = np.var(scaffold_summary["mean_EE"])
-        print("\n")
-        print("="*90)
-        print("VARIANCE DECOMPOSITION")
-        print("="*90)
+        print("\n"); print("="*90); print("VARIANCE DECOMPOSITION"); print("="*90)
         print(f"Overall EE variance     : {overall_var:.2f}")
         print(f"Between-scaffold variance: {between_var:.2f}")
-        print(f"Fraction explained by scaffold: "
-              f"{between_var/overall_var:.3f}")
+        print(f"Fraction explained by scaffold: {between_var/overall_var:.3f}")
         print("\nSaved:")
         print(" table_scaffold_oh_summary.csv")
         print(" table_within_scaffold_OH_effects.csv")
@@ -3879,43 +3439,20 @@ class SHAP:
         except:
             HAS_PINGOUIN = False
 
-        # SMARTS
-        PATTERNS = {
-            "Ether": "[#6]-O-[#6]",
-            "Ester": "C(=O)O[#6]"
-        }
+        PATTERNS = {"Ether": "[#6]-O-[#6]", "Ester": ESTER_SMARTS}
 
-        # --------------------------- ESTER/ ETHER DESCRIPTOR ---------------------------
         def get_group_metrics(smiles, smarts):
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                return pd.Series({
-                    "count": np.nan,
-                    "min_dist": np.nan,
-                    "mean_dist": np.nan,
-                    "burden": np.nan,
-                    "head_count": np.nan,
-                    "linker_count": np.nan,
-                    "tail_count": np.nan
-                })
+                return pd.Series({"count": np.nan, "min_dist": np.nan, "mean_dist": np.nan, "burden": np.nan,
+                                   "head_count": np.nan, "linker_count": np.nan, "tail_count": np.nan})
             patt = Chem.MolFromSmarts(smarts)
             matches = mol.GetSubstructMatches(patt)
             N_atoms = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 7]
             if len(matches) == 0 or len(N_atoms) == 0:
-                return pd.Series({
-                    "count": 0,
-                    "min_dist": np.nan,
-                    "mean_dist": np.nan,
-                    "burden": 0,
-                    "head_count": 0,
-                    "linker_count": 0,
-                    "tail_count": 0
-                })
-
-            distances = []
-            head = 0
-            linker = 0
-            tail = 0
+                return pd.Series({"count": 0, "min_dist": np.nan, "mean_dist": np.nan, "burden": 0,
+                                   "head_count": 0, "linker_count": 0, "tail_count": 0})
+            distances = []; head = 0; linker = 0; tail = 0
             for match in matches:
                 anchor = match[0]
                 nearest = 999
@@ -3927,24 +3464,13 @@ class SHAP:
                     except:
                         pass
                 distances.append(nearest)
-                if nearest <= 4:
-                    head += 1
-                elif nearest <= 8:
-                    linker += 1
-                else:
-                    tail += 1
+                if nearest <= 4: head += 1
+                elif nearest <= 8: linker += 1
+                else: tail += 1
             burden = sum(1/d for d in distances if d > 0)
-            return pd.Series({
-                "count": len(distances),
-                "min_dist": np.min(distances),
-                "mean_dist": np.mean(distances),
-                "burden": burden,
-                "head_count": head,
-                "linker_count": linker,
-                "tail_count": tail
-            })
+            return pd.Series({"count": len(distances), "min_dist": np.min(distances), "mean_dist": np.mean(distances),
+                               "burden": burden, "head_count": head, "linker_count": linker, "tail_count": tail})
 
-        # --------------------------- BUILD DATAFRAME ---------------------------
         chem_df = pd.DataFrame()
         chem_df["EE"] = clean_df["EE"]
         chem_df["MolWt"] = (clean_df["ionizable_lipid_smiles"].apply(lambda x: Descriptors.MolWt(Chem.MolFromSmiles(x))))
@@ -3954,89 +3480,63 @@ class SHAP:
             tmp.columns = [f"{group}_{c}" for c in tmp.columns]
             chem_df = pd.concat([chem_df, tmp], axis=1)
 
-        # --------------------------- ANALYSIS ---------------------------
+        # Store the two adjusted-regression models fit below so Figure1_Topology (further
+        # down) can plot their ACTUAL fitted beta coefficients instead of typed-in numbers.
+        ether_ester_adjusted_models = {}
 
         for GROUP in ["Ether","Ester"]:
-            print("\n")
-            print("="*90)
-            print(GROUP.upper())
-            print("="*90)
-            descriptors = [
-                f"{GROUP}_count",
-                f"{GROUP}_min_dist",
-                f"{GROUP}_mean_dist",
-                f"{GROUP}_burden",
-                f"{GROUP}_head_count",
-                f"{GROUP}_linker_count",
-                f"{GROUP}_tail_count"
-            ]
+            print("\n"); print("="*90); print(GROUP.upper()); print("="*90)
+            descriptors = [f"{GROUP}_count", f"{GROUP}_min_dist", f"{GROUP}_mean_dist", f"{GROUP}_burden",
+                           f"{GROUP}_head_count", f"{GROUP}_linker_count", f"{GROUP}_tail_count"]
 
-            # --------------------------- Spearman correlation---------------------------
             print("\nCORRELATIONS\n")
             rows = []
             for col in descriptors:
                 sub = chem_df[["EE", col]].dropna()
-                if len(sub) < 20:
-                    continue
+                if len(sub) < 20: continue
                 rho,p = spearmanr(sub[col], sub["EE"])
-                rows.append({
-                    "Descriptor": col,
-                    "rho": rho,
-                    "p": p
-                })
+                rows.append({"Descriptor": col, "rho": rho, "p": p})
 
             corr_df = pd.DataFrame(rows)
             print(corr_df.round(4).to_string(index=False))
+            global_pvals += [{'analysis': f'{GROUP}_topology_correlation', 'feature': r['Descriptor'], 'p': r['p']}
+                              for _, r in corr_df.iterrows()]
             corr_df.to_csv(f"{GROUP}_correlations.csv",index=False)
-  
-            # --------------------------- Single-variable regressions ---------------------------
+
             print("\nREGRESSIONS\n")
             for col in descriptors:
                 sub = chem_df[["EE", col]].dropna()
-                if len(sub) < 20:
-                    continue
-                model = smf.ols(
-                    f"EE ~ {col}",
-                    data=sub).fit()
-                print("\n")
-                print(col)
+                if len(sub) < 20: continue
+                model = smf.ols(f"EE ~ {col}", data=sub).fit()
+                print("\n"); print(col)
                 coef = model.params.get(col, np.nan)
                 pval = model.pvalues.get(col, np.nan)
-                print(f"R²={model.rsquared:.3f} "
-                      f"beta={coef:.3f} "
-                      f"p={pval:.5g}")
+                print(f"R²={model.rsquared:.3f} beta={coef:.3f} p={pval:.5g}")
 
-            # --------------------------- Adjusted model ---------------------------
-            print("\n")
-            print("ADJUSTED MODEL")
-            print("-"*60)
+            print("\n"); print("ADJUSTED MODEL"); print("-"*60)
             dcol = f"{GROUP}_mean_dist"
             reg = chem_df[["EE", dcol, "MolWt", "LogP"]].dropna()
-            model = smf.ols(
-                f"""
-                EE ~ {dcol}
-                    + MolWt
-                    + LogP
-                """,
-                data=reg).fit()
+            model = smf.ols(f"EE ~ {dcol} + MolWt + LogP", data=reg).fit()
             print(model.summary())
+            ether_ester_adjusted_models[GROUP] = model
+            global_pvals.append({'analysis': f'{GROUP}_adjusted_regression', 'feature': dcol,
+                                  'p': model.pvalues.get(dcol, np.nan)})
 
-            # --------------------------- VIF ---------------------------
+            # --------------------------- VIF (FIX: add intercept) ---------------------------
             print("\nVIF\n")
-            X = reg[
-                [dcol, "MolWt", "LogP"]]
+            X = reg[[dcol, "MolWt", "LogP"]]
+            X_vif = sm.add_constant(X)
             vif_df = pd.DataFrame()
-            vif_df["Feature"] = X.columns
-            vif_df["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+            vif_df["Feature"] = X_vif.columns
+            vif_df["VIF"] = [variance_inflation_factor(X_vif.values, i) for i in range(X_vif.shape[1])]
+            vif_df = vif_df[vif_df["Feature"] != "const"].reset_index(drop=True)
             print(vif_df.round(2).to_string(index=False))
 
-            # --------------------------- Partial correlation ---------------------------
             if HAS_PINGOUIN:
                 print("\nPARTIAL CORRELATION\n")
                 pc = partial_corr(data=reg, x=dcol, y="EE", covar=["MolWt","LogP"])
                 print(pc)
 
-        # save final form
         chem_df.to_csv("table_ether_ester_final_analysis.csv",index=False)
         print("\nSaved: table_ether_ester_final_analysis.csv")
 
@@ -4047,51 +3547,27 @@ class SHAP:
         except:
             HAS_PINGOUIN = False
 
-        # SMARTS
         PRIMARY = Chem.MolFromSmarts("[NX3;H2]")
         SECONDARY = Chem.MolFromSmarts("[NX3;H1]")
         TERTIARY = Chem.MolFromSmarts("[NX3;H0]")
         QUATERNARY = Chem.MolFromSmarts("[N+]")
 
-        # --------------------------- NITROGEN DESCRIPTORS --------------------------
         def nitrogen_metrics(smiles):
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                return pd.Series({
-                    "Total_N": np.nan,
-                    "Primary_N": np.nan,
-                    "Secondary_N": np.nan,
-                    "Tertiary_N": np.nan,
-                    "Quaternary_N": np.nan,
-                    "Min_NN_Distance": np.nan,
-                    "Mean_NN_Distance": np.nan,
-                    "N_Cluster_Score": np.nan,
-                    "Polyamine": np.nan
-                })
-
-            # N atoms
+                return pd.Series({"Total_N": np.nan, "Primary_N": np.nan, "Secondary_N": np.nan,
+                                   "Tertiary_N": np.nan, "Quaternary_N": np.nan, "Min_NN_Distance": np.nan,
+                                   "Mean_NN_Distance": np.nan, "N_Cluster_Score": np.nan, "Polyamine": np.nan})
             N_atoms = [atom.GetIdx() for atom in mol.GetAtoms() if atom.GetAtomicNum() == 7]
             total_n = len(N_atoms)
             if total_n == 0:
-                return pd.Series({
-                    "Total_N": 0,
-                    "Primary_N": 0,
-                    "Secondary_N": 0,
-                    "Tertiary_N": 0,
-                    "Quaternary_N": 0,
-                    "Min_NN_Distance": np.nan,
-                    "Mean_NN_Distance": np.nan,
-                    "N_Cluster_Score": 0,
-                    "Polyamine": 0
-                })
-
-            # Amine classes
+                return pd.Series({"Total_N": 0, "Primary_N": 0, "Secondary_N": 0, "Tertiary_N": 0,
+                                   "Quaternary_N": 0, "Min_NN_Distance": np.nan, "Mean_NN_Distance": np.nan,
+                                   "N_Cluster_Score": 0, "Polyamine": 0})
             primary = len(mol.GetSubstructMatches(PRIMARY))
             secondary = len(mol.GetSubstructMatches(SECONDARY))
             tertiary = len(mol.GetSubstructMatches(TERTIARY))
             quaternary = len(mol.GetSubstructMatches(QUATERNARY))
-
-            # N-N topology
             pair_distances = []
             for i in range(len(N_atoms)):
                 for j in range(i+1,len(N_atoms)):
@@ -4099,33 +3575,18 @@ class SHAP:
                         path = Chem.rdmolops.GetShortestPath(mol, N_atoms[i], N_atoms[j])
                         dist = len(path)-1
                         pair_distances.append(dist)
-
                     except:
                         pass
             if len(pair_distances)==0:
-                min_nn = np.nan
-                mean_nn = np.nan
-                cluster_score = 0
+                min_nn = np.nan; mean_nn = np.nan; cluster_score = 0
             else:
-                min_nn = np.min(pair_distances)
-                mean_nn = np.mean(pair_distances)
+                min_nn = np.min(pair_distances); mean_nn = np.mean(pair_distances)
                 cluster_score = np.sum([1/d for d in pair_distances])
-
-            # Polyamine flag
             polyamine = int(total_n >= 2)
-            return pd.Series({
-                "Total_N": total_n,
-                "Primary_N": primary,
-                "Secondary_N": secondary,
-                "Tertiary_N": tertiary,
-                "Quaternary_N": quaternary,
-                "Min_NN_Distance": min_nn,
-                "Mean_NN_Distance": mean_nn,
-                "N_Cluster_Score": cluster_score,
-                "Polyamine": polyamine
-            })
+            return pd.Series({"Total_N": total_n, "Primary_N": primary, "Secondary_N": secondary,
+                               "Tertiary_N": tertiary, "Quaternary_N": quaternary, "Min_NN_Distance": min_nn,
+                               "Mean_NN_Distance": mean_nn, "N_Cluster_Score": cluster_score, "Polyamine": polyamine})
 
-        # --------------------------- BUILD DATAFRAME ---------------------------
         n_df = pd.DataFrame()
         n_df["EE"] = clean_df["EE"]
         n_df["MolWt"] = (clean_df["ionizable_lipid_smiles"].apply(lambda x: Descriptors.MolWt(Chem.MolFromSmiles(x))))
@@ -4133,143 +3594,81 @@ class SHAP:
         metrics = (clean_df["ionizable_lipid_smiles"].apply(nitrogen_metrics))
         n_df = pd.concat([n_df, metrics],axis=1)
 
-        # --------------------------- CORRELATIONS ---------------------------
-        print("\n")
-        print("="*90)
-        print("NITROGEN CORRELATIONS")
-        print("="*90)
-        descriptors = [
-            "Total_N",
-            "Primary_N",
-            "Secondary_N",
-            "Tertiary_N",
-            "Quaternary_N",
-            "Min_NN_Distance",
-            "Mean_NN_Distance",
-            "N_Cluster_Score",
-            "Polyamine"
-        ]
+        print("\n"); print("="*90); print("NITROGEN CORRELATIONS"); print("="*90)
+        descriptors = ["Total_N","Primary_N","Secondary_N","Tertiary_N","Quaternary_N",
+                       "Min_NN_Distance","Mean_NN_Distance","N_Cluster_Score","Polyamine"]
         corr_rows = []
         for col in descriptors:
             sub = n_df[["EE", col]].dropna()
-            if len(sub) < 20:
-                continue
+            if len(sub) < 20: continue
             rho,p = spearmanr(sub[col], sub["EE"])
-            corr_rows.append({
-                "Descriptor": col,
-                "rho":rho,
-                "p": p
-            })
+            corr_rows.append({"Descriptor": col, "rho":rho, "p": p})
 
         corr_df = pd.DataFrame(corr_rows)
         print(corr_df.round(4).to_string(index=False))
+        global_pvals += [{'analysis': 'nitrogen_correlation', 'feature': r['Descriptor'], 'p': r['p']}
+                          for _, r in corr_df.iterrows()]
         corr_df.to_csv("table_nitrogen_correlations.csv",index=False)
+        # Stable reference for Figure3 (see the oh_deepdive_corr_df comment above).
+        nitrogen_corr_df = corr_df.copy()
 
-        # --------------------------- REGRESSIONS ---------------------------
-        print("\n")
-        print("="*90)
-        print("REGRESSIONS")
-        print("="*90)
+        print("\n"); print("="*90); print("REGRESSIONS"); print("="*90)
+        # Store fitted single-variable models keyed by descriptor for Figure3 to reuse.
+        nitrogen_single_models = {}
         for col in descriptors:
             sub = n_df[["EE",col]].dropna()
-            if len(sub) < 20:
-                continue
-            model = smf.ols(
-                f"EE ~ {col}",
-                data=sub).fit()
+            if len(sub) < 20: continue
+            model = smf.ols(f"EE ~ {col}", data=sub).fit()
+            nitrogen_single_models[col] = model
             coef = model.params.get(col, np.nan)
             pval = model.pvalues.get(col, np.nan)
-            print("\n")
-            print(col)
-            print(f"$R^2$={model.rsquared:.3f}  "
-                f"beta={coef:.3f}  "
-                f"p={pval:.5g}")
+            print("\n"); print(col)
+            print(f"$R^2$={model.rsquared:.3f}  beta={coef:.3f}  p={pval:.5g}")
 
-        # --------------------------- ADJUSTED REGRESSIONS ---------------------------
-        print("\n")
-        print("="*90)
-        print("ADJUSTED MODELS")
-        print("="*90)
+        print("\n"); print("="*90); print("ADJUSTED MODELS"); print("="*90)
         adj_rows = []
+        nitrogen_adjusted_models = {}
         for col in descriptors:
             reg = n_df[["EE", col, "MolWt", "LogP"]].dropna()
-            if len(reg) < 30:
-                continue
-            model = smf.ols(
-                f"""
-                EE ~ {col}
-                    + MolWt
-                    + LogP
-                """, data=reg).fit()
-            adj_rows.append({
-                "Descriptor": col,
-                "Beta": model.params[col],
-                "P": model.pvalues[col],
-                "R2": model.rsquared
-            })
+            if len(reg) < 30: continue
+            model = smf.ols(f"EE ~ {col} + MolWt + LogP", data=reg).fit()
+            nitrogen_adjusted_models[col] = model
+            adj_rows.append({"Descriptor": col, "Beta": model.params[col], "P": model.pvalues[col], "R2": model.rsquared})
+            global_pvals.append({'analysis': 'nitrogen_adjusted_regression', 'feature': col, 'p': model.pvalues[col]})
 
         adj_df = pd.DataFrame(adj_rows)
         print(adj_df.round(4).to_string(index=False))
         adj_df.to_csv("table_nitrogen_adjusted_models.csv", index=False)
 
-        # --------------------------- VIF ---------------------------
-        print("\n")
-        print("="*90)
-        print("VIF ANALYSIS")
-        print("="*90)
-        for col in [
-            "Total_N",
-            "Primary_N",
-            "Secondary_N",
-            "Tertiary_N",
-            "N_Cluster_Score"]:
+        # --------------------------- VIF (FIX: add intercept) ---------------------------
+        print("\n"); print("="*90); print("VIF ANALYSIS"); print("="*90)
+        for col in ["Total_N","Primary_N","Secondary_N","Tertiary_N","N_Cluster_Score"]:
             reg = n_df[[col, "MolWt", "LogP"]].dropna()
-            if len(reg) < 30:
-                continue
+            if len(reg) < 30: continue
+            reg_vif = sm.add_constant(reg)
             vif_df = pd.DataFrame()
-            vif_df["Feature"] = reg.columns
-            vif_df["VIF"] = [variance_inflation_factor(reg.values, i) for i in range(reg.shape[1])]
-            print("\n")
-            print(col)
+            vif_df["Feature"] = reg_vif.columns
+            vif_df["VIF"] = [variance_inflation_factor(reg_vif.values, i) for i in range(reg_vif.shape[1])]
+            vif_df = vif_df[vif_df["Feature"] != "const"].reset_index(drop=True)
+            print("\n"); print(col)
             print(vif_df.round(2).to_string(index=False))
 
-        # --------------------------- PARTIAL CORRELATIONS ---------------------------
         if HAS_PINGOUIN:
-            print("\n")
-            print("="*90)
-            print("PARTIAL CORRELATIONS")
-            print("="*90)
-            for col in [
-                "Total_N",
-                "Primary_N",
-                "Secondary_N",
-                "Tertiary_N",
-                "N_Cluster_Score"
-            ]:
+            print("\n"); print("="*90); print("PARTIAL CORRELATIONS"); print("="*90)
+            for col in ["Total_N","Primary_N","Secondary_N","Tertiary_N","N_Cluster_Score"]:
                 sub = n_df[["EE",col,"MolWt","LogP"]].dropna()
-                if len(sub) < 30:
-                    continue
-                print("\n")
-                print(col)
+                if len(sub) < 30: continue
+                print("\n"); print(col)
                 pc = partial_corr(data=sub, x=col, y="EE", covar=["MolWt", "LogP"])
                 print(pc)
 
-        print("\n")
-        print("="*90)
-        print("TOTAL N SUMMARY")
-        print("="*90)
+        print("\n"); print("="*90); print("TOTAL N SUMMARY"); print("="*90)
         print(n_df.groupby("Total_N")["EE"].agg(["count", "mean", "median", "std"]).round(2))
 
-        print("\n")
-        print("="*90)
-        print("PRIMARY AMINE SUMMARY")
-        print("="*90)
+        print("\n"); print("="*90); print("PRIMARY AMINE SUMMARY"); print("="*90)
         print(n_df.groupby("Primary_N")["EE"].agg(["count", "mean", "median"]).round(2))
 
-        print("\n")
-        print("="*90)
-        print("POLYAMINE SUMMARY")
-        print("="*90)
+        print("\n"); print("="*90); print("POLYAMINE SUMMARY"); print("="*90)
         print(n_df.groupby("Polyamine")["EE"].agg(["count", "mean", "median"]).round(2))
 
         print("\nSaved:")
@@ -4277,28 +3676,34 @@ class SHAP:
         print(" table_nitrogen_adjusted_models.csv")
 
         # --------------------------- FIGURE : ETHER / ESTER TOPOLOGY ---------------------------
-        # Delta EE distance bins
+        colors = PUB_PALETTE[:16]
         plot_df = bin_df[bin_df["Feature"].isin(["Ether","Ester"])].copy()
         order = ["0-2", "3-5", "6-8", ">8"]
-        fig, axes = plt.subplots(1, 3, figsize=(18,5))
-        colors = PUB_PALETTE[:16]
+        fig, axes = plt.subplots(1, 3, figsize=(8, 3))
 
-        # Ether
         ether = plot_df[plot_df.Feature=="Ether"]
         sns.barplot(data=ether, x="Distance_bin", y="Delta_EE", order=order, color=colors[1], ax=axes[0])
         axes[0].axhline(0, ls="--", c="black")
         axes[0].set_title("Ether Topology")
         axes[0].set_ylabel(f"$\\Delta$ EE (%)")
 
-        # Ester
         ester = plot_df[plot_df.Feature=="Ester"]
         sns.barplot(data=ester, x="Distance_bin", y="Delta_EE", order=order, color=colors[2], ax=axes[1])
         axes[1].axhline(0, ls="--", c="black")
         axes[1].set_title("Ester Topology")
         axes[1].set_ylabel("$\\Delta$ EE (%)")
 
-        # Regression coefficients
-        coef_df = pd.DataFrame({"Feature":["Ether", "Ester"], "Beta":[3.3412, 3.1863]})
+        # FIX: previously coef_df was hand-typed as {"Ether": 3.3412, "Ester": 3.1863} --
+        # disconnected from the adjusted OLS models fit above. Now pulls the actual fitted
+        # beta_{group}_mean_dist coefficient out of ether_ester_adjusted_models, so the bar
+        # heights always match what the printed regression summaries above say.
+        coef_df = pd.DataFrame({
+            "Feature": ["Ether", "Ester"],
+            "Beta": [
+                ether_ester_adjusted_models["Ether"].params[f"Ether_mean_dist"],
+                ether_ester_adjusted_models["Ester"].params[f"Ester_mean_dist"],
+            ]
+        })
         sns.barplot(data=coef_df, x="Feature", y="Beta", palette=[colors[0], colors[3]], ax=axes[2])
         axes[2].set_title("Adjusted Distance Effects")
         axes[2].set_ylabel(f"Regression $\\beta$")
@@ -4308,147 +3713,199 @@ class SHAP:
         plt.show()
 
         # --------------------------- FIGURE : HYDROXYL BURDEN RATHER THAN DISTANCE DRIVES EE ---------------------------
-        fig, axes = plt.subplots(1, 3, figsize=(14,4))
+        def _lookup(corr_table, descriptor):
+            row = corr_table.loc[corr_table['Descriptor'] == descriptor]
+            if len(row) == 0:
+                return np.nan, np.nan
+            return float(row['rho'].iloc[0]), float(row['p'].iloc[0])
 
-        # PANEL A
+        fig, axes = plt.subplots(1, 3, figsize=(8, 3))
+
         tmp = (oh_df.groupby("OH_count")["EE"].agg(["mean","sem","count"]).reset_index())
         axes[0].errorbar(tmp["OH_count"], tmp["mean"], yerr=tmp["sem"], marker="o", lw=2, capsize=4, color=colors[11])
         axes[0].set_xlabel("Number of OH Groups")
         axes[0].set_ylabel("Mean EE (%)")
-        axes[0].text(0.05, 0.95, r"$\rho$ = -0.377"+"\n"+"p < 0.001", transform=axes[0].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        # FIX: rho/p now read from the actual computed oh_deepdive_corr_df instead of typed literals.
+        rho_a, p_a = _lookup(oh_deepdive_corr_df, 'OH_count')
+        axes[0].text(0.05, 0.95, f"$\\rho$ = {rho_a:.3f}\np {'< 0.001' if p_a < 0.001 else f'= {p_a:.3g}'}",
+                     transform=axes[0].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
-        # PANEL B
         tmp = (oh_df.groupby("Headgroup_OH_count")["EE"].agg(["mean","sem","count"]).reset_index())
         axes[1].errorbar(tmp["Headgroup_OH_count"], tmp["mean"], yerr=tmp["sem"], marker="o", lw=2, capsize=4, color=colors[12])
         axes[1].set_xlabel("Headgroup OHs")
         axes[1].set_ylabel("Mean EE (%)")
-        axes[1].text(0.05, 0.95, r"$\rho$ = -0.242"+"\n"+"p = 0.0028", transform=axes[1].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        rho_b, p_b = _lookup(oh_deepdive_corr_df, 'Headgroup_OH_count')
+        axes[1].text(0.05, 0.95, f"$\\rho$ = {rho_b:.3f}\np = {p_b:.3g}",
+                     transform=axes[1].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
-        # PANEL C
         sns.regplot(data=oh_df, x="OH_mean_distance", y="EE", scatter_kws={"alpha":0.5,"s":30}, line_kws={"color":"black"}, ax=axes[2])
         axes[2].set_xlabel("Mean OH Distance")
         axes[2].set_ylabel("EE (%)")
-        axes[2].text(0.05, 0.95, r"$\rho$ = 0.033"+"\n"+"p = 0.686\n n.s.", transform=axes[2].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        rho_c, p_c = _lookup(oh_deepdive_corr_df, 'OH_mean_distance')
+        ns_flag = "\nn.s." if p_c >= 0.05 else ""
+        axes[2].text(0.05, 0.95, f"$\\rho$ = {rho_c:.3f}\np = {p_c:.3g}{ns_flag}",
+                     transform=axes[2].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
         plt.tight_layout()
         save_pub_figure(fig, "Figure2_HydroxylBurden", width="double")
         plt.show()
 
         # --------------------------- FIGURE : NITROGEN ARCHITECTURE ---------------------------
-        fig, axes = plt.subplots(1, 3, figsize=(14,4))
+        fig, axes = plt.subplots(1, 3, figsize=(8, 3))
 
-        # PANEL A : PRIMARY AMINES
         tmp = (n_df.groupby("Primary_N")["EE"].agg(["mean","sem","count"]).reset_index())
         axes[0].errorbar(tmp["Primary_N"], tmp["mean"], yerr=tmp["sem"], marker="^", lw=2, capsize=4, color=colors[9])
         axes[0].set_xlabel("Primary Amine Count")
         axes[0].set_ylabel("Mean EE (%)")
-        axes[0].text(0.05, 0.95, r"$\rho$ = -0.401"+"\n" "p < 0.001\n" r"$\beta$ = -13.85", transform=axes[0].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        rho_a, p_a = _lookup(nitrogen_corr_df, 'Primary_N')
+        beta_a = nitrogen_single_models['Primary_N'].params.get('Primary_N', np.nan) if 'Primary_N' in nitrogen_single_models else np.nan
+        axes[0].text(0.05, 0.95, f"$\\rho$ = {rho_a:.3f}\np {'< 0.001' if p_a < 0.001 else f'= {p_a:.3g}'}\n"
+                     f"$\\beta$ = {beta_a:.2f}", transform=axes[0].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
-        # PANEL B : TOTAL N
         tmp = (n_df.groupby("Total_N")["EE"].agg(["mean","sem","count"]).reset_index())
         axes[1].errorbar(tmp["Total_N"], tmp["mean"], yerr=tmp["sem"], marker="d", lw=2, capsize=4, color=colors[10])
         axes[1].set_xlabel("Total N Count")
         axes[1].set_ylabel("Mean EE (%)")
-        axes[1].text(0.05, 0.95, r"$\rho$ = -0.309"+"\n" "p < 0.001\n" r"$\beta$ = -5.24", transform=axes[1].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        rho_b, p_b = _lookup(nitrogen_corr_df, 'Total_N')
+        beta_b = nitrogen_single_models['Total_N'].params.get('Total_N', np.nan) if 'Total_N' in nitrogen_single_models else np.nan
+        axes[1].text(0.05, 0.95, f"$\\rho$ = {rho_b:.3f}\np {'< 0.001' if p_b < 0.001 else f'= {p_b:.3g}'}\n"
+                     f"$\\beta$ = {beta_b:.2f}", transform=axes[1].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
-        # PANEL C : CLUSTERING
         sns.regplot(data=n_df, x="N_Cluster_Score", y="EE", scatter_kws={"alpha":0.45,"s":30}, line_kws={"color":"black"}, ax=axes[2])
         axes[2].set_xlabel("Cluster Score")
         axes[2].set_ylabel("EE (%)")
-        axes[2].text(0.05, 0.95, r"$\rho$ = -0.309"+"\n" "p < 0.001\n" r"$\beta$ = -6.21", transform=axes[2].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
+        rho_c, p_c = _lookup(nitrogen_corr_df, 'N_Cluster_Score')
+        beta_c = nitrogen_single_models['N_Cluster_Score'].params.get('N_Cluster_Score', np.nan) if 'N_Cluster_Score' in nitrogen_single_models else np.nan
+        axes[2].text(0.05, 0.95, f"$\\rho$ = {rho_c:.3f}\np {'< 0.001' if p_c < 0.001 else f'= {p_c:.3g}'}\n"
+                     f"$\\beta$ = {beta_c:.2f}", transform=axes[2].transAxes, va="top", bbox=dict(fc="white", alpha=0.6))
 
         plt.tight_layout()
         save_pub_figure(fig, "Figure3_NitrogenArchitecture", width="double")
         plt.show()
 
-        # FIGURE 4 : MECHANISTIC DESIGN RULES (DELTA EE)
-        summary_df = pd.DataFrame({
-            "Feature":[
-                "OH-rich headgroup",
-                "Primary amine",
-                "Nitrogen clustering",
-                "Polyamine architecture",
-                "High nitrogen count",
-                "Secondary amine",
-                "Distal ester",
-                "Distal ether"
-            ],
-            "Delta_EE":[
-                -12.3,     # OH headgroup
-                -13.9,     # primary amines
-                -6.2,      # clustering
-                -7.4,      # polyamines
-                -5.2,      # total N
-                7.7,      # secondary amines
-                11.0,     # distal ester
-                21.0      # distal ether
-            ],
-            "P":[
-                0.0028,
-                1e-10,
-                1e-7,
-                0.0187,
-                1e-8,
-                1e-4,
-                1e-3,
-                1e-10
-            ]
-        })
+        # --------------------------- FIGURE 4 : MECHANISTIC DESIGN RULES (DELTA EE) ---------------------------
+        # FIX: summary_df below was previously hand-typed (Delta_EE and P values pasted in
+        # as literals, disconnected from rules_df / region_df / n_df / oh_df computed above).
+        # It is now built entirely from an indicator-vs-EE Mann-Whitney comparison computed
+        # in-place from the same dataframes used throughout this section, so every bar in
+        # Figure4 traces back to an actual computed value.
+        def _delta_and_mwu(indicator, ee):
+            indicator = np.asarray(indicator).astype(bool)
+            ee = np.asarray(ee, dtype=float)
+            mask = ~pd.isna(ee)
+            indicator, ee = indicator[mask], ee[mask]
+            present, absent = ee[indicator], ee[~indicator]
+            if len(present) < 3 or len(absent) < 3:
+                return np.nan, np.nan
+            delta = present.mean() - absent.mean()
+            _, p = mannwhitneyu(present, absent, alternative='two-sided')
+            return delta, p
 
-        # Significance stars
+        design_rule_rows = []
+
+        # OH-rich headgroup: loc_df['OH_Headgroup'] is the binary "has a headgroup OH"
+        # indicator already computed in the headgroup/linker/tail analysis above.
+        d, p = _delta_and_mwu(loc_df['OH_Headgroup'], loc_df['EE'])
+        design_rule_rows.append({'Feature': 'OH-rich headgroup', 'Delta_EE': d, 'P': p})
+
+        # Primary / secondary amine: reuse the already-fit MWU design rules (rules_df).
+        for label, frag_name in [('Primary amine', 'Primary amine'), ('Secondary amine', 'Secondary amine')]:
+            row = rules_df.loc[rules_df['Feature'] == frag_name]
+            if len(row):
+                design_rule_rows.append({'Feature': label, 'Delta_EE': float(row['delta'].iloc[0]), 'P': float(row['p_mwu'].iloc[0])})
+
+        # Nitrogen clustering: median split of N_Cluster_Score.
+        nz = n_df['N_Cluster_Score'].dropna()
+        if len(nz) > 0:
+            median_cluster = nz.median()
+            d, p = _delta_and_mwu(n_df['N_Cluster_Score'] > median_cluster, n_df['EE'])
+            design_rule_rows.append({'Feature': 'Nitrogen clustering', 'Delta_EE': d, 'P': p})
+
+        # Polyamine architecture: n_df['Polyamine'] is already a 0/1 indicator.
+        d, p = _delta_and_mwu(n_df['Polyamine'], n_df['EE'])
+        design_rule_rows.append({'Feature': 'Polyamine architecture', 'Delta_EE': d, 'P': p})
+
+        # High nitrogen count: at/above the median Total_N vs below.
+        tn = n_df['Total_N'].dropna()
+        if len(tn) > 0:
+            median_n = tn.median()
+            d, p = _delta_and_mwu(n_df['Total_N'] >= median_n, n_df['EE'])
+            design_rule_rows.append({'Feature': 'High nitrogen count', 'Delta_EE': d, 'P': p})
+
+        # Distal ester / ether: topo_df['{group}_region'] == 'Tail' indicator (computed earlier).
+        for label, group in [('Distal ester', 'Ester'), ('Distal ether', 'Ether')]:
+            indicator = (topo_df[f'{group}_region'] == 'Tail')
+            d, p = _delta_and_mwu(indicator, topo_df['EE'])
+            design_rule_rows.append({'Feature': label, 'Delta_EE': d, 'P': p})
+
+        summary_df = pd.DataFrame(design_rule_rows).dropna(subset=['Delta_EE'])
+        global_pvals += [{'analysis': 'mechanistic_design_rule_summary', 'feature': r['Feature'], 'p': r['P']}
+                          for _, r in summary_df.iterrows()]
+
         def p_to_stars(p):
-            if p < 0.001:
-                return "***"
-            elif p < 0.01:
-                return "**"
-            elif p < 0.05:
-                return "*"
+            if p < 0.001: return "***"
+            elif p < 0.01: return "**"
+            elif p < 0.05: return "*"
             return ""
 
-        summary_df["Stars"] = (summary_df["P"] .apply(p_to_stars))
-        summary_df = summary_df.sort_values("Delta_EE")     # Sort by effect size
+        summary_df["Stars"] = (summary_df["P"].apply(p_to_stars))
+        summary_df = summary_df.sort_values("Delta_EE")
 
-        # Plot
-        fig, ax = plt.subplots(figsize=(8,6))
-        colors = [colors[12] if x < 0 else colors[10] for x in summary_df["Delta_EE"]]
-        bars = ax.barh(summary_df["Feature"], summary_df["Delta_EE"], color=colors, edgecolor="white", linewidth=2)
+        fig, ax = plt.subplots(figsize=(7, 3))
+        bar_colors = [colors[12] if x < 0 else colors[10] for x in summary_df["Delta_EE"]]
+        bars = ax.barh(summary_df["Feature"], summary_df["Delta_EE"], color=bar_colors, edgecolor="white", linewidth=2)
         ax.axvline(0, color="black", lw=2, ls=":")
 
         for bar, (_, row) in zip(bars, summary_df.iterrows()):
             effect = row["Delta_EE"]
             x_loc = (effect + 0.8 if effect > 0 else effect - 0.8)
-            ax.text(x_loc, bar.get_y() + bar.get_height()/2, row["Stars"], fontsize=14, fontweight="bold", va="center", ha="left" if effect > 0 else "right")
+            ax.text(x_loc, bar.get_y() + bar.get_height()/2, row["Stars"], fontweight="bold", va="center", ha="left" if effect > 0 else "right")
 
         ax.set_xlabel(r"$\Delta$EE (%)")
         ax.set_ylabel("Chemical Design Rule")
-        ax.set_xlim(-18, 24)
-        ax.text(0.98, -0.12, "* p<0.05   ** p<0.01   *** p<0.001", transform=ax.transAxes, ha="right", fontsize=11, style="italic")
-        ax.legend()
-
+        span = max(abs(summary_df["Delta_EE"].min()), abs(summary_df["Delta_EE"].max())) * 1.3 + 2
+        ax.set_xlim(-span, span)
+        ax.text(0.98, -0.12, "* p<0.05   ** p<0.01   *** p<0.001", transform=ax.transAxes, ha="center", style="italic")
+        plt.legend()
         plt.tight_layout()
         save_pub_figure(fig, "Figure4_MechanisticDesignRules_DeltaEE", width="single")
         plt.show()
 
         # --- SHAP-Guided Design Case Study ----------------------------------------
-        ester_smarts   = Chem.MolFromSmarts('C(=O)O')
+        # FIX: uses the shared ESTER_SMARTS constant (was a separate, slightly different
+        # bare 'C(=O)O' pattern before) and now prints the actual edited SMILES plus a
+        # basic sanity check (atom-count / validity) rather than only sanitizing silently,
+        # so a chemically odd substructure-replacement result is visible before anyone
+        # treats it as evidence.
+        ester_smarts_mol = Chem.MolFromSmarts(ESTER_SMARTS)
         ether_template = Chem.MolFromSmiles('CO')
 
         def ester_to_ether_edit(smiles):
-            """Replace the first ester linkage (-C(=O)O-) with an ether (-C-O-) as a
-            minimal structural probe of the SHAP ether/ester design rule. Returns None
-            if no ester is present or the edited molecule fails to sanitize."""
+            """Replace the first ester linkage with an ether as a minimal structural probe
+            of the SHAP ether/ester design rule. Returns None if no ester is present or the
+            edited molecule fails to sanitize. NOTE: this is a crude atom-substitution edit,
+            not a validated retrosynthetic transform -- inspect the printed SMILES/atom counts
+            before treating the result as more than a rough in-silico probe (see caveat below)."""
             mol = Chem.MolFromSmiles(str(smiles))
-            if mol is None or not mol.HasSubstructMatch(ester_smarts):
+            if mol is None or not mol.HasSubstructMatch(ester_smarts_mol):
                 return None
-            edited_mols = AllChem.ReplaceSubstructs(mol, ester_smarts, ether_template)
+            edited_mols = AllChem.ReplaceSubstructs(mol, ester_smarts_mol, ether_template)
             edited = edited_mols[0]
             try:
                 Chem.SanitizeMol(edited)
-                return Chem.MolToSmiles(edited)
+                edited_smiles = Chem.MolToSmiles(edited)
+                # Sanity check: report the heavy-atom-count change so an obviously wrong
+                # edit (e.g. losing/gaining far more atoms than the O-for-C(=O)O swap
+                # should) is visible in the printed output, not silently accepted.
+                n_before = mol.GetNumHeavyAtoms()
+                n_after = edited.GetNumHeavyAtoms()
+                print(f'    [ester_to_ether_edit sanity check] heavy atoms before={n_before}, '
+                      f'after={n_after} (delta={n_after - n_before}; inspect if this looks larger '
+                      f'than expected for a single ester->ether substitution)')
+                return edited_smiles
             except Exception:
                 return None
 
-        # Find a Low-EE formulation whose ionizable lipid contains an ester linkage
         candidates = clean_df[clean_df['EE'] < 60].copy()
         candidates['edited_smiles'] = candidates['ionizable_lipid_smiles'].apply(ester_to_ether_edit)
         candidates = candidates[candidates['edited_smiles'].notna()]
@@ -4479,7 +3936,48 @@ class SHAP:
             print('Shift consistent with SHAP rule (ether favored): ' +
                   ('YES' if pred_edited['prob_high_EE'] > pred_original['prob_high_EE'] else 'NO'))
             print('\nNote: in-silico structural probe only -- not experimental validation. '
-                  'Synthetic accessibility of the edited structure was not assessed.')
+                  'Synthetic accessibility of the edited structure was not assessed, and the '
+                  'atom-count sanity check above should be reviewed before citing this result.')
+
+        # --------------------------- GLOBAL MULTIPLE-TESTING CORRECTION ---------------------------
+        # FIX: every sub-analysis above (functional groups, MWU design rules, SMARTS
+        # enrichment, headgroup/linker/tail, topology distance/bin/region, OH descriptors,
+        # ether/ester topology, nitrogen architecture, design-rule summary) corrected its
+        # own p-values IN ISOLATION. Section12 as a whole runs several dozen overlapping,
+        # often correlated hypothesis tests -- the true family-wise false-discovery rate
+        # across the section is understated by any single table's q-values. This block
+        # pools every p-value collected into `global_pvals` during this method and applies
+        # ONE FDR (and, more conservatively, one Bonferroni) correction across all of them,
+        # so a reviewer (or you) can see how many "significant" findings survive a fair,
+        # section-wide accounting rather than being read off degrees table-by-table.
+        global_test_df = pd.DataFrame(global_pvals).dropna(subset=['p'])
+        if len(global_test_df) > 0:
+            global_test_df['q_fdr_global']    = multipletests(global_test_df['p'], method='fdr_bh')[1]
+            global_test_df['p_bonf_global']   = multipletests(global_test_df['p'], method='bonferroni')[1]
+            global_test_df['sig_fdr_global']  = global_test_df['q_fdr_global'] < 0.05
+            global_test_df['sig_bonf_global'] = global_test_df['p_bonf_global'] < 0.05
+            global_test_df = global_test_df.sort_values('p').reset_index(drop=True)
+            global_test_df.to_csv('table_section12_global_multiple_testing_correction.csv', index=False)
+
+            n_tests = len(global_test_df)
+            n_locally_would_be_sig_at_p05 = int((global_test_df['p'] < 0.05).sum())
+            n_sig_fdr_global = int(global_test_df['sig_fdr_global'].sum())
+            n_sig_bonf_global = int(global_test_df['sig_bonf_global'].sum())
+            print('\n' + '='*90)
+            print('GLOBAL MULTIPLE-TESTING CORRECTION ACROSS SECTION 12')
+            print('='*90)
+            print(f'Total hypothesis tests pooled across this section: {n_tests}')
+            print(f'Raw p<0.05 (uncorrected, per-test):                {n_locally_would_be_sig_at_p05} / {n_tests}')
+            print(f'Surviving a GLOBAL FDR (Benjamini-Hochberg) correction:  {n_sig_fdr_global} / {n_tests}')
+            print(f'Surviving a GLOBAL Bonferroni correction:                {n_sig_bonf_global} / {n_tests}')
+            print('\nUse this table -- not any single sub-analysis\'s local q-value -- when deciding which '
+                  'mechanistic claims in this section are safe to state as confirmatory rather than '
+                  'hypothesis-generating. Saved: table_section12_global_multiple_testing_correction.csv')
+            print('\nMost significant tests globally:')
+            print(global_test_df.head(15)[['analysis','feature','p','q_fdr_global','sig_fdr_global']].to_string(index=False))
+        else:
+            print('\nNo p-values collected for the global multiple-testing correction table '
+                  '(unexpected -- check that global_pvals is being populated above).')
 
         return self.state
 
@@ -4519,7 +4017,6 @@ class Chemistry:
         gkf = self.state.gkf
         df = self.state.df
 
-        # --- UMAP ----------------------------------------
         try:
             import umap
         except ImportError:
@@ -4544,7 +4041,6 @@ class Chemistry:
             axes[0].scatter(embedding[mask,0], embedding[mask,1], c=color,
                             s=ion_data.loc[mask,'n_obs']*10+20, alpha=0.7, label=label, edgecolors='white', lw=0.3)
         axes[0].set_xlabel('UMAP 1'); axes[0].set_ylabel('UMAP 2')
-        # axes[0].set_title('Ionizable Lipid Chemical Space by EE Class\n(size = n Atlas observations)', fontsize=11)
         axes[0].legend()
 
         sc = axes[1].scatter(embedding[:,0], embedding[:,1], c=ion_data['mean_EE'],
@@ -4552,14 +4048,11 @@ class Chemistry:
                               edgecolors='white', lw=0.3, vmin=0, vmax=100)
         plt.colorbar(sc, ax=axes[1], label='Mean EE%')
         axes[1].set_xlabel('UMAP 1'); axes[1].set_ylabel('UMAP 2')
-        # axes[1].set_title('Mean EE% by Ionizable Lipid Structure', fontsize=11)
 
-        # plt.suptitle('UMAP of Ionizable Lipid Space (Morgan ECFP6, n=188 unique structures)', fontsize=11)
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec13A_umap', width='double')
         plt.show()
 
-        # --- Ratio Optimiser ----------------------------------------
         def optimise_ratio(ionizable_smiles, helper_smiles, sterol_smiles, peg_smiles,
                            bundle, il_range=(25, 50, 2.5), peg_range=(1,3,0.5)):
             rows = []
@@ -4575,34 +4068,26 @@ class Chemistry:
                                  'prob_high_EE':r['prob_high_EE'],'FQS':r.get('FQS','N/A')})
             return pd.DataFrame(rows).sort_values('prob_high_EE', ascending=False)
 
-
         print('Optimising ratio for MC3 + DSPC + Cholesterol + DMG-PEG2000...')
         opt = optimise_ratio(MC3, DSPC, CHOLESTEROL, DMG_PEG, bundle)
         print('Top 10 predicted ratios:')
         print(opt.head(10).to_string(index=False))
 
-        # --- Applicability Domain (AD) ----------------------------------------
-        # ── Compute AD threshold from training data ───────────────────────────────────
-        # Use ionizable FP only (primary driver per SHAP)
         ion_fp_cols = [c for c in fp_matrix.columns if c.startswith('ionizable_')]
         X_ion = fp_matrix[ion_fp_cols].values
 
-        # Fit kNN on full training set
         k = 5
         knn = NearestNeighbors(n_neighbors=k+1, metric='jaccard', n_jobs=-1)
-        knn.fit(X_ion > 0)  # binary for Jaccard
+        knn.fit(X_ion > 0)
 
-        # Distance from each point to its k nearest neighbours (excluding self)
         dists, _ = knn.kneighbors(X_ion > 0)
-        knn_dists = dists[:, 1:].mean(axis=1)  # exclude self (first neighbour)
+        knn_dists = dists[:, 1:].mean(axis=1)
 
-        # AD threshold: 95th percentile of training distances
         ad_threshold = np.percentile(knn_dists, 95)
         print(f'AD threshold (95th percentile of kNN Jaccard distances): {ad_threshold:.4f}')
         print(f'Formulations INSIDE AD:  {(knn_dists <= ad_threshold).sum()} / {len(knn_dists)}')
         print(f'Formulations OUTSIDE AD: {(knn_dists > ad_threshold).sum()} / {len(knn_dists)}')
 
-        # ── Compare model performance inside vs outside AD ───────────────────────────
         clean_df['knn_dist']   = knn_dists
         clean_df['in_AD']      = knn_dists <= ad_threshold
 
@@ -4616,68 +4101,49 @@ class Chemistry:
             print(f'AUC outside AD: {auc_outside:.3f}  (n={outside_mask.sum()})')
             print(f'Performance drop outside AD: \\Delta ={auc_outside-auc_inside:+.3f}')
 
-        # ── Visualise ────────────────────────────────────────────────────────────────
         try:
             import umap as umap_lib
             fig, axes = plt.subplots(1, 2, figsize=(7, 3))
             colors = PUB_PALETTE[:8]
 
-            # Use already-computed UMAP embedding if available
-            # Colour by AD status
             axes[0].scatter(embedding[inside_mask[:len(embedding)], 0],
                             embedding[inside_mask[:len(embedding)], 1],
                             c=colors[0], s=15, alpha=0.6, label='Inside AD')
             axes[0].scatter(embedding[outside_mask[:len(embedding)], 0],
                             embedding[outside_mask[:len(embedding)], 1],
                             c=colors[1], s=40, alpha=0.9, marker='^', label='Outside AD')
-            # axes[0].set_title(f'Applicability Domain\n(threshold={ad_threshold:.3f})', fontsize=12)
             axes[0].legend()
             axes[0].set_xlabel('UMAP 1'); axes[0].set_ylabel('UMAP 2')
 
-            # kNN distance distribution
             axes[1].hist(knn_dists, bins=30, color=colors[2], edgecolor='white', alpha=0.6)
             axes[1].axvline(ad_threshold, color=colors[1], lw=1.5, ls='--',
                             label=f'AD threshold={ad_threshold:.3f} (95th pct)')
             axes[1].set_xlabel(f'Mean Jaccard distance to {k} nearest neighbours')
             axes[1].set_ylabel('Count')
-            # axes[1].set_title('kNN Distance Distribution\n(higher = more novel = less reliable)', fontsize=12)
             axes[1].legend()
 
-            # plt.suptitle('Applicability Domain — When Should You Trust the Model?', fontsize=12, fontweight='bold')
             plt.tight_layout()
             save_pub_figure(fig, 'fig_sec13C_applicability_domain', width='double')
             plt.show()
         except Exception as e:
             print(f'UMAP plot skipped (run after Section 9 UMAP): {e}')
 
-        # ── Universal vs Context-Dependent Ionizable Lipids ─────────────────────────
-        # For each ionizable lipid with ≥3 observations, compute: (1) mean EE%, (2) std EE%, (3) fraction of formulations that are High EE regardless of helper/sterol/PEG variation. Lipids with high mean AND low std are 'robust' — they work with multiple formulation partners.
-        
         lip_stats = (
             clean_df.groupby('ionizable_lipid_smiles')
             .agg(
-                n_obs=('EE','count'),
-                mean_EE=('EE','mean'),
-                std_EE=('EE','std'),
-                pct_high_EE=('true_label','mean'),  # fraction of formulations that are High EE
-                n_helper=('helper_lipid_smiles','nunique'),   # how many different helper lipids used
-                n_peg=('peg_lipid_smiles','nunique'),
+                n_obs=('EE','count'), mean_EE=('EE','mean'), std_EE=('EE','std'),
+                pct_high_EE=('true_label','mean'),
+                n_helper=('helper_lipid_smiles','nunique'), n_peg=('peg_lipid_smiles','nunique'),
             )
             .reset_index()
         )
         lip_stats['std_EE'] = lip_stats['std_EE'].fillna(0)
 
-        # Filter: at least 3 observations
         lip_multi = lip_stats[lip_stats['n_obs'] >= 3].copy()
         print(f'Ionizable lipids with ≥3 observations: {len(lip_multi)}')
 
-        # Classify: Universal (high mean, low std) vs Context-dependent (high std)
-        lip_multi['robust'] = (
-            (lip_multi['mean_EE'] >= 75) & (lip_multi['std_EE'] <= 15)
-        )
-        lip_multi['universal'] = (
-            (lip_multi['pct_high_EE'] >= 0.75) & (lip_multi['std_EE'] <= 15)
-        )
+        lip_multi['robust'] = ((lip_multi['mean_EE'] >= 75) & (lip_multi['std_EE'] <= 15))
+        lip_multi['universal'] = ((lip_multi['pct_high_EE'] >= 0.75) & (lip_multi['std_EE'] <= 15))
         print(f'\nUniversally robust lipids (≥75% formulations high EE, std≤15%): {lip_multi["universal"].sum()}')
         print(f'Context-dependent lipids (std>15%): {(lip_multi["std_EE"]>15).sum()}')
         print('\nTop 10 most universally robust ionizable lipids:')
@@ -4685,11 +4151,9 @@ class Chemistry:
             ['n_obs','mean_EE','std_EE','pct_high_EE','n_helper','n_peg','robust']
         ].round(2).to_string())
 
-        # ── Visualise ────────────────────────────────────────────────────────────────
         fig, axes = plt.subplots(1, 2, figsize=(7, 3))
         color = PUB_PALETTE[:8]
 
-        # Scatter: mean EE vs std EE, coloured by universality
         sc = axes[0].scatter(
             lip_multi['mean_EE'], lip_multi['std_EE'],
             c=lip_multi['pct_high_EE'], cmap='RdYlGn',
@@ -4702,10 +4166,8 @@ class Chemistry:
         axes[0].set_xlabel('Mean EE% across all formulations')
         axes[0].set_ylabel('EE% Std (across formulations)')
         axes[0].set_xlim(45, 100); axes[0].set_ylim(0, 40)
-        # axes[0].set_title('Robust vs Context-Dependent Ionizable Lipids\n(size = n observations)', fontsize=12)
         axes[0].legend()
 
-        # Bar: n_helper diversity for universal vs context-dependent
         cat = lip_multi['universal'].map({True:'Universal', False:'Context-dependent'})
         lip_multi['category'] = cat
         axes[1].boxplot(
@@ -4715,9 +4177,7 @@ class Chemistry:
             patch_artist=True,
         )
         axes[1].set_ylabel('Within-lipid EE% std')
-        # axes[1].set_title('EE% Stability by Lipid Category')
 
-        # plt.suptitle('Formulation Universality — Which Lipids Work With Everything?', fontsize=12, fontweight='bold')
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec13D_universality', width='double')
         plt.show()
@@ -4765,7 +4225,6 @@ class Chemistry:
         print(f'\n{len(robust_lipids)} universally robust ionizable lipids '
               f'(>=70% High-EE across partners, std<=15%, n_obs>=3)\n')
 
-        # -- For each robust lipid, pull its single best-performing full formulation --
         report_rows = []
         for _, r in robust_lipids.iterrows():
             subset = clean_df[clean_df['ionizable_lipid_smiles'] == r['ionizable_lipid_smiles']]
@@ -4799,16 +4258,7 @@ class Chemistry:
         print('\nFull table (incl. all 4-component SMILES, cargo, and source paper) is in '
               'table_universally_robust_lipid_compositions.csv -- pull that directly into the report.')
 
-        # --- Physicochemical Descriptors: LogP, Tail Length, PEG Length ----------------------------------------
-        """        
-        `ion_tail_len` is the longest connected run of non-ring sp3 carbons in the ionizable lipid (a proxy for
-        tail length/saturation — double bonds and ring carbons break the run, so this is closer to
-        "longest saturated segment" than "total tail carbon count"). `peg_repeat_units` counts `O-C-C` motifs
-        in the PEG-lipid SMILES as a monotonic proxy for PEG chain length.
-        """
-
         def longest_aliphatic_run(mol):
-            """Longest connected run of non-ring sp3 carbons (proxy for tail length/saturation)."""
             if mol is None: return np.nan
             patt = Chem.MolFromSmarts('[CX4;!R]')
             matches = [m[0] for m in mol.GetSubstructMatches(patt)]
@@ -4834,13 +4284,12 @@ class Chemistry:
             return d + 1
 
         def peg_repeat_units(smi):
-            """Count of O-C-C motifs in the PEG-lipid SMILES — a monotonic proxy for PEG chain length."""
             mol = Chem.MolFromSmiles(str(smi))
             if mol is None: return np.nan
             patt = Chem.MolFromSmarts('OCC')
             return len(mol.GetSubstructMatches(patt))
 
-        print('Computing physicochemical descriptors for all 452 formulations...')
+        print('Computing physicochemical descriptors for all formulations...')
         clean_df['ion_LogP']         = clean_df['ionizable_lipid_smiles'].apply(lambda s: Descriptors.MolLogP(Chem.MolFromSmiles(str(s))) if Chem.MolFromSmiles(str(s)) else np.nan)
         clean_df['ion_tail_len']     = clean_df['ionizable_lipid_smiles'].apply(lambda s: longest_aliphatic_run(Chem.MolFromSmiles(str(s))))
         clean_df['peg_repeat_units'] = clean_df['peg_lipid_smiles'].apply(peg_repeat_units)
@@ -4874,50 +4323,40 @@ class Chemistry:
             ax.plot(xs, np.polyval(z, xs), color=color[1], lw=2)
             ax.set_xlabel(title); ax.set_ylabel('EE%')
             ax.set_title(f'ρ={r:.2f}, p={p:.1e}', fontsize=10)
-        # plt.suptitle('Physicochemical Descriptors vs Encapsulation Efficiency', fontsize=13, fontweight='bold')
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec13F_descriptors', width='double')
         plt.show()
 
         # --- Does Cargo Type (mRNA / siRNA / DNA) Matter? ----------------------------------------
-        """
-        The dataset spans three cargo classes. We (a) test whether EE% differs by cargo with a
-        Kruskal-Wallis test, and (b) test whether adding cargo type as a one-hot feature actually
-        improves the GroupKFold classifier — a direct, quantitative answer to the review's question
-        of whether payload identity needs to be modeled explicitly.
-        """
         print('=== EE% by cargo (target_type) ===')
         print(clean_df.groupby('target_type')['EE'].agg(['count', 'mean', 'median', 'std']).round(1))
-        cargo_groups = [clean_df.loc[clean_df['target_type'] == t, 'EE'].values for t in clean_df['target_type'].dropna().unique()]
+        # FIX: fixed cargo order used everywhere below (plot + annotation loop), instead of
+        # relying on whatever order pandas/seaborn happen to infer. Previously the boxplot
+        # had no explicit `order=`, so the hardcoded 'n=' label loop below it could silently
+        # attach sample sizes to the wrong box if seaborn's inferred category order ever
+        # differed from ['DNA','mRNA','siRNA'].
+        CARGO_ORDER = [c for c in ['DNA', 'mRNA', 'siRNA'] if c in clean_df['target_type'].unique()]
+        cargo_groups = [clean_df.loc[clean_df['target_type'] == t, 'EE'].values for t in CARGO_ORDER]
         h, p_cargo = stats.kruskal(*cargo_groups)
         print(f'Kruskal-Wallis across cargo types: H={h:.2f}, p={p_cargo:.3f}')
 
         fig, ax = plt.subplots(figsize=(5.5, 4))
         color = PUB_PALETTE[:8]
         sns.boxplot(
-            data=clean_df,
-            x='target_type',
-            y='EE',
-            showfliers=False,
-            width=0.5,
-            color='white',
-            ax=ax
+            data=clean_df, x='target_type', y='EE', order=CARGO_ORDER,
+            showfliers=False, width=0.5, color='white', ax=ax
         )
         sns.stripplot(
-            data=clean_df,
-            x='target_type',
-            y='EE',
-            color=color[4],
-            alpha=0.25,
-            jitter=0.25,
-            size=5,
-            ax=ax
+            data=clean_df, x='target_type', y='EE', order=CARGO_ORDER,
+            color=color[4], alpha=0.25, jitter=0.25, size=5, ax=ax
         )
         ax.set_xlabel('Cargo type')
         ax.set_ylabel('EE (%)')
+        # FIX: p-value now taken from the Kruskal-Wallis test computed two lines above
+        # (p_cargo) instead of a hardcoded 'p = 0.096' string.
         ax.text(
             0.75, 0.05,
-            'Kruskal-Wallis p = 0.096',
+            f'Kruskal-Wallis p = {p_cargo:.3g}',
             transform=ax.transAxes,
             ha='left',
             va='bottom',
@@ -4927,15 +4366,17 @@ class Chemistry:
         save_pub_figure(fig, 'fig_sec13G_cargo', width='single')
         plt.show()
         counts = clean_df['target_type'].value_counts()
-        for i, grp in enumerate(['DNA', 'mRNA', 'siRNA']):
+        # FIX: iterate CARGO_ORDER (the same order the plot above actually used) instead of
+        # a hardcoded ['DNA','mRNA','siRNA'] list that could silently mismatch the plotted
+        # box order; also guard with .get() in case a cargo type has zero rows.
+        for i, grp in enumerate(CARGO_ORDER):
             ax.text(
                 i, -0.13,
-                f'n={counts[grp]}',
+                f'n={counts.get(grp, 0)}',
                 transform=ax.get_xaxis_transform(),
                 ha='center'
             )
 
-        # ── Does adding cargo as a model feature help? ────────────────────────────────
         cargo_oh = pd.get_dummies(clean_df['target_type'].fillna('Unknown'), prefix='cargo').reset_index(drop=True)
         X_cargo = pd.concat([X_D.reset_index(drop=True), cargo_oh], axis=1)
 
@@ -4956,15 +4397,6 @@ class Chemistry:
         print('Interpretation: if Delta AUC is small/negative, this supports the framing that intrinsic')
         print('lipid chemistry — not payload identity — dominates EE% prediction in this dataset.')
 
-        # --- Data-Driven Ionizable-Lipid Classes ----------------------------------------
-        """
-        Rather than relying on hand-curated scaffold names (often inconsistent across the 63 source papers),
-        we cluster the **unique ionizable lipids** in descriptor space (LogP, MolWt, ring count, amine
-        substitution pattern, ester count) with k-means (k=4, chosen for interpretability — feel free to
-        sweep k and inspect the elbow/silhouette for the manuscript version). Each formulation inherits its
-        ionizable lipid's cluster label, letting us test whether EE% differs systematically by lipid *class*
-        rather than by individual SHAP bits.
-        """
         def desc_row(smi):
             mol = Chem.MolFromSmiles(str(smi))
             if mol is None: return None
@@ -4979,17 +4411,9 @@ class Chemistry:
         print('\n=== KMeans Cluster Validation ===')
         k_results = []
         for k in range(2, 9):
-            km_tmp = KMeans(
-                n_clusters=k,
-                random_state=42,
-                n_init=10
-            )
+            km_tmp = KMeans(n_clusters=k, random_state=42, n_init=10)
             labels = km_tmp.fit_predict(Xs)
-            k_results.append({
-                'k': k,
-                'inertia': km_tmp.inertia_,
-                'silhouette': silhouette_score(Xs, labels)
-            })
+            k_results.append({'k': k, 'inertia': km_tmp.inertia_, 'silhouette': silhouette_score(Xs, labels)})
         k_df = pd.DataFrame(k_results)
         print(k_df.to_string(index=False))
         km = KMeans(n_clusters=4, random_state=42, n_init=10).fit(Xs)
@@ -5008,23 +4432,12 @@ class Chemistry:
         print(f'\nKruskal-Wallis across lipid classes: H={h2:.2f}, p={p_class:.2e}')
         fig, ax = plt.subplots(figsize=(7, 3))
         sns.boxplot(
-            data=clean_df,
-            x='lipid_class',
-            y='EE',
-            showfliers=False,
-            width=0.5,
-            palette=PUB_PALETTE[8:12],
-            ax=ax
+            data=clean_df, x='lipid_class', y='EE',
+            showfliers=False, width=0.5, palette=PUB_PALETTE[8:12], ax=ax
         )
         sns.stripplot(
-            data=clean_df,
-            x='lipid_class',
-            y='EE',
-            color='black',
-            alpha=0.25,
-            jitter=0.25,
-            size=5,
-            ax=ax
+            data=clean_df, x='lipid_class', y='EE',
+            color='black', alpha=0.25, jitter=0.25, size=5, ax=ax
         )
         ax.set_xlabel('Data-driven ionizable lipid class')
         ax.set_ylabel('EE (%)')
@@ -5035,18 +4448,20 @@ class Chemistry:
             ha='right',
             va='bottom'
         )
-        # Add sample sizes
         counts = clean_df['lipid_class'].value_counts().sort_index()
         ax.set_xticklabels([
-            f'Class 0\n(n={counts[0]})',
-            f'Class 1\n(n={counts[1]})',
-            f'Class 2\n(n={counts[2]})',
-            f'Class 3\n(n={counts[3]})'
+            f'Class 0\n(n={counts.get(0, 0)})',
+            f'Class 1\n(n={counts.get(1, 0)})',
+            f'Class 2\n(n={counts.get(2, 0)})',
+            f'Class 3\n(n={counts.get(3, 0)})'
         ])
         plt.legend()
         plt.tight_layout()
         save_pub_figure(fig, 'fig_sec13H_lipid_class', width='double')
         plt.show()
+
+        return self.state
+
 
 # ============================================================================
 # Section14 FeedbackLoop
@@ -5057,28 +4472,15 @@ class FeedbackLoop:
 
     Also provides suggest_next_candidates() -- an active-learning acquisition
     function: given a pool of hypothetical formulations, rank them by how
-    informative labeling them would be, and return a diverse shortlist. This
-    is meant to directly answer "which formulations should we actually
-    synthesize/test next?" -- see its own docstring below for details. It
-    can be called independently of run() (it only needs SaveAndPredictAPI,
-    ConformalPrediction, and ErrorAnalysis to have already run).
+    informative labeling them would be, and return a diverse shortlist.
 
-    What we implement instead is a **human-in-the-loop feedback pipeline**, closer to the active-learning pattern than to naive online learning:
-    1. Log every new prediction with its features and conformal confidence.
-    2. Collect true outcomes as they become available (ideally from controlled experiments, not just self-reported values).
-    3. Only trigger a candidate retrain once enough *verified* new data has accumulated.
-    4. Evaluate the candidate under the **same GroupKFold-by-lipid protocol** used throughout this notebook.
-    5. Only promote the candidate if lipid-held-out AUC does not regress beyond a small tolerance.
-            
-    Whether this improves performance depends entirely on what gets fed back: verified feedback concentrated in chemotypes the model currently gets wrong (i.e., an active-learning acquisition strategy — prioritize low-confidence/ambiguous conformal predictions for verification) is far more likely to help than passively logging whatever formulations happen to be submitted.
-    
     Reads from state:  count_fp_array, X_D, y, groups, results_df, gkf
     """
     def __init__(self, state: PipelineState):
         self.state = state
 
     def run(self):
-        """Execute this section (notebook cells [64]) and update shared state."""
+        """Execute this section and update shared state."""
         count_fp_array = self.state.count_fp_array
         X_D = self.state.X_D
         y = self.state.y
@@ -5087,14 +4489,11 @@ class FeedbackLoop:
         gkf = self.state.gkf
 
         FEEDBACK_LOG = 'lnp_feedback_log.jsonl'
-        MIN_NEW_SAMPLES_FOR_RETRAIN = 20   # don't retrain on tiny feedback batches
-        AUC_REGRESSION_TOLERANCE = 0.01    # candidate must not lose more than this vs. current reference
+        MIN_NEW_SAMPLES_FOR_RETRAIN = 20
+        AUC_REGRESSION_TOLERANCE = 0.01
 
         def log_prediction_feedback(ionizable_smiles, helper_smiles, sterol_smiles, peg_smiles,
                                      molar_ratio, prediction_result, true_EE=None, source='user_submitted'):
-            """Append a prediction (and, if known, its verified true outcome) to the feedback log.
-            true_EE=None means 'prediction only, outcome not yet known' -- these rows are kept
-            for monitoring but excluded from any retrain until a value is filled in."""
             record = {
                 'timestamp': datetime.utcnow().isoformat(),
                 'ionizable_smiles': ionizable_smiles, 'helper_smiles': helper_smiles,
@@ -5110,7 +4509,6 @@ class FeedbackLoop:
             return record
 
         def load_verified_feedback():
-            """Load only feedback rows that have a verified true_EE value."""
             if not os.path.exists(FEEDBACK_LOG):
                 return pd.DataFrame()
             rows = [json.loads(l) for l in open(FEEDBACK_LOG)]
@@ -5118,7 +4516,6 @@ class FeedbackLoop:
             return df_fb[df_fb['true_EE'].notna()] if len(df_fb) else df_fb
 
         def featurize_feedback_row(row):
-            """Turn one feedback row into a Feature-Set-D-compatible row (reuses count_fp_array)."""
             fp_row = {}
             for prefix, smi in [('ionizable', row['ionizable_smiles']), ('helper', row['helper_smiles']),
                                  ('sterol', row['sterol_smiles']), ('peg', row['peg_smiles'])]:
@@ -5132,9 +4529,6 @@ class FeedbackLoop:
 
         def evaluate_candidate_vs_current(X_current, y_current, groups_current, new_rows, y_new,
                                            new_groups, current_auc_ref):
-            """Retrain on (original + verified feedback) under the SAME GroupKFold-by-lipid
-            protocol used throughout the notebook. Only recommends promotion if AUC does not
-            regress beyond AUC_REGRESSION_TOLERANCE relative to the current reference AUC."""
             X_combined = pd.concat([X_current, pd.DataFrame(new_rows)[X_current.columns]], ignore_index=True)
             y_combined = np.concatenate([y_current, y_new])
             groups_combined = np.concatenate([groups_current, new_groups])
@@ -5154,7 +4548,6 @@ class FeedbackLoop:
             print('Promote candidate model: ' + ('YES' if promote else 'NO -- regression exceeds tolerance'))
             return (rfc_c if promote else None), candidate_auc
 
-        # ── Usage sketch (no-op until verified feedback accumulates) ─────────────────
         verified = load_verified_feedback()
         print(f'Verified feedback rows available: {len(verified)} '
               f'(retrain triggers at {MIN_NEW_SAMPLES_FOR_RETRAIN})')
@@ -5163,13 +4556,13 @@ class FeedbackLoop:
             new_rows    = [featurize_feedback_row(r) for _, r in verified.iterrows()]
             y_new       = (verified['true_EE'].values >= 80).astype(int)
             new_groups  = verified['ionizable_smiles'].values
-            current_ref_auc = results_df['AUC'].mean()  # main GroupKFold result, Section 6
+            current_ref_auc = results_df['AUC'].mean()
             candidate_model, candidate_auc = evaluate_candidate_vs_current(
                 X_D, y, groups, new_rows, y_new, new_groups, current_ref_auc)
         else:
             print('Not enough verified feedback yet -- logging only. Call log_prediction_feedback(...) '
-                  'as outcomes come in (prioritize formulations with low conformal confidence -- '
-                  'see Section 17 -- for verification, active-learning style), and re-run this cell periodically.')
+                  'as outcomes come in (prioritize formulations with low conformal confidence for '
+                  'verification, active-learning style), and re-run this cell periodically.')
 
         print("\n=== Conformal Diagnostics ===")
         print(f"q_hat = {self.state.q_hat}")
@@ -5177,15 +4570,6 @@ class FeedbackLoop:
         print('\n=== Active Learning Demonstration ===')
         clean_df = self.state.clean_df
 
-        # Pull the top-3 highest-mean-EE lipids from EACH data-driven lipid class
-        # (Section 13H's KMeans clusters), instead of the global top-10 by mean EE
-        # alone. The global top-10 tend to concentrate in one or two chemotypes --
-        # SHAP already showed ionizable-lipid identity, not molar ratio, dominates
-        # the prediction, so sweeping ratios for a chemically narrow set of lipids
-        # produces a candidate pool that's narrow in chemical space too. That's
-        # exactly why so many shortlisted rows landed in the same probability band:
-        # novelty_score had little real variation to reward. Sampling across every
-        # lipid_class gives it something genuine to discriminate on.
         lipid_classes = sorted(clean_df['lipid_class'].dropna().unique())
         candidate_lipids = []
         for cls in lipid_classes:
@@ -5203,180 +4587,56 @@ class FeedbackLoop:
 
         for ion_lipid in candidate_lipids:
             pool = self.generate_candidate_pool(
-                ion_lipid,
-                self.state.DSPC,
-                self.state.CHOLESTEROL,
-                self.state.DMG_PEG
+                ion_lipid, self.state.DSPC, self.state.CHOLESTEROL, self.state.DMG_PEG
             )
             candidate_pools.append(pool)
-        candidate_pool = pd.concat(
-            candidate_pools,
-            ignore_index=True
-        )
+        candidate_pool = pd.concat(candidate_pools, ignore_index=True)
         print(f"Candidate pool size: {len(candidate_pool)}")
-        shortlist = self.suggest_next_candidates(
-            candidate_pool,
-            n_suggestions=10
-        )
+        shortlist = self.suggest_next_candidates(candidate_pool, n_suggestions=10)
         print(
-            shortlist[
-                [
-                    'ionizable_smiles',
-                    'molar_ratio',
-                    'prob_high_EE',
-                    'knn_distance',
-                    'acquisition_score',
-                    'acquisition_type'
-                ]
-            ]
+            shortlist[['ionizable_smiles', 'molar_ratio', 'prob_high_EE', 'knn_distance',
+                       'acquisition_score', 'acquisition_type']]
             .to_string(index=False)
         )
         print(shortlist.head(10).to_string(index=False))
 
-        # --------------------------------------------------
-        # Prospective validation candidates
-        # --------------------------------------------------
-
         winners, losers, uncertain = (
-            self.rank_candidates_for_validation(
-                candidate_pool,
-                top_n=10
-            )
+            self.rank_candidates_for_validation(candidate_pool, top_n=10)
         )
 
         print("\n=== TOP PREDICTED WINNERS ===")
-        print(
-            winners[
-                [
-                    'prob_high_EE',
-                    'molar_ratio',
-                    'knn_distance'
-                ]
-            ]
-            .to_string(index=False)
-        )
+        print(winners[['prob_high_EE', 'molar_ratio', 'knn_distance']].to_string(index=False))
 
         print("\n=== TOP PREDICTED LOSERS ===")
-
-        print(
-            losers[
-                [
-                    'prob_high_EE',
-                    'molar_ratio',
-                    'knn_distance'
-                ]
-            ]
-            .to_string(index=False)
-        )
+        print(losers[['prob_high_EE', 'molar_ratio', 'knn_distance']].to_string(index=False))
 
         print("\n=== MOST UNCERTAIN CANDIDATES ===")
-
-        print(
-            uncertain[
-                [
-                    'prob_high_EE',
-                    'molar_ratio',
-                    'knn_distance'
-                ]
-            ]
-            .to_string(index=False)
-        )
+        print(uncertain[['prob_high_EE', 'molar_ratio', 'knn_distance']].to_string(index=False))
         return self.state
 
-    # -------------------------------------------------------------------
-    # Active-learning acquisition: which candidates should we test next?
-    # -------------------------------------------------------------------
-
-    def generate_candidate_pool(
-        self,
-        ionizable_smiles,
-        helper_smiles,
-        sterol_smiles,
-        peg_smiles,
-        il_range=(25, 50, 2.5),
-        peg_range=(1, 3, 0.5)):
+    def generate_candidate_pool(self, ionizable_smiles, helper_smiles, sterol_smiles, peg_smiles,
+                                 il_range=(25, 50, 2.5), peg_range=(1, 3, 0.5)):
         rows = []
-
         for il in np.arange(*il_range):
             for peg in np.arange(*peg_range):
-
                 rem = 100 - il - peg
-
                 if rem < 10:
                     continue
-
                 sterol = int(rem * 0.78)
                 helper = rem - sterol
-
                 rows.append({
-                    "ionizable_smiles": ionizable_smiles,
-                    "helper_smiles": helper_smiles,
-                    "sterol_smiles": sterol_smiles,
-                    "peg_smiles": peg_smiles,
+                    "ionizable_smiles": ionizable_smiles, "helper_smiles": helper_smiles,
+                    "sterol_smiles": sterol_smiles, "peg_smiles": peg_smiles,
                     "molar_ratio": f"{il}:{helper}:{sterol}:{peg}"
                 })
-
         return pd.DataFrame(rows)
-    
-    def suggest_next_candidates(self, candidate_pool, n_suggestions=10, ad_multiplier_cutoff=2.0,  min_novelty=1e-6):
+
+    def suggest_next_candidates(self, candidate_pool, n_suggestions=10, ad_multiplier_cutoff=2.0, min_novelty=1e-6):
         """
-        Active-learning acquisition function: given a POOL of hypothetical
-        formulations (not yet tested), rank them by how informative it would
-        be to get a real (wet-lab) label for each one, and return a diverse
-        top-N shortlist. This directly answers "which formulations should we
-        actually synthesize next?" -- it does not need run() to have been
-        called first, only SaveAndPredictAPI, ConformalPrediction, and
-        ErrorAnalysis (for predict_lnp, q_hat/conformal_predict_set, and the
-        applicability-domain kNN model respectively).
-
-        Two signals already computed elsewhere in this pipeline drive the
-        ranking:
-
-          1. UNCERTAINTY (Section H, conformal prediction). A formulation
-             whose conformal prediction set contains BOTH labels ("could be
-             High or Low EE") is one the model is genuinely, calibratedly
-             unsure about -- exactly what active learning wants to query.
-             This is a real advantage over a plain "P(High EE) near 0.5"
-             heuristic: conformal sets come with a distribution-free
-             coverage guarantee, so "ambiguous" here means something
-             statistically grounded, not just "close to a coin flip".
-
-          2. NOVELTY vs. REDUNDANCY (Section I, Applicability Domain). Among
-             ambiguous candidates, one far from anything in the training set
-             teaches the model more than a near-duplicate of an existing
-             formulation. Candidates that are TOO far outside the training
-             domain (beyond `ad_multiplier_cutoff` x the AD threshold) are
-             excluded up front, though -- out there, the model's uncertainty
-             estimate itself isn't trustworthy enough to act on.
-
-          3. DIVERSITY. Greedy farthest-first selection among the
-             high-scoring candidates, so the shortlist doesn't cluster
-             around one small region of chemical space (e.g. ten variants
-             of the same scaffold) -- spreading synthesis effort across
-             genuinely different structures is worth more than ten near-
-             identical bets.
-
-        Parameters
-        ----------
-        candidate_pool : pd.DataFrame
-            Columns: ionizable_smiles, helper_smiles, sterol_smiles,
-            peg_smiles, molar_ratio (same schema as
-            lnp_model.LNPModel.predict_batch, so a pool built for one works
-            for the other).
-        n_suggestions : int
-            How many candidates to shortlist.
-        ad_multiplier_cutoff : float
-            Candidates whose kNN distance exceeds ad_multiplier_cutoff x the
-            Section I applicability-domain threshold are dropped before
-            ranking (default 2x -- moderately novel is good, wildly
-            out-of-domain is not).
-
-        Returns
-        -------
-        pd.DataFrame, ranked best-to-worst (empty if nothing in the pool was
-        valid or everything fell outside the AD cutoff), with columns: the
-        original candidate columns plus prob_high_EE, conformal_set,
-        is_ambiguous, knn_distance, in_AD, acquisition_score.
+        Active-learning acquisition function -- see original docstring for full details:
+        ranks a pool of hypothetical formulations by uncertainty (conformal ambiguity),
+        novelty vs. the applicability domain, and promise, then greedily diversifies
+        the shortlist across ionizable-lipid chemotypes.
         """
         predict_lnp = self.state.predict_lnp
         conformal_predict_set = self.state.conformal_predict_set
@@ -5399,10 +4659,6 @@ class FeedbackLoop:
                 f"run() before calling this."
             )
 
-        # The exact bit-indices the AD's kNN model was fit on (a SUBSET of the
-        # full 512 raw fingerprint bits -- only ones that were ever nonzero in
-        # the training set). We must pull the same subset, in the same order,
-        # from a new candidate's raw fingerprint, or the distances are meaningless.
         active_bit_indices = [int(c.replace('ionizable_fp', '')) for c in ion_fp_cols]
 
         rows = []
@@ -5416,10 +4672,6 @@ class FeedbackLoop:
             pset = conformal_predict_set(result['prob_high_EE'], q_hat)
             is_ambiguous = len(pset) == 2
 
-            # Applicability-domain distance for this candidate's ionizable lipid.
-            # Query for exactly k=5 neighbours (not k+1) -- unlike the training-set
-            # points scored in Section I, a brand-new candidate is never its own
-            # nearest neighbour, so there's no self-match slot to exclude here.
             ion_arr = count_fp_array(cand['ionizable_smiles'])
             ion_fp_vec = ion_arr[active_bit_indices]
             dist, _ = knn.kneighbors((ion_fp_vec > 0).reshape(1, -1), n_neighbors=5)
@@ -5442,14 +4694,6 @@ class FeedbackLoop:
 
         cand_df = pd.DataFrame(rows)
 
-        # Exclude candidates whose ionizable lipid is (numerically) identical to
-        # something already in the training set -- knn_distance == 0 means "this is
-        # a known lipid at an untested ratio," not new chemistry. That's a legitimate
-        # question (see Section 13B's ratio optimiser), but a different one from
-        # "what should we synthesize next" -- mixing the two into one shortlist
-        # understates how much of it is actually novel. min_novelty is a tolerance,
-        # not an exact-zero check, since floating-point Jaccard distances can be
-        # vanishingly small without being exactly 0.
         n_before_novelty_filter = len(cand_df)
         cand_df = cand_df[cand_df['knn_distance'] > min_novelty].copy()
         n_excluded_known = n_before_novelty_filter - len(cand_df)
@@ -5458,10 +4702,6 @@ class FeedbackLoop:
                 f'(knn_distance <= {min_novelty}) -- these are untested ratios of '
                 f'existing training-set lipids, not new chemistry.')
 
-        # Drop candidates too far outside the applicability domain -- the model's
-        # uncertainty estimate there isn't trustworthy enough to act on, so
-        # "ambiguous" out there doesn't mean the same thing as "ambiguous" near
-        # the training distribution.
         n_before_ad_filter = len(cand_df)
         cand_df = cand_df[cand_df['knn_distance'] <= ad_multiplier_cutoff * ad_threshold].copy()
         if len(cand_df) == 0:
@@ -5470,32 +4710,14 @@ class FeedbackLoop:
                   f'reconsider whether this candidate pool is too far from the training chemistry.')
             return cand_df.drop(columns=['_ion_fp'], errors='ignore')
 
-        # Acquisition score: learns from ambiguity, usefulness and novelty
-        # candidates among the rest -- more to learn from a genuinely new region
-        # of chemical space than from a near-duplicate of existing training data.
-        # uncertainty score
-
-        # Continuous distance from the 0.5 decision boundary -- not a step function on
-        # is_ambiguous. A candidate at 0.50 is maximally uncertain (score 1.0); one at
-        # 0.75 (still technically "ambiguous" under q_hat=0.751) gets a real, lower,
-        # distinguishable score instead of tying with everyone else at 1.0. is_ambiguous
-        # and conformal_set are still computed and kept as reported columns -- this only
-        # changes what drives the ranking.
         cand_df['uncertainty_score'] = 1.0 - np.abs(cand_df['prob_high_EE'] - 0.5) * 2
 
-        # novelty score
         cand_df['novelty_score'] = (
-            cand_df['knn_distance'] /
-            cand_df['knn_distance'].max()
+            cand_df['knn_distance'] / cand_df['knn_distance'].max()
         )
 
-        cand_df['ad_penalty'] = np.where(
-                cand_df['in_AD'],
-                1.0,
-                0.5
-            )
-        
-        # promise score
+        cand_df['ad_penalty'] = np.where(cand_df['in_AD'], 1.0, 0.5)
+
         cand_df['promise_score'] = cand_df['prob_high_EE']
 
         cand_df['acquisition_score'] = (
@@ -5505,26 +4727,12 @@ class FeedbackLoop:
         )
         cand_df['acquisition_score'] *= cand_df['ad_penalty']
         cand_df['acquisition_type'] = np.select(
-                [
-                    cand_df['is_ambiguous'],
-                    cand_df['knn_distance'] > ad_threshold,
-                    cand_df['prob_high_EE'] > 0.80
-                ],
-                [
-                    'Uncertainty-driven',
-                    'Novelty-driven',
-                    'High-promise'
-                ],
+                [cand_df['is_ambiguous'], cand_df['knn_distance'] > ad_threshold, cand_df['prob_high_EE'] > 0.80],
+                ['Uncertainty-driven', 'Novelty-driven', 'High-promise'],
                 default='Balanced'
             )
         cand_df = cand_df.sort_values('acquisition_score', ascending=False).reset_index(drop=True)
 
-        # Greedy farthest-first diversity selection: always keep the top-ranked
-        # candidate, then repeatedly add whichever remaining candidate best
-        # balances (a) still being high-acquisition-score and (b) being
-        # chemically different from everything already picked (Jaccard distance
-        # in ionizable-lipid fingerprint space) -- so the shortlist doesn't
-        # cluster around one scaffold.
         selected_idx = [0]
         selected_lipids = {cand_df.loc[0, 'ionizable_smiles']}
         remaining_idx = list(range(1, len(cand_df)))
@@ -5532,10 +4740,6 @@ class FeedbackLoop:
         max_score = max(cand_df['acquisition_score'].max(), 1e-9)
 
         while len(selected_idx) < min(n_suggestions, len(cand_df)) and remaining_idx:
-            # Prefer candidates whose lipid hasn't been picked yet -- ratio-variants
-            # of an already-selected lipid have near-identical fingerprints, so they
-            # can otherwise slip through the diversity check when the pool runs low
-            # on genuinely distinct alternatives late in the loop.
             unpicked_lipid_idx = [i for i in remaining_idx if cand_df.loc[i, 'ionizable_smiles'] not in selected_lipids]
             pool_for_this_slot = unpicked_lipid_idx if unpicked_lipid_idx else remaining_idx
             if not unpicked_lipid_idx:
@@ -5557,27 +4761,13 @@ class FeedbackLoop:
             remaining_idx.remove(best_idx)
 
         shortlist = cand_df.iloc[selected_idx].drop(columns=['_ion_fp']).reset_index(drop=True)
-        shortlist.to_csv(
-            'active_learning_shortlist.csv',
-            index=False)
+        shortlist.to_csv('active_learning_shortlist.csv', index=False)
         print("Saved active_learning_shortlist.csv")
         print("\n=== Active Learning Shortlist ===")
-        cols_to_show = [
-            'prob_high_EE',
-            'conformal_set',
-            'knn_distance',
-            'uncertainty_score',
-            'novelty_score',
-            'promise_score',
-            'acquisition_score',
-            'acquisition_type'
-        ]
+        cols_to_show = ['prob_high_EE', 'conformal_set', 'knn_distance', 'uncertainty_score',
+                        'novelty_score', 'promise_score', 'acquisition_score', 'acquisition_type']
 
-        print(
-            shortlist[cols_to_show]
-            .round(3)
-            .to_string(index=False)
-        )
+        print(shortlist[cols_to_show].round(3).to_string(index=False))
         n_ambiguous = int(cand_df['is_ambiguous'].sum())
         n_excluded_ad = n_before_ad_filter - len(cand_df)
         print(f'suggest_next_candidates(): {len(shortlist)} suggestions from a pool of '
@@ -5585,16 +4775,10 @@ class FeedbackLoop:
               f'{n_excluded_ad} excluded as outside the applicability domain).')
         return shortlist
 
-    def rank_candidates_for_validation(
-        self,
-        candidate_pool,
-        top_n=10):
+    def rank_candidates_for_validation(self, candidate_pool, top_n=10):
         """
         Generate prospective validation candidates.
-        Returns:
-            top_winners
-            top_losers
-            uncertain_candidates
+        Returns: top_winners, top_losers, uncertain_candidates
         """
         predict_lnp = self.state.predict_lnp
         conformal_predict_set = self.state.conformal_predict_set
@@ -5605,129 +4789,45 @@ class FeedbackLoop:
         count_fp_array = self.state.count_fp_array
         bundle = self.state.bundle
 
-        active_bit_indices = [
-            int(c.replace('ionizable_fp', ''))
-            for c in ion_fp_cols
-        ]
+        active_bit_indices = [int(c.replace('ionizable_fp', '')) for c in ion_fp_cols]
 
         rows = []
-
         for _, cand in candidate_pool.iterrows():
-
-            result = predict_lnp(
-                cand['ionizable_smiles'],
-                cand['helper_smiles'],
-                cand['sterol_smiles'],
-                cand['peg_smiles'],
-                molar_ratio=cand['molar_ratio'],
-                model_bundle=bundle
-            )
-
+            result = predict_lnp(cand['ionizable_smiles'], cand['helper_smiles'],
+                                  cand['sterol_smiles'], cand['peg_smiles'],
+                                  molar_ratio=cand['molar_ratio'], model_bundle=bundle)
             if not result.get("valid", True):
                 continue
 
-            ion_arr = count_fp_array(
-                cand['ionizable_smiles']
-            )
-
+            ion_arr = count_fp_array(cand['ionizable_smiles'])
             ion_fp_vec = ion_arr[active_bit_indices]
-
-            dist, _ = knn.kneighbors(
-                (ion_fp_vec > 0).reshape(1, -1),
-                n_neighbors=5
-            )
-
+            dist, _ = knn.kneighbors((ion_fp_vec > 0).reshape(1, -1), n_neighbors=5)
             knn_dist = float(dist[0].mean())
 
-            pset = conformal_predict_set(
-                result["prob_high_EE"],
-                q_hat
-            )
+            pset = conformal_predict_set(result["prob_high_EE"], q_hat)
 
             rows.append({
-
                 **cand.to_dict(),
-
-                "prob_high_EE":
-                    result["prob_high_EE"],
-
-                "conformal_set":
-                    pset,
-
-                "in_AD":
-                    knn_dist <= ad_threshold,
-
-                "knn_distance":
-                    knn_dist,
-
-                "uncertainty":
-                    abs(
-                        result["prob_high_EE"] - 0.5
-                    )
+                "prob_high_EE": result["prob_high_EE"],
+                "conformal_set": pset,
+                "in_AD": knn_dist <= ad_threshold,
+                "knn_distance": knn_dist,
+                "uncertainty": abs(result["prob_high_EE"] - 0.5)
             })
 
         df = pd.DataFrame(rows)
-
-        # only keep AD compounds
         df = df[df["in_AD"]].copy()
         print("\n=== Probability Distribution ===")
         print(df["prob_high_EE"].describe())
-
         print(f"\nCandidates inside AD = {len(df)}")
 
-        # --------------------------------------------------
-        # Likely winners
-        # --------------------------------------------------
+        top_winners = (df.sort_values("prob_high_EE", ascending=False).head(top_n))
+        top_losers = (df.sort_values("prob_high_EE", ascending=True).head(top_n))
+        uncertain_candidates = (df.sort_values("uncertainty", ascending=True).head(top_n))
 
-        top_winners = (
-            df
-            .sort_values(
-                "prob_high_EE",
-                ascending=False
-            )
-            .head(top_n)
-        )
-
-        # --------------------------------------------------
-        # Likely losers
-        # --------------------------------------------------
-
-        top_losers = (
-            df
-            .sort_values(
-                "prob_high_EE",
-                ascending=True
-            )
-            .head(top_n)
-        )
-
-        # --------------------------------------------------
-        # Most uncertain
-        # --------------------------------------------------
-
-        uncertain_candidates = (
-            df
-            .sort_values(
-                "uncertainty",
-                ascending=True
-            )
-            .head(top_n)
-        )
-
-        top_winners.to_csv(
-            "prospective_winners.csv",
-            index=False
-        )
-
-        top_losers.to_csv(
-            "prospective_losers.csv",
-            index=False
-        )
-
-        uncertain_candidates.to_csv(
-            "prospective_uncertain.csv",
-            index=False
-        )
+        top_winners.to_csv("prospective_winners.csv", index=False)
+        top_losers.to_csv("prospective_losers.csv", index=False)
+        uncertain_candidates.to_csv("prospective_uncertain.csv", index=False)
 
         print("\nSaved:")
         print("  prospective_winners.csv")
@@ -5738,26 +4838,12 @@ class FeedbackLoop:
         print(df["prob_high_EE"].describe())
 
         print("\nTop 20 probabilities")
-        print(
-            df["prob_high_EE"]
-            .sort_values(ascending=False)
-            .head(20)
-            .to_string(index=False)
-        )
+        print(df["prob_high_EE"].sort_values(ascending=False).head(20).to_string(index=False))
 
         print("\nBottom 20 probabilities")
-        print(
-            df["prob_high_EE"]
-            .sort_values(ascending=True)
-            .head(20)
-            .to_string(index=False)
-        )
+        print(df["prob_high_EE"].sort_values(ascending=True).head(20).to_string(index=False))
 
-        return (
-            top_winners,
-            top_losers,
-            uncertain_candidates
-        )
+        return (top_winners, top_losers, uncertain_candidates)
 
 # ============================================================================
 # Orchestration

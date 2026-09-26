@@ -67,12 +67,48 @@ STRUCT3D_FEATURE_NAMES = ["n_neighbors_5A", "n_neighbors_8A", "n_tertiary_neighb
                            "dist_nearest_P_other", "burial_proxy"]
 
 
-def extract_structural_features(pqr_path: Path) -> pd.DataFrame:
+def _is_heavy_atom(atom_name: str) -> bool:
+    """True unless `atom_name` names a hydrogen (or deuterium) atom.
+
+    PQR files carry no explicit element column, so element has to be
+    inferred from the atom name. pdb2pqr/AMBER hydrogen names are NOT
+    always a plain leading "H" -- stereo-labelled hydrogens are commonly
+    written with a leading digit, e.g. "1H5'", "2H5'", "1H2''" -- so a
+    naive `name.startswith("H")` check silently keeps roughly half the
+    hydrogens in the file. No standard RNA heavy-atom name starts with a
+    digit followed by H/D, so stripping leading digits before checking
+    the first letter is both necessary and safe here.
+    """
+    stripped = atom_name.lstrip("0123456789")
+    return stripped[:1] not in ("H", "D")
+
+
+def extract_structural_features(pqr_path: Path, with_sasa: bool = False) -> pd.DataFrame:
     """One row per residue: (chain, resnum, resname) + the 3D features
-    above, computed from the PQR's atom coordinates via a KD-tree."""
+    above, computed from the PQR's atom coordinates via a KD-tree.
+
+    Hydrogens are dropped before any of this runs (see _is_heavy_atom):
+    pdb2pqr's PQR output includes explicit hydrogens (needed for correct
+    protonation states in the PB solve), and hydrogen COUNT differs
+    systematically between purines and pyrimidines. Left in, that
+    silently reintroduces a base-identity confound into features that
+    are supposed to be purely geometric -- exactly the kind of thing
+    Phase I was designed to rule out.
+
+    with_sasa: also compute a real per-residue solvent-accessible
+    surface area (sum of per-atom Shrake-Rupley SASA over the residue's
+    heavy atoms) as "residue_sasa_A2" -- a principled replacement for
+    `burial_proxy`'s neighbor-count heuristic, computed from the same
+    coordinates/radii, still no simulation required. Adds real runtime
+    cost (see compute_per_atom_sasa), so it's opt-in.
+    """
     from scipy.spatial import cKDTree
 
     atoms = parse_pqr_residues(pqr_path)
+    if atoms.empty:
+        return pd.DataFrame()
+
+    atoms = atoms[atoms["atom_name"].map(_is_heavy_atom)].reset_index(drop=True)
     if atoms.empty:
         return pd.DataFrame()
 
@@ -81,6 +117,8 @@ def extract_structural_features(pqr_path: Path) -> pd.DataFrame:
 
     p_atoms = atoms[atoms["atom_name"] == "P"]
     p_tree = cKDTree(p_atoms[["x", "y", "z"]].to_numpy()) if len(p_atoms) else None
+
+    atom_sasa = compute_per_atom_sasa(atoms) if with_sasa else None
 
     rows = []
     for (chain, resnum, resname), group in atoms.groupby(["chain", "resnum", "resname"], sort=False):
@@ -117,18 +155,71 @@ def extract_structural_features(pqr_path: Path) -> pd.DataFrame:
                     dist_other_p = float(d)
                     break
 
-        rows.append({
+        row = {
             "chain": chain, "resnum": resnum, "resname": resname,
             "n_neighbors_5A": n5, "n_neighbors_8A": n8,
             "n_tertiary_neighbors_5A": n_tertiary,
             "dist_nearest_P_other": dist_other_p,
             "burial_proxy": 1.0 / (1.0 + n8),
-        })
+        }
+        if atom_sasa is not None:
+            own_positions = [atoms.index.get_loc(idx) for idx in own_atom_idxs]
+            row["residue_sasa_A2"] = float(atom_sasa[own_positions].sum())
+        rows.append(row)
     return pd.DataFrame(rows)
 
 
+def _fibonacci_sphere(n_points: int) -> np.ndarray:
+    """n_points roughly-uniformly-spaced points on a unit sphere."""
+    golden_angle = np.pi * (3.0 - np.sqrt(5.0))
+    i = np.arange(n_points)
+    z = 1 - 2 * (i + 0.5) / n_points
+    radius_xy = np.sqrt(np.clip(1 - z * z, 0.0, None))
+    theta = golden_angle * i
+    return np.stack([radius_xy * np.cos(theta), radius_xy * np.sin(theta), z], axis=1)
+
+
+def compute_per_atom_sasa(atoms: pd.DataFrame, probe_radius: float = 1.4,
+                           n_sphere_points: int = 92) -> np.ndarray:
+    """Shrake-Rupley solvent-accessible surface area, per atom (A^2).
+
+    Real geometry -- a rolling probe sphere over the atomic coordinates
+    -- rather than a crowding heuristic like `burial_proxy`. Uses the
+    PQR's own AMBER radii (now returned by `parse_pqr_residues` as the
+    "radius" column) rather than an external radius table, so it stays
+    consistent with the exact atoms/radii the PB solve itself used.
+
+    O(n_atoms^2)-ish per structure (each atom checks candidate neighbors
+    via a KD-tree, then tests ~90 sphere points against them), noticeably
+    slower than the other structural_3d features -- opt in via
+    --with-sasa rather than always computing it.
+    """
+    from scipy.spatial import cKDTree
+
+    coords = atoms[["x", "y", "z"]].to_numpy()
+    ext_radii = atoms["radius"].to_numpy() + probe_radius
+    sphere = _fibonacci_sphere(n_sphere_points)
+    tree = cKDTree(coords)
+    max_ext = ext_radii.max() if len(ext_radii) else 0.0
+
+    sasa = np.zeros(len(atoms), dtype=float)
+    for i in range(len(atoms)):
+        neighbor_idx = [j for j in tree.query_ball_point(coords[i], r=ext_radii[i] + max_ext) if j != i]
+        if not neighbor_idx:
+            sasa[i] = 4 * np.pi * ext_radii[i] ** 2
+            continue
+        test_points = coords[i] + sphere * ext_radii[i]                     # (P, 3)
+        nbr_coords = coords[neighbor_idx]                                    # (M, 3)
+        nbr_radii = ext_radii[neighbor_idx]                                  # (M,)
+        d2 = ((test_points[:, None, :] - nbr_coords[None, :, :]) ** 2).sum(-1)  # (P, M)
+        buried = (d2 < (nbr_radii[None, :] ** 2)).any(axis=1)
+        sasa[i] = (1.0 - buried.mean()) * 4 * np.pi * ext_radii[i] ** 2
+    return sasa
+
+
 def build_residue_level_table(labels_dir: Path, pdb_ids: list[str], label_column: str,
-                               include_flagged: bool) -> pd.DataFrame:
+                               include_flagged: bool, with_sasa: bool = False) -> pd.DataFrame:
+    feature_names = STRUCT3D_FEATURE_NAMES + (["residue_sasa_A2"] if with_sasa else [])
     frames = []
     for pdb_id in pdb_ids:
         labels = load_structure_labels(labels_dir, pdb_id, include_flagged)
@@ -137,11 +228,11 @@ def build_residue_level_table(labels_dir: Path, pdb_ids: list[str], label_column
         pqr_path = labels_dir / "work" / pdb_id.upper() / f"{pdb_id.lower()}.pqr"
         if not pqr_path.exists():
             continue
-        struct_feats = extract_structural_features(pqr_path)
+        struct_feats = extract_structural_features(pqr_path, with_sasa=with_sasa)
         if struct_feats.empty:
             continue
         merged = labels.merge(struct_feats, on=["chain", "resnum", "resname"], how="inner")
-        merged = merged.dropna(subset=[label_column] + STRUCT3D_FEATURE_NAMES)
+        merged = merged.dropna(subset=[label_column] + feature_names)
         if merged.empty:
             continue
         merged = merged.copy()
@@ -169,6 +260,10 @@ def main():
     ap.add_argument("--outdir", type=Path, default=Path("./structural_3d_baseline"))
     ap.add_argument("--include-flagged", action="store_true")
     ap.add_argument("--limit-structures", type=int, default=None)
+    ap.add_argument("--with-sasa", action="store_true",
+                     help="Also compute real per-residue SASA (Shrake-Rupley) from the PQR's own "
+                          "atomic radii and report it alongside the crowding-based features -- "
+                          "noticeably slower (see compute_per_atom_sasa).")
     args = ap.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
@@ -178,13 +273,18 @@ def main():
         pdb_ids = pdb_ids[: args.limit_structures]
 
     log.info("=== Extracting 3D structural features for %d structures ===", len(pdb_ids))
-    df = build_residue_level_table(args.labels_dir, pdb_ids, args.label_column, args.include_flagged)
+    df = build_residue_level_table(args.labels_dir, pdb_ids, args.label_column, args.include_flagged,
+                                    with_sasa=args.with_sasa)
     add_centered_and_rank(df)
     df.to_csv(args.outdir / "residue_level_structural_3d_table.csv", index=False)
     log.info("Assembled %d residues across %d chains", len(df), df["chain_id"].nunique())
 
     splits = df["split"].to_numpy() if "split" in df.columns else np.full(len(df), "train")
-    X_struct3d = df[STRUCT3D_FEATURE_NAMES].to_numpy(dtype=float)
+
+    feature_sets = {"structural_3d": STRUCT3D_FEATURE_NAMES}
+    if args.with_sasa:
+        feature_sets["structural_3d_plus_sasa"] = STRUCT3D_FEATURE_NAMES + ["residue_sasa_A2"]
+        feature_sets["sasa_only"] = ["residue_sasa_A2"]
 
     targets = {
         "raw": df["y"].to_numpy(dtype=float),
@@ -195,9 +295,11 @@ def main():
     rows = []
     log.info("=== Regressing each target on 3D structural features ===")
     for target_name, y in targets.items():
-        r2 = split_ridge_r2(X_struct3d, y, splits)
-        rows.append({"target": target_name, "features": "structural_3d", "test_r2": r2})
-        log.info("target=%-24s features=structural_3d test_R^2=%.4f", target_name, r2)
+        for feat_name, feat_cols in feature_sets.items():
+            X = df[feat_cols].to_numpy(dtype=float)
+            r2 = split_ridge_r2(X, y, splits)
+            rows.append({"target": target_name, "features": feat_name, "test_r2": r2})
+            log.info("target=%-24s features=%-24s test_R^2=%.4f", target_name, feat_name, r2)
 
     pd.DataFrame(rows).to_csv(args.outdir / "structural_3d_summary.csv", index=False)
     log.info("Wrote outputs to %s", args.outdir)

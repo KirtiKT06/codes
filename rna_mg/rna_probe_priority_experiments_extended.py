@@ -117,7 +117,7 @@ def build_dataset_for_model_with_chains(labels_dir: Path, pdb_ids: list[str], mo
 
     per_layer_X = {i: [] for i in range(n_layers)}
     y_by_column_lists = {col: [] for col in label_columns}
-    pdb_groups_all, chain_groups_all, splits_all, base_all, resnum_all = [], [], [], [], []
+    pdb_groups_all, chain_groups_all, splits_all, base_all, resnum_all, seq_index_all = [], [], [], [], [], []
 
     for pdb_id in pdb_ids:
         labels = load_structure_labels(labels_dir, pdb_id, include_flagged)
@@ -148,6 +148,7 @@ def build_dataset_for_model_with_chains(labels_dir: Path, pdb_ids: list[str], mo
                                else np.full(len(valid), "train"))
             base_all.append(valid["base"].to_numpy())
             resnum_all.append(valid["resnum"].to_numpy())
+            seq_index_all.append(valid["seq_index"].to_numpy())
 
     if not pdb_groups_all:
         raise RuntimeError(f"No usable (embedding, label) pairs assembled for model {model_key}")
@@ -158,11 +159,12 @@ def build_dataset_for_model_with_chains(labels_dir: Path, pdb_ids: list[str], mo
     splits = np.concatenate(splits_all)
     base_ids = np.concatenate(base_all)
     resnums = np.concatenate(resnum_all)
+    seq_indices = np.concatenate(seq_index_all)
     y_by_column = {col: np.concatenate(v) for col, v in y_by_column_lists.items()}
 
     log.info("%s: assembled %d residues, %d structures, %d distinct chains",
               model_key, len(pdb_groups), len(set(pdb_groups)), len(set(chain_groups)))
-    return X, y_by_column, pdb_groups, chain_groups, splits, base_ids, resnums, effective_max_len
+    return X, y_by_column, pdb_groups, chain_groups, splits, base_ids, resnums, seq_indices, effective_max_len
 
 
 # ----------------------------------------------------------------------
@@ -240,10 +242,23 @@ def kmer_context_features(seq: str, k: int) -> np.ndarray:
 
 
 def build_kmer_dataset(labels_dir: Path, pdb_ids: list[str], k: int,
-                        include_flagged: bool, label_column: str):
+                        include_flagged: bool, label_column: str,
+                        max_len: int | None = None):
     """Sequence-only analogue of build_dataset_for_model: same label
     loading, but features are local one-hot k-mer context instead of LM
-    embeddings. Returns X (n_residues, k*5), y, groups, splits."""
+    embeddings. Returns X (n_residues, k*5), y, groups, splits.
+
+    max_len: restrict to seq_index < max_len, matching exactly the
+    truncation condition build_dataset_for_model_with_chains applies
+    (seq_index < emb.shape[1], i.e. seq_index < effective_max_len).
+    Without this, the k-mer baseline runs over EVERY residue in
+    labels_dir regardless of which model this baseline is meant to sit
+    next to -- so a model with heavy truncation (e.g. rnabert's 438-token
+    limit, which keeps only ~41% of residues) gets compared against a
+    baseline fit on roughly 2.4x more data than its own LM ever saw. Pass
+    the model's own `effective_max_len` here for a fair, same-support
+    comparison (this is exactly what Priority 1c already does for the
+    base-identity baseline; Priority 2 was the odd one out)."""
     X_list, y_list, groups_list, splits_list = [], [], [], []
     for pdb_id in pdb_ids:
         labels = load_structure_labels(labels_dir, pdb_id, include_flagged)
@@ -255,7 +270,8 @@ def build_kmer_dataset(labels_dir: Path, pdb_ids: list[str], k: int,
             if not seq:
                 continue
             feats = kmer_context_features(seq, k)
-            valid = chain_rows[chain_rows["seq_index"] < feats.shape[0]]
+            cap = feats.shape[0] if max_len is None else min(feats.shape[0], max_len)
+            valid = chain_rows[chain_rows["seq_index"] < cap]
             if valid.empty:
                 continue
             idxs = valid["seq_index"].to_numpy()
@@ -271,10 +287,12 @@ def build_kmer_dataset(labels_dir: Path, pdb_ids: list[str], k: int,
 
 
 def run_kmer_baseline_sweep(labels_dir: Path, pdb_ids: list[str], label_column: str,
-                             include_flagged: bool, ks: tuple[int, ...] = (1, 3, 5, 7)) -> pd.DataFrame:
+                             include_flagged: bool, ks: tuple[int, ...] = (1, 3, 5, 7),
+                             max_len: int | None = None) -> pd.DataFrame:
     rows = []
     for k in ks:
-        X, y, groups, splits = build_kmer_dataset(labels_dir, pdb_ids, k, include_flagged, label_column)
+        X, y, groups, splits = build_kmer_dataset(labels_dir, pdb_ids, k, include_flagged, label_column,
+                                                   max_len=max_len)
         valid = ~np.isnan(y)
         X, y, splits = X[valid], y[valid], splits[valid]
         train, val, test = splits == "train", splits == "val", splits == "test"
@@ -623,12 +641,17 @@ def run_kmer_centered_sweep(labels_dir: Path, pdb_ids: list[str], label_column: 
     return pd.DataFrame(rows)
 
 
-def build_structural_feature_lookup(labels_dir: Path, pdb_ids: list[str]) -> dict:
-    """(pdb_id, chain, resnum) -> 3D structural feature vector, extracted
-    from the label pipeline's own .pqr coordinate files via
+def build_structural_feature_lookup(labels_dir: Path, pdb_ids: list[str],
+                                     label_column: str, include_flagged: bool) -> dict:
+    """(pdb_id, chain, seq_index) -> 3D structural feature vector,
+    extracted from the label pipeline's own .pqr coordinate files via
     structural_3d_baseline.py's extractor -- keep that file in the same
-    directory. Lazy-imported so scipy is only required when this
-    priority actually runs."""
+    directory. Keyed by seq_index (not resnum): extract_structural_features
+    only has resnum from the PQR atoms, so this looks each residue's
+    seq_index up from the labels table (which carries both) before
+    storing it, so the final lookup matches align_structural_features'
+    seq_index-keyed convention. Lazy-imported so scipy is only required
+    when this priority actually runs."""
     from structural_3d_baseline import extract_structural_features, STRUCT3D_FEATURE_NAMES
     lookup = {}
     for pdb_id in pdb_ids:
@@ -638,50 +661,213 @@ def build_structural_feature_lookup(labels_dir: Path, pdb_ids: list[str]) -> dic
         feats = extract_structural_features(pqr_path)
         if feats.empty:
             continue
+        labels = load_structure_labels(labels_dir, pdb_id, include_flagged)
+        if labels is None or label_column not in labels.columns:
+            continue
+        resnum_to_seqidx = labels.set_index(["chain", "resnum"])["seq_index"].to_dict()
         for _, r in feats.iterrows():
-            key = (pdb_id, r["chain"], r["resnum"])
-            lookup[key] = r[STRUCT3D_FEATURE_NAMES].to_numpy(dtype=float)
+            seq_idx = resnum_to_seqidx.get((r["chain"], r["resnum"]))
+            if seq_idx is None:
+                continue
+            lookup[(pdb_id, r["chain"], int(seq_idx))] = r[STRUCT3D_FEATURE_NAMES].to_numpy(dtype=float)
     return lookup
 
 
-def align_structural_features(
-    lookup,
-    pdb_groups,
-    chain_groups,
-    resnums,
-):
-    from structural_3d_baseline import STRUCT3D_FEATURE_NAMES
-
+def align_structural_features(lookup: dict, pdb_groups: np.ndarray, chain_groups: np.ndarray,
+                               seq_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Returns (X_struct, ok_mask) aligned row-for-row with pdb_groups/
+    chain_groups/seq_indices. Keyed by seq_index rather than resnum --
+    seq_index is unique-by-construction (it's the FASTA position), so
+    this sidesteps any risk of resnum collisions from insertion-code
+    edge cases even after the label pipeline's own renumbering. ok_mask
+    is also False where a found vector isn't fully finite (e.g.
+    dist_nearest_P_other with no other-residue phosphate nearby)."""
     n = len(pdb_groups)
-    n_feat = len(STRUCT3D_FEATURE_NAMES)
-
-    X_struct = np.full((n, n_feat), np.nan)
+    X_struct = None
     ok = np.zeros(n, dtype=bool)
-
     for i in range(n):
-
         chain = chain_groups[i].split("::")[1]
-
-        key = (
-            pdb_groups[i],
-            chain,
-            resnums[i],
-        )
-
+        key = (pdb_groups[i], chain, seq_indices[i])
         vec = lookup.get(key)
-
         if vec is None:
             continue
-
         vec = np.asarray(vec, dtype=float)
-
-        # only keep fully finite feature vectors
+        if X_struct is None:
+            X_struct = np.full((n, vec.shape[0]), np.nan)
         if np.isfinite(vec).all():
-
             X_struct[i] = vec
             ok[i] = True
-
+    if X_struct is None:
+        from structural_3d_baseline import STRUCT3D_FEATURE_NAMES
+        X_struct = np.full((n, len(STRUCT3D_FEATURE_NAMES)), np.nan)
     return X_struct, ok
+
+
+def align_feature_lookup(lookup: dict, pdb_groups: np.ndarray, chain_groups: np.ndarray,
+                          seq_indices: np.ndarray, n_feat: int) -> tuple[np.ndarray, np.ndarray]:
+    """Generic version of align_structural_features for any (pdb_id, chain,
+    seq_index) -> feature-vector lookup -- used by Priority 10's 21-mer
+    residual lookup so the same safe, seq_index-keyed alignment pattern
+    applies everywhere a per-residue feature gets joined to the LM's rows."""
+    n = len(pdb_groups)
+    X = np.full((n, n_feat), np.nan)
+    ok = np.zeros(n, dtype=bool)
+    for i in range(n):
+        chain = chain_groups[i].split("::")[1]
+        key = (pdb_groups[i], chain, seq_indices[i])
+        vec = lookup.get(key)
+        if vec is None:
+            continue
+        vec = np.asarray(vec, dtype=float)
+        if np.isfinite(vec).all():
+            X[i] = vec
+            ok[i] = True
+    return X, ok
+
+
+def build_kmer21_lookup(labels_dir: Path, pdb_ids: list[str], label_column: str,
+                         include_flagged: bool, max_len: Optional[int]) -> dict:
+    """(pdb_id, chain, seq_index) -> 21-mer one-hot context feature
+    vector, restricted to max_len (the LM's own effective_max_len) so it
+    stays support-matched -- for the residual-after-21mer probe
+    (Priority 10)."""
+    lookup = {}
+    for pdb_id in pdb_ids:
+        labels = load_structure_labels(labels_dir, pdb_id, include_flagged)
+        if labels is None or label_column not in labels.columns:
+            continue
+        seqs = load_fasta_by_chain(labels_dir, pdb_id)
+        for chain, chain_rows in labels.groupby("chain"):
+            seq = seqs.get(chain)
+            if not seq:
+                continue
+            if max_len is not None:
+                seq = seq[:max_len]
+            feats = kmer_context_features(seq, 21)
+            valid_rows = chain_rows[chain_rows["seq_index"] < feats.shape[0]]
+            for _, r in valid_rows.iterrows():
+                idx = int(r["seq_index"])
+                lookup[(pdb_id, chain, idx)] = feats[idx]
+    return lookup
+
+
+def fit_kmer_baseline_and_compute_residual(X_kmer: np.ndarray, y: np.ndarray,
+                                            splits: np.ndarray) -> np.ndarray:
+    """Out-of-fold residualization, NOT a single train+val fit predicting
+    everything. A single trainval fit would make val's residual in-sample
+    (the kmer model saw val's own targets), which biases layer selection
+    in select_best_layer_and_test (layer choice is driven by val R^2).
+    Instead: a model fit on TRAIN ONLY generates train's residual
+    (in-sample for train -- standard and unavoidable in two-stage
+    residual learning) AND val's residual (genuinely out-of-sample,
+    since this model never saw val); a separate model fit on TRAIN+VAL
+    generates test's residual (genuinely out-of-sample), mirroring
+    exactly the protocol select_best_layer_and_test itself uses."""
+    from sklearn.linear_model import RidgeCV
+    from sklearn.preprocessing import StandardScaler
+
+    train = splits == "train"
+    val = splits == "val"
+    test = splits == "test"
+    trainval = train | val
+
+    residual = np.full_like(y, np.nan, dtype=float)
+
+    scaler_train = StandardScaler().fit(X_kmer[train])
+    model_train = RidgeCV(alphas=np.logspace(-3, 3, 13)).fit(scaler_train.transform(X_kmer[train]), y[train])
+    residual[train] = y[train] - model_train.predict(scaler_train.transform(X_kmer[train]))
+    residual[val] = y[val] - model_train.predict(scaler_train.transform(X_kmer[val]))
+
+    scaler_trainval = StandardScaler().fit(X_kmer[trainval])
+    model_trainval = RidgeCV(alphas=np.logspace(-3, 3, 13)).fit(
+        scaler_trainval.transform(X_kmer[trainval]), y[trainval])
+    residual[test] = y[test] - model_trainval.predict(scaler_trainval.transform(X_kmer[test]))
+
+    return residual
+
+
+def local_context_strings(seq: str, half_window: int = 2) -> list[str]:
+    """Local sequence context string per position (e.g. length 5 for
+    half_window=2), padded with N at chain boundaries -- used purely as a
+    grouping key for the electrostatic-twins experiment (Priority 11),
+    not as a regression feature."""
+    seq = seq.upper()
+    padded = "N" * half_window + seq + "N" * half_window
+    return [padded[i:i + 2 * half_window + 1] for i in range(len(seq))]
+
+
+def build_twin_key_lookup(labels_dir: Path, pdb_ids: list[str], half_window: int = 2,
+                           max_len: Optional[int] = None) -> dict:
+    """(pdb_id, chain, seq_index) -> (base, is_paired_mfe, local_context)
+    grouping key. Residues sharing this key look identical to any simple
+    sequence-based model (same base, same secondary-structure status,
+    same immediate neighbourhood) -- so any embedding-distance vs.
+    electrostatic-difference correlation found within a group can't be
+    explained by those superficial features, since they're held fixed by
+    construction.
+
+    max_len: truncates each sequence to the LM's own effective_max_len
+    BEFORE folding. Without this, ViennaRNA's partition-function step
+    (roughly O(n^3)) gets paid in full on every chain, including the
+    longest RNAs in the dataset (several run past 4000 nt) -- for
+    residues well past what the LM ever saw and that this lookup would
+    never even be queried for downstream. That mismatch is what was
+    burning hours: truncating first cuts the cost on the longest chains
+    by roughly (full_len / max_len)^3, not just proportionally."""
+    from secondary_structure_baseline import pairing_features
+    lookup = {}
+    for pdb_id in pdb_ids:
+        seqs = load_fasta_by_chain(labels_dir, pdb_id)
+        for chain, seq in seqs.items():
+            if not seq:
+                continue
+            if max_len is not None:
+                seq = seq[:max_len]
+            pair_feats = pairing_features(seq)
+            contexts = local_context_strings(seq, half_window=half_window)
+            seq_upper = seq.upper()
+            for i, base in enumerate(seq_upper):
+                if i >= pair_feats.shape[0] or np.isnan(pair_feats[i]).any():
+                    continue
+                is_paired = int(round(pair_feats[i, 0]))
+                lookup[(pdb_id, chain, i)] = (base, is_paired, contexts[i])
+    return lookup
+
+
+def fit_probe_and_get_predictions(X_layer: np.ndarray, y: np.ndarray, splits: np.ndarray) -> np.ndarray:
+    """Refits the Ridge probe on train+val (same final-fit protocol
+    select_best_layer_and_test itself uses for the chosen best layer),
+    then returns w^T h + b -- the probe's own scalar prediction -- for
+    EVERY row. This is what Priority 11 should compare twins on: not raw
+    Euclidean distance in the full embedding space (which mixes in every
+    direction the probe doesn't even use), but the actual signed
+    difference in what the trained probe itself would predict."""
+    from sklearn.linear_model import RidgeCV
+    from sklearn.preprocessing import StandardScaler
+
+    trainval = (splits == "train") | (splits == "val")
+    scaler = StandardScaler().fit(X_layer[trainval])
+    model = RidgeCV(alphas=np.logspace(-3, 3, 13)).fit(scaler.transform(X_layer[trainval]), y[trainval])
+    return model.predict(scaler.transform(X_layer))
+
+
+def sample_pairs_from_group(idxs: list[int], max_pairs: int, rng: np.random.Generator) -> list[tuple[int, int]]:
+    """All pairs if the group is small enough, else a random sample of
+    unique pairs (bounded attempts to avoid pathological loops on
+    degenerate/huge groups)."""
+    import itertools
+    s = len(idxs)
+    total_possible = s * (s - 1) // 2
+    if total_possible <= max_pairs:
+        return list(itertools.combinations(idxs, 2))
+    idxs_arr = np.array(idxs)
+    pairs = set()
+    attempts = 0
+    while len(pairs) < max_pairs and attempts < max_pairs * 20:
+        a, b = rng.choice(idxs_arr, size=2, replace=False)
+        pairs.add((int(min(a, b)), int(max(a, b))))
+        attempts += 1
+    return list(pairs)
 
 
 def main():
@@ -717,7 +903,7 @@ def main():
         pdb_ids = pdb_ids[: args.limit_structures]
 
     log.info("=== Building embeddings for %s (%d structures) ===", args.model, len(pdb_ids))
-    X, y_by_column, pdb_groups, chain_groups, splits, base_ids, resnums, eff_max_len = build_dataset_for_model_with_chains(
+    X, y_by_column, pdb_groups, chain_groups, splits, base_ids, resnums, seq_indices, eff_max_len = build_dataset_for_model_with_chains(
         args.labels_dir, pdb_ids, args.model, device, args.include_flagged,
         args.max_len, [args.label_column],
     )
@@ -795,9 +981,11 @@ def main():
               "rank: LM=%.3f base=%.3f", quick["test_r2"], base_raw["test_r2"],
               centered_result["test_r2"], base_centered["test_r2"],
               rank_result["test_r2"], base_rank["test_r2"])
-    log.info("=== Priority 2: k-mer baselines ===")
+    log.info("=== Priority 2: k-mer baselines (same support as %s, seq_index < %d) ===",
+              args.model, eff_max_len)
     kmer_df = run_kmer_baseline_sweep(args.labels_dir, pdb_ids, args.label_column,
-                                       args.include_flagged, ks=tuple(args.kmer_ks))
+                                       args.include_flagged, ks=tuple(args.kmer_ks),
+                                       max_len=eff_max_len)
     kmer_df.to_csv(args.outdir / "p2_kmer_baselines.csv", index=False)
 
     # ---- Priority 3: sequence-cluster split (raw / centered / rank) ----
@@ -897,8 +1085,10 @@ def main():
     # distinct from -- and more decisive than -- comparing the LM alone against
     # identity+structure, which answers a related but different question.
     log.info("=== Priority 9: Delta R^2 = R^2(LM+structure) - R^2(structure) ===")
-    struct_lookup = build_structural_feature_lookup(args.labels_dir, pdb_ids)
-    X_struct_full, struct_ok_full = align_structural_features(struct_lookup, pdb_groups, chain_groups, resnums)
+    struct_lookup = build_structural_feature_lookup(args.labels_dir, pdb_ids, args.label_column,
+                                                      args.include_flagged)
+    X_struct_full, struct_ok_full = align_structural_features(struct_lookup, pdb_groups, chain_groups,
+                                                                seq_indices)
     struct_ok_valid = struct_ok_full[valid]
     log.info("Structural features matched for %d/%d LM-valid residues",
               int(struct_ok_valid.sum()), len(struct_ok_valid))
@@ -912,26 +1102,6 @@ def main():
         best_layer = quick["best_layer"]  # reuse the layer already chosen for the LM alone on this target
         X_lm_best_9 = X_valid[best_layer][struct_ok_valid]
         X_lm_plus_struct_9 = np.concatenate([X_lm_best_9, X_struct_valid], axis=1)
-
-        # ------------------------------------------
-        # Defensive NaN guard
-        # ------------------------------------------
-
-        finite_mask = np.isfinite(X_struct_valid).all(axis=1)
-
-        log.info(
-            "Priority 9: finite structural rows %d/%d",
-            finite_mask.sum(),
-            len(finite_mask),
-        )
-
-        X_struct_valid = X_struct_valid[finite_mask]
-
-        y_centered_9 = y_centered_9[finite_mask]
-
-        splits_9 = splits_9[finite_mask]
-
-        X_lm_best_9 = X_lm_best_9[finite_mask]
 
         struct_alone_result = select_best_layer_and_test(
             {0: X_struct_valid}, y_centered_9, splits_9, args.model, args.label_column + "_structure_alone")
@@ -951,6 +1121,179 @@ def main():
                   "Delta R^2 (LM+structure - structure) = %.3f",
                   struct_alone_result["test_r2"], lm_alone_result_9["test_r2"],
                   lm_plus_struct_result["test_r2"], delta_r2)
+
+    # ---- Priority 10: residual-after-21mer probe, plus the proper decomposition ----
+    # Fits a 21-nucleotide-context model to the raw target with PROPER
+    # out-of-fold residualization (see fit_kmer_baseline_and_compute_residual),
+    # then probes the LM against what's left -- directly answering "is the
+    # LM just a fancy k-mer model". Also reports the mathematically correct
+    # decomposition Delta R^2 = R^2(kmer+LM) - R^2(kmer), since R^2 on a
+    # residual target isn't simply additive with the original R^2 -- the
+    # residual number below is a genuine, honest diagnostic, but this
+    # second number is the one to actually cite. Finally, 10c sanity-checks
+    # the residual itself: base identity, k=7, and k=21 should ALL score
+    # ~0 against it (they're exactly what it was built to remove); if they
+    # don't, the residual construction has a problem worth chasing down
+    # before trusting the LM number above it.
+    log.info("=== Priority 10: residual-after-21mer probe ===")
+    kmer21_lookup = build_kmer21_lookup(args.labels_dir, pdb_ids, args.label_column,
+                                         args.include_flagged, eff_max_len)
+    n_kmer_feat = 21 * len(_ALPHABET)
+    X_kmer21_full, kmer21_ok_full = align_feature_lookup(kmer21_lookup, pdb_groups, chain_groups,
+                                                           seq_indices, n_kmer_feat)
+    kmer21_ok_valid = kmer21_ok_full[valid]
+    log.info("21-mer features matched for %d/%d LM-valid residues",
+              int(kmer21_ok_valid.sum()), len(kmer21_ok_valid))
+
+    if kmer21_ok_valid.sum() < 100:
+        log.warning("Too few residues with matched 21-mer features -- skipping Priority 10")
+    else:
+        X_kmer21_valid = X_kmer21_full[valid][kmer21_ok_valid]
+        y_10 = y[valid][kmer21_ok_valid]
+        splits_10 = splits_valid[kmer21_ok_valid]
+
+        # 10a: out-of-fold residual, LM probed against it (diagnostic, not the headline number)
+        residual_21mer = fit_kmer_baseline_and_compute_residual(X_kmer21_valid, y_10, splits_10)
+        X_lm_10 = {i: arr[kmer21_ok_valid] for i, arr in X_valid.items()}
+        residual_result_10 = select_best_layer_and_test(
+            X_lm_10, residual_21mer, splits_10, args.model, args.label_column + "_residual_after_21mer")
+        log.info("10a (diagnostic) Residual-after-21mer: LM test_R^2=%.3f (n=%d)",
+                  residual_result_10["test_r2"], int(kmer21_ok_valid.sum()))
+
+        # 10b: the correct decomposition -- Delta R^2 = R^2(kmer+LM) - R^2(kmer)
+        best_layer_10 = residual_result_10["best_layer"] if residual_result_10["best_layer"] in X_lm_10 \
+            else quick["best_layer"]
+        X_lm_best_10 = X_lm_10[best_layer_10]
+        X_kmer_plus_lm_10 = np.concatenate([X_kmer21_valid, X_lm_best_10], axis=1)
+        kmer_alone_10 = select_best_layer_and_test(
+            {0: X_kmer21_valid}, y_10, splits_10, args.model, args.label_column + "_kmer21_alone")
+        kmer_plus_lm_10 = select_best_layer_and_test(
+            {0: X_kmer_plus_lm_10}, y_10, splits_10, args.model, args.label_column + "_kmer21_plus_lm")
+        delta_r2_10b = kmer_plus_lm_10["test_r2"] - kmer_alone_10["test_r2"]
+        log.info("10b (headline) kmer21_alone=%.3f | kmer21+LM=%.3f | Delta R^2 = %.3f",
+                  kmer_alone_10["test_r2"], kmer_plus_lm_10["test_r2"], delta_r2_10b)
+
+        # 10c: sanity check -- base identity / k=7 / k=21 should all score ~0 against the residual
+        base_onehot_10 = _onehot_base_features(base_ids[valid][kmer21_ok_valid])
+        base_vs_resid = select_best_layer_and_test(
+            {0: base_onehot_10}, residual_21mer, splits_10, args.model, args.label_column + "_resid_vs_base")
+        k7_lookup_10 = {}
+        for pdb_id in pdb_ids:
+            seqs = load_fasta_by_chain(args.labels_dir, pdb_id)
+            for chain, seq in seqs.items():
+                seq7 = seq[:eff_max_len] if eff_max_len is not None else seq
+                feats7 = kmer_context_features(seq7, 7)
+                for idx in range(feats7.shape[0]):
+                    k7_lookup_10[(pdb_id, chain, idx)] = feats7[idx]
+        X_k7_full, k7_ok_full = align_feature_lookup(k7_lookup_10, pdb_groups, chain_groups,
+                                                       seq_indices, 7 * len(_ALPHABET))
+        k7_ok_10 = k7_ok_full[valid][kmer21_ok_valid]
+        if k7_ok_10.sum() > 100:
+            k7_vs_resid = select_best_layer_and_test(
+                {0: X_k7_full[valid][kmer21_ok_valid][k7_ok_10]}, residual_21mer[k7_ok_10],
+                splits_10[k7_ok_10], args.model, args.label_column + "_resid_vs_k7")
+        else:
+            k7_vs_resid = {"test_r2": float("nan")}
+        k21_vs_resid = select_best_layer_and_test(
+            {0: X_kmer21_valid}, residual_21mer, splits_10, args.model, args.label_column + "_resid_vs_k21")
+        log.info("10c sanity check -- base_identity vs residual R^2=%.3f | k=7 vs residual R^2=%.3f | "
+                  "k=21 vs residual R^2=%.3f (all should be ~0)",
+                  base_vs_resid["test_r2"], k7_vs_resid["test_r2"], k21_vs_resid["test_r2"])
+
+        pd.DataFrame([
+            {"quantity": "10a_residual_after_21mer_LM", "test_r2": residual_result_10["test_r2"]},
+            {"quantity": "10b_kmer21_alone", "test_r2": kmer_alone_10["test_r2"]},
+            {"quantity": "10b_kmer21_plus_LM", "test_r2": kmer_plus_lm_10["test_r2"]},
+            {"quantity": "10b_delta_r2_headline", "test_r2": delta_r2_10b},
+            {"quantity": "10c_sanity_base_identity_vs_residual", "test_r2": base_vs_resid["test_r2"]},
+            {"quantity": "10c_sanity_k7_vs_residual", "test_r2": k7_vs_resid["test_r2"]},
+            {"quantity": "10c_sanity_k21_vs_residual", "test_r2": k21_vs_resid["test_r2"]},
+        ]).to_csv(args.outdir / "p10_residual_after_21mer.csv", index=False)
+
+    # ---- Priority 11: electrostatic twin experiment ----
+    # Groups residues by (base identity, ViennaRNA paired/unpaired status,
+    # local 5-nt sequence context) -- everything a simple sequence model
+    # could plausibly use -- pooled across ALL structures. Within each
+    # group, residues are indistinguishable on every superficial feature.
+    # If the LM's embedding distance between two "twins" still tracks
+    # their ACTUAL electrostatic difference, that's the embedding space
+    # organized by real environment, not by the features defining the
+    # group. No new structures or APBS runs needed -- this only re-uses
+    # data you already have.
+    log.info("=== Priority 11: electrostatic twin experiment ===")
+    twin_key_lookup = build_twin_key_lookup(args.labels_dir, pdb_ids, max_len=eff_max_len)
+    pg_valid = pdb_groups[valid]
+    cg_valid = chain_groups[valid]
+    si_valid = seq_indices[valid]
+    n_valid_rows = len(pg_valid)
+
+    from collections import defaultdict
+    groups_by_key = defaultdict(list)
+    n_matched_11 = 0
+    for i in range(n_valid_rows):
+        chain = cg_valid[i].split("::")[1]
+        key = (pg_valid[i], chain, int(si_valid[i]))
+        gk = twin_key_lookup.get(key)
+        if gk is not None:
+            groups_by_key[gk].append(i)
+            n_matched_11 += 1
+    log.info("Twin-key matched for %d/%d LM-valid residues, forming %d distinct groups",
+              n_matched_11, n_valid_rows, len(groups_by_key))
+
+    rng11 = np.random.default_rng(0)
+    pair_i, pair_j = [], []
+    n_groups_used = 0
+    for gk, idxs in groups_by_key.items():
+        if len(idxs) < 2:
+            continue
+        n_groups_used += 1
+        for a, b in sample_pairs_from_group(idxs, max_pairs=100, rng=rng11):
+            pair_i.append(a)
+            pair_j.append(b)
+
+    if len(pair_i) < 50:
+        log.warning("Too few twin pairs formed -- skipping Priority 11")
+    else:
+        pair_i = np.array(pair_i)
+        pair_j = np.array(pair_j)
+        y_valid_arr = y[valid]
+        emb_best_11 = X_valid[quick["best_layer"]]
+
+        # Signed probe-prediction difference (w^T h_i - w^T h_j), not raw
+        # Euclidean embedding distance. This isolates exactly the direction
+        # in embedding space the trained probe actually uses, and keeping
+        # it SIGNED (rather than a magnitude-only norm) tests whether the
+        # probe gets the DIRECTION of the electrostatic difference right,
+        # not just how large it thinks the gap is -- a strictly sharper
+        # claim than "distance tracks distance".
+        probe_preds_11 = fit_probe_and_get_predictions(emb_best_11, y_valid_arr, splits_valid)
+        delta_phi_signed = y_valid_arr[pair_i] - y_valid_arr[pair_j]
+        delta_pred_signed = probe_preds_11[pair_i] - probe_preds_11[pair_j]
+
+        from scipy.stats import pearsonr, spearmanr
+        pear_r, pear_p = pearsonr(delta_pred_signed, delta_phi_signed)
+        spear_r, spear_p = spearmanr(delta_pred_signed, delta_phi_signed)
+
+        # negative control: shuffle delta_phi across pairs -- correlation should collapse to ~0
+        shuffled_delta_phi = rng11.permutation(delta_phi_signed)
+        pear_r_shuf, pear_p_shuf = pearsonr(delta_pred_signed, shuffled_delta_phi)
+
+        log.info("Electrostatic twins: n_pairs=%d, n_groups=%d | real: Pearson r=%.3f (p=%.2e), "
+                  "Spearman rho=%.3f (p=%.2e) | shuffled-control: Pearson r=%.3f (p=%.2e)",
+                  len(pair_i), n_groups_used, pear_r, pear_p, spear_r, spear_p, pear_r_shuf, pear_p_shuf)
+        log.info("Base rate within twin groups: median|delta_phi|=%.4f, 90th pct=%.4f",
+                  float(np.median(np.abs(delta_phi_signed))), float(np.percentile(np.abs(delta_phi_signed), 90)))
+
+        pd.DataFrame({"delta_phi_signed": delta_phi_signed, "delta_probe_pred_signed": delta_pred_signed}).to_csv(
+            args.outdir / "p11_electrostatic_twin_pairs.csv", index=False)
+        pd.DataFrame([{
+            "n_pairs": len(pair_i), "n_groups_used": n_groups_used,
+            "pearson_r": pear_r, "pearson_p": pear_p,
+            "spearman_rho": spear_r, "spearman_p": spear_p,
+            "pearson_r_shuffled_control": pear_r_shuf, "pearson_p_shuffled_control": pear_p_shuf,
+            "median_abs_delta_phi": float(np.median(np.abs(delta_phi_signed))),
+            "p90_abs_delta_phi": float(np.percentile(np.abs(delta_phi_signed), 90)),
+        }]).to_csv(args.outdir / "p11_electrostatic_twin_summary.csv", index=False)
 
     log.info("All priority experiment outputs written to %s", args.outdir)
 
