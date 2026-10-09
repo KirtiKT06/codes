@@ -13,8 +13,7 @@ Requires ONE of, on PATH:
     cd-hit-est (conda install -c bioconda cd-hit)     -- fallback
 
 Usage:
-    python mmseqs_cluster.py --labels-dir /data/rna_mg/cutoff_4_8_12 \
-        --outdir /data/rna_mg/clustering --identity 0.8 --tool mmseqs
+    python mmseqs_cluster.py    --labels-dir /data/rna_electostats/phi_res    --outdir /data/rna_mg/clustering      --identity 0.8      --tool mmseqs
 
 Then, in rna_probe_priority_experiments.py:
     --cluster-assignments-csv /data/rna_mg/clustering/chain_cluster_assignments.csv

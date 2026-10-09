@@ -39,6 +39,24 @@ prediction using MD trajectories):
     importantly, every seq_index after that point in the chain. True
     numbering is preserved via residue_renumber_map.csv and merged back
     into the output tables as original_resnum/insertion_code.
+  * v2.1 fix (chain IDs lost in PQR): pdb2pqr was run WITHOUT --keep-chain,
+    so it wrote PQR lines with no chain column (10 fields instead of 11).
+    parse_pqr_residues then defaulted every atom to chain "A", undoing the
+    per-molecule chain separation done by renumber_pdb_residues (duplex
+    strands "A:1-7" and "B:1-7" collapsed back into "A:1-7" twice). Fixes:
+      - run_pdb2pqr now passes --keep-chain.
+      - split_pqr_line() is the single PQR line parser; it handles a chain
+        letter fused to a 4-digit residue number ("A1000") and RAISES if
+        the chain column is missing, instead of silently guessing "A".
+      - process_structure() checks that the number of distinct chains
+        survives the pdb2pqr round trip and fails loudly if not.
+  * v2.2 fixes (from the first production failure log):
+      - split_pqr_line now reads PDB columns first (fixed-width), so a
+        digit chain fused to a 4-digit resSeq ("01000") and fused negative
+        coordinates no longer break parsing.
+      - remove_incomplete_residues identifies residues by contiguous run
+        incl. insertion code, so dangling stubs sharing a number with a
+        complete residue are really removed (pdb2pqr "Too few atoms").
 
 Pipeline stages (unchanged from v1 unless noted above):
     1. Non-redundant RNA structure list (BGSU RNA 3D Hub representative set,
@@ -54,7 +72,7 @@ Pipeline stages (unchanged from v1 unless noted above):
 
 IMPORTANT -- same caveat as v1: pdb2pqr RNA charge assignment, the APBS
 multigrid PB solve, .dx interpolation, and the local-window cutoff
-averaging have been exercised end-to-end against a real APBS run. The ion
+averaging have been exaercised end-to-end against a real APBS run. The ion
 sidecar extraction, resolution parsing, and --assign-only retry path are
 new in this version and have NOT been run against a real batch -- they are
 written defensively (best-effort parsing, never raise on a missing/odd
@@ -67,7 +85,7 @@ Requirements:
 
 Usage:
     python rna_electrostatics_pipeline_v2.py --pdb-ids 1EHZ 4V9F ... --outdir /data/rna_mg/cutoff_8
-    python rna_electrostatics_pipeline_v2.py --nonredundant-csv nrlist.csv --outdir /data/rna_mg/res_phi --n-workers 8
+    python rna_electrostatics_pipeline_v2.py --nonredundant-csv nrlist.csv --outdir /data/rna_mg/cutoff_8 --n-workers 8
 """
 
 from __future__ import annotations
@@ -124,7 +142,7 @@ ION_RESNAMES = {
 ION_RESOLUTION_FLAG_THRESHOLD = 3.0
 
 RESIDUE_CUTOFF_ANGSTROM = 8.0
-MIN_RNA_RESIDUES = 2
+MIN_RNA_RESIDUES = 5
 
 # Sweep of averaging radii computed per residue in one pass (see
 # per_residue_potential). 8.0 A is kept as RESIDUE_CUTOFF_ANGSTROM above for
@@ -251,8 +269,7 @@ def download_pdb(pdb_id: str, out_dir: Path) -> Path:
                 f"{pdb_id}: mmcif_long_chain_ids"
             )
         raise
-    
-    st.write_pdb(str(dest))
+
     return dest
 
 # ----------------------------------------------------------------------
@@ -376,62 +393,50 @@ def remove_alternate_locations(in_pdb: Path, out_pdb: Path):
 
 def remove_incomplete_residues(in_pdb: Path, out_pdb: Path):
     """
-    Remove residues lacking C1'.
-    These are typically dangling phosphate stubs:
-        P, OP1, OP2, O5'
-    which can trigger PDB2PQR charge failures.
+    Remove residues lacking C1' (or lacking N9/N1). These are typically
+    dangling phosphate stubs (P, OP1, OP2, O5') that make pdb2pqr give up
+    ("Too few atoms present to reconstruct or cap residue").
+
+    v2.2: a residue is a maximal RUN of consecutive ATOM/HETATM lines with
+    the same (resname, chain, resSeq + insertion code); TER ends a run. The
+    old version keyed on (chain, resSeq) only, so a stub that shared its
+    number with a complete residue (different insertion code, or the second
+    strand of a duplex numbered identically) inherited that residue's atoms
+    and was wrongly KEPT -- the cause of the 4V4F "Too few atoms" crash.
     """
+    lines = in_pdb.read_text().splitlines(keepends=True)
 
-    residue_atoms = {}
-    lines = []
+    run_of_line: dict[int, int] = {}
+    run_atoms: list[set] = []
+    prev_key = None
+    for i, line in enumerate(lines):
+        if line.startswith("TER"):
+            prev_key = None
+            continue
+        if not line.startswith(("ATOM", "HETATM")):
+            continue
+        key = (line[17:20], line[21], line[22:27])   # resname, chain, resSeq+iCode
+        if key != prev_key:
+            run_atoms.append(set())
+            prev_key = key
+        run_of_line[i] = len(run_atoms) - 1
+        run_atoms[-1].add(line[12:16].strip())
 
-    with open(in_pdb) as f:
-        for line in f:
-            lines.append(line)
-
-            if not line.startswith(("ATOM", "HETATM")):
-                continue
-
-            chain = line[21]
-            resnum = line[22:26].strip()
-            atom = line[12:16].strip()
-
-            key = (chain, resnum)
-
-            if key not in residue_atoms:
-                residue_atoms[key] = set()
-
-            residue_atoms[key].add(atom)
-
-    keep_residues = {
-        key
-        for key, atoms in residue_atoms.items()
-            if (
-                "C1'" in atoms
-                and
-                ("N9" in atoms or "N1" in atoms)
-            )}
-    removed = len(residue_atoms) - len(keep_residues)
-
+    keep_runs = {
+        rid for rid, atoms in enumerate(run_atoms)
+        if "C1'" in atoms and ("N9" in atoms or "N1" in atoms)
+    }
+    removed = len(run_atoms) - len(keep_runs)
     if removed:
-        log.info(
-            "%s: removed %d incomplete residues lacking C1'",
-            in_pdb.name,
-            removed,
-        )
+        log.info("%s: removed %d incomplete residues lacking C1'", in_pdb.name, removed)
 
     with open(out_pdb, "w") as f:
-        for line in lines:
-
-            if not line.startswith(("ATOM", "HETATM")):
-                f.write(line)
+        for i, line in enumerate(lines):
+            if i in run_of_line and run_of_line[i] not in keep_runs:
                 continue
+            f.write(line)
 
-            chain = line[21]
-            resnum = line[22:26].strip()
 
-            if (chain, resnum) in keep_residues:
-                f.write(line)
 # ----------------------------------------------------------------------
 # Step 4: strip ions/waters, relabel modified nucleotides
 # ----------------------------------------------------------------------
@@ -463,71 +468,158 @@ def strip_ions_and_waters(pdb_path: Path, out_path: Path) -> tuple[Path, int, bo
     return out_path, kept, had_modified
 
 
+def keep_first_model_only(pdb_path: Path) -> int:
+    """For multi-MODEL structures (NMR ensembles -- many entries in this
+    dataset are 10-40 near-identical conformers of the same molecule),
+    keep only the first MODEL...ENDMDL block and drop the rest, rewriting
+    pdb_path IN PLACE. Every downstream step -- ion extraction, residue
+    renumbering, atom counting -- otherwise sees the SAME physical
+    residue/ion once per model, inflating residue and atom counts by up
+    to ~40x. Combined with renumber_pdb_residues' contiguity-based
+    residue identity, a later model's residues reusing model 1's
+    chain+resSeq look exactly like "a second molecule sharing a chain
+    ID" (the real case that logic exists to catch) and get silently
+    shunted onto a fake alias chain -- the failure mode behind the
+    ">99999 atoms" crashes and make_clean_subset still flagging most
+    structures after the first renumbering fix.
+
+    No-op (returns 0, file untouched) for single-model files -- the
+    large majority of X-ray/cryo-EM depositions, which have no MODEL
+    records at all.
+    """
+    lines = pdb_path.read_text().splitlines(keepends=True)
+    model_starts = [i for i, l in enumerate(lines) if l.startswith("MODEL")]
+    if len(model_starts) <= 1:
+        return 0
+    endmdl_after_first = next(
+        (i for i, l in enumerate(lines) if l.startswith("ENDMDL") and i > model_starts[0]), None)
+    end = endmdl_after_first + 1 if endmdl_after_first is not None else model_starts[1]
+    kept = lines[:end]
+    # preserve trailing non-coordinate records (CONECT/MASTER/END) that
+    # legitimately follow the LAST model in the original file.
+    trailer = [l for l in lines[end:] if not l.startswith(("MODEL", "ATOM", "HETATM", "ENDMDL", "TER"))]
+    pdb_path.write_text("".join(kept) + "".join(trailer))
+    return len(model_starts) - 1
+
+
 def renumber_pdb_residues(pdb_path: Path) -> pd.DataFrame:
     """Reassign a synthetic, collision-free residue number (resSeq) per
     chain, blanking any insertion code, and return a mapping table back
     to the original (chain, resnum, insertion_code, resname).
 
-    WHY THIS EXISTS (post-review fix): every downstream step keys
-    residues on (chain, resnum, resname) parsed with a digit-only regex
-    that never reads the PDB insertion-code column. Many real RNA
-    structures -- tRNAs especially, whose canonical numbering uses named
-    insertions in the D-loop/variable arm (17a, 20a, 20b, e11, e12, ...)
-    -- have two DISTINCT residues sharing the same numeric resSeq,
-    differing only by insertion code. Two such residues with the same
-    resname would silently collapse into a single groupby bucket: their
-    atoms averaged into one bogus 'residue', and every seq_index after
-    that point in the chain shifted by one relative to the true
-    sequence -- with no exception raised. That silent shift corrupts
-    exactly the embedding-to-label alignment the probing script depends
-    on. It is also not safe to assume pdb2pqr preserves insertion codes
-    into its PQR output resSeq field (unverified either way), so fixing
-    the parser alone would not be a complete fix.
+    WHY THIS EXISTS: every downstream step keys residues on
+    (chain, resnum, resname). Two DISTINCT residues sharing a key must
+    never reach those steps, or they silently collapse into one groupby
+    bucket (atoms pooled into one bogus residue, seq_index shifted for the
+    rest of the chain) or -- when their resnames differ -- get interleaved
+    when sequences are built by sorting on resnum.
 
-    The fix applies the same principle already used for atom serials in
-    renumber_pdb_atoms(): eliminate the ambiguity before pdb2pqr ever
-    sees the file, rather than relying on a third-party tool's format
-    handling for something ambiguity-prone. Call this BEFORE pdb2pqr
-    (order relative to renumber_pdb_atoms doesn't matter). The returned
-    mapping (also useful to merge back into per_residue_potential.csv /
-    seq_index_map.csv for provenance) is keyed by (chain,
-    synthetic_resnum) -> (original_resnum, insertion_code, resname).
+    TWO kinds of collision are handled here:
+
+      1. Same numeric resSeq, different insertion code (tRNA D-loop
+         17/17a/17b etc.): distinct (resnum, icode) -> distinct synthetic
+         ids within the chain.
+
+      2. (added after this was found in the real dataset: 680 of the
+         label table's structures had repeated (chain, resnum) keys)
+         Two different MOLECULES sharing a chain ID AND numbering -- e.g.
+         both strands of a duplex written as chain "A", residues 1-7 each
+         (PDB 2VAL). The old code keyed its lookup on (chain, resnum,
+         icode) alone, so the second strand's residues inherited the first
+         strand's synthetic ids; sequences were then built by sorting on
+         resnum, interleaving the two strands into a scrambled "sequence"
+         that every LM, k-mer baseline, and ViennaRNA fold downstream was
+         fed. Residue identity is now decided by CONTIGUITY in file order
+         (a residue is a maximal run of ATOM/HETATM lines with the same
+         chain, resSeq, icode and resname; TER always ends a residue), and
+         when a new run re-uses a (resSeq, icode) already used in that
+         chain it is a different molecule sharing the chain ID -> it is
+         moved to a fresh, unused single-character chain ID so each strand
+         becomes its own chain with its own correctly-ordered sequence.
+         If no unused chain ID is left the structure raises rather than
+         being silently corrupted.
+
+    The returned mapping has one row per residue, keyed by the INTERNAL
+    (chain, synthetic_resnum), and records `original_chain` so results can
+    still be related to the deposited chain ID / numbering (e.g. joining
+    x3dna-dssr output, which reports the deposited IDs).
+
+    NOTE (v2.1): these internal chain letters only survive pdb2pqr if it
+    is run with --keep-chain (see run_pdb2pqr).
     """
     lines = pdb_path.read_text().splitlines(keepends=True)
-    chain_counters: dict[str, int] = {}
-    seen: dict[tuple, int] = {}
+
+    def _chain_of(line: str) -> str:
+        return line[21].strip() or "A"
+
+    used_chars = {_chain_of(l) for l in lines
+                  if l.startswith(("ATOM", "HETATM")) and len(l) >= 27}
+    alphabet = list("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+    free_chars = [c for c in alphabet if c not in used_chars]
+
+    alias_current: dict[str, str] = {}          # original chain -> active internal chain
+    seen_keys: dict[str, set] = {}              # internal chain -> {(resSeq, icode)}
+    counters: dict[str, int] = {}
     mapping_rows = []
     out_lines = []
+    prev_run_key = None
+    cur_chain, cur_id = None, None
 
     for line in lines:
+        if line.startswith("TER"):
+            prev_run_key = None
+            out_lines.append(line)
+            continue
         if line.startswith(("ATOM", "HETATM")) and len(line) >= 27:
-            chain = (line[21].strip() or "A")
-            orig_resnum_field = line[22:26]
-            icode = line[26]
+            orig_chain = _chain_of(line)
+            resseq_field, icode = line[22:26], line[26]
             resname = line[17:20].strip()
-            key = (chain, orig_resnum_field, icode)
+            run_key = (orig_chain, resseq_field, icode, resname)
 
-            if key not in seen:
-                chain_counters[chain] = chain_counters.get(chain, 0) + 1
-                synthetic_id = chain_counters[chain]
-                if synthetic_id > 9999:
+            if run_key != prev_run_key:                      # a new residue starts here
+                if orig_chain.isdigit():
+                    if orig_chain not in alias_current:
+                        if not free_chars:
+                            raise RuntimeError(
+                                f"{pdb_path}: no unused alphabetic chain IDs left."
+                            )
+                        alias_current[orig_chain] = free_chars.pop(0)
+
+                    internal = alias_current[orig_chain]
+                else:
+                    internal = alias_current.get(orig_chain, orig_chain)
+                res_key = (resseq_field, icode)
+                seen = seen_keys.setdefault(internal, set())
+                if res_key in seen:
+                    if not free_chars:
+                        raise RuntimeError(
+                            f"{pdb_path}: chain {orig_chain} re-uses residue numbering "
+                            "(multiple molecules share one chain ID) and no unused "
+                            "single-character chain ID is left to separate them."
+                        )
+                    internal = free_chars.pop(0)
+                    alias_current[orig_chain] = internal
+                    seen = seen_keys.setdefault(internal, set())
+                seen.add(res_key)
+                counters[internal] = counters.get(internal, 0) + 1
+                if counters[internal] > 9999:
                     raise RuntimeError(
-                        f"{pdb_path}: chain {chain} exceeds 9999 residues, cannot "
+                        f"{pdb_path}: chain {internal} exceeds 9999 residues, cannot "
                         "represent in legacy PDB resSeq field."
                     )
-                seen[key] = synthetic_id
+                cur_chain, cur_id = internal, counters[internal]
                 try:
-                    orig_resnum = int(orig_resnum_field.strip())
+                    orig_resnum = int(resseq_field.strip())
                 except ValueError:
                     orig_resnum = None
                 mapping_rows.append({
-                    "chain": chain, "synthetic_resnum": synthetic_id,
-                    "original_resnum": orig_resnum,
+                    "chain": cur_chain, "synthetic_resnum": cur_id,
+                    "original_chain": orig_chain, "original_resnum": orig_resnum,
                     "insertion_code": icode.strip(), "resname": resname,
                 })
+                prev_run_key = run_key
 
-            synthetic_id = seen[key]
-            line = line[:22] + f"{synthetic_id:4d}" + " " + line[27:]
+            line = line[:21] + cur_chain + f"{cur_id:4d}" + " " + line[27:]
         out_lines.append(line)
 
     pdb_path.write_text("".join(out_lines))
@@ -559,12 +651,19 @@ def renumber_pdb_atoms(pdb_path: Path) -> None:
 # ----------------------------------------------------------------------
 
 def run_pdb2pqr(pdb_path: Path, pqr_path: Path) -> tuple[Path, bool]:
-    """Unchanged from v1: default run, retry once with --assign-only on
-    a non-integer-charge crash (missing/unresolved atoms). See v1
-    docstring -- the --assign-only recovery path is a plausible but
-    UNVERIFIED fallback; treat charges_possibly_incomplete=True rows as
-    lower-confidence labels, not equal-confidence ones."""
-    base_cmd = ["pdb2pqr30", "--ff", "AMBER", "--ffout", "AMBER", "--drop-water"]
+    """Default run, retry once with --assign-only on a non-integer-charge
+    crash (missing/unresolved atoms). See v1 docstring -- the
+    --assign-only recovery path is a plausible but UNVERIFIED fallback;
+    treat charges_possibly_incomplete=True rows as lower-confidence
+    labels, not equal-confidence ones.
+
+    v2.1: --keep-chain is REQUIRED. Without it pdb2pqr writes PQR lines
+    with no chain column, which erases the per-molecule chain letters
+    assigned by renumber_pdb_residues and re-creates residue-key
+    collisions downstream.
+    """
+    base_cmd = ["pdb2pqr30", "--ff", "AMBER", "--ffout", "AMBER",
+                "--drop-water", "--keep-chain"]
 
     result = subprocess.run(base_cmd + [str(pdb_path), str(pqr_path)],
                              capture_output=True, text=True)
@@ -632,23 +731,80 @@ def _next_valid_dime(n: int) -> int:
     return candidates[-1]
 
 
+def split_pqr_line(line: str):
+    """Parse ONE PQR ATOM/HETATM line. Returns
+    (name, resname, chain, resseq, x, y, z, q, r), or None if the line
+    has an unrecognized layout. Raises ValueError if the chain column is
+    missing (pdb2pqr run without --keep-chain) -- we never guess "A".
+
+    Strategy (v2.2):
+      1. FIXED-WIDTH first. pdb2pqr writes PDB-style columns (name 12-16,
+         resname 17-20, chain 21, resSeq 22-26, x/y/z 30-54, charge 54-62,
+         radius 62-69). Reading by column is immune to the two things that
+         broke whitespace splitting: a chain letter/digit fused to a
+         4-digit residue number ("01000" = chain '0', residue 1000) and
+         fused negative coordinates ("-194.332-152.767"). Accepted only if
+         every sanity check passes (blank spacer columns, integer resSeq,
+         floats parse); otherwise fall through to step 2.
+      2. WHITESPACE fallback, for lines whose columns are shifted (e.g. a
+         6-digit atom serial). 11 fields = chain present. 10 fields =
+         the chain is fused to resSeq, which is only possible when the
+         token is exactly 5 characters (chain + 4-digit resSeq); any
+         shorter token is a bare residue number, i.e. NO chain column.
+    """
+    # ---- 1. fixed-width ------------------------------------------------
+    if len(line.rstrip("\n")) >= 69 and line[11] == " " and line[16] == " " and line[20] == " ":
+        try:
+            name = line[12:16].strip()
+            resname = line[17:20].strip()
+            chain = line[21]
+            resseq = line[22:26].strip()
+            int(resseq)
+            x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
+            q, r = float(line[54:62]), float(line[62:69])
+        except ValueError:
+            pass
+        else:
+            if chain == " ":
+                raise ValueError(
+                    "PQR line has no chain column - was pdb2pqr run with --keep-chain? "
+                    f"offending line: {line.rstrip()}"
+                )
+            return name, resname, chain, resseq, str(x), str(y), str(z), str(q), str(r)
+
+    # ---- 2. whitespace fallback ---------------------------------------
+    line = re.sub(r"(\d\.\d+)(-\d+\.\d+)", r"\1 \2", line)  # un-fuse "1.234-5.678"
+    p = line.split()
+    if len(p) == 11:
+        _, _, name, resname, chain, resseq, x, y, z, q, r = p
+    elif len(p) == 10:
+        _, _, name, resname, fused, x, y, z, q, r = p
+        if len(fused) == 5 and re.fullmatch(r"\d{4}", fused[1:]):   # chain + 4-digit resSeq
+            chain, resseq = fused[0], fused[1:]
+        else:
+            raise ValueError(
+                "PQR line has no chain column - was pdb2pqr run with --keep-chain? "
+                f"offending line: {line.rstrip()}"
+            )
+    else:
+        return None
+    return name, resname, chain, resseq, x, y, z, q, r
+
+
 def parse_pqr_residues(pqr_path: Path) -> pd.DataFrame:
     """The single place PQR lines get parsed (v1 had a second,
     independent, silently-wrong parser inside read_pqr_coords -- removed
-    in v2; everything now goes through this function)."""
+    in v2; everything now goes through this function, which in turn uses
+    split_pqr_line for the actual field splitting)."""
     rows = []
     with open(pqr_path) as f:
         for line in f:
             if not line.startswith(("ATOM", "HETATM")):
                 continue
-            parts = line.split()
-            if len(parts) == 11:
-                _, serial, name, resname, chain, resseq, x, y, z, q, r = parts
-            elif len(parts) == 10:
-                _, serial, name, resname, resseq, x, y, z, q, r = parts
-                chain = "A"
-            else:
+            parsed = split_pqr_line(line)
+            if parsed is None:
                 continue
+            name, resname, chain, resseq, x, y, z, q, r = parsed
             m = re.match(r"(-?\d+)", resseq)
             if not m:
                 continue
@@ -733,16 +889,46 @@ quit
     return apbs_in
 
 
-def run_apbs(apbs_in_path: Path, pot_prefix: str = "potential") -> Path:
+def run_apbs(apbs_in_path: Path, pqr_path: Path, pot_prefix: str = "potential") -> Path:
     from apbs_binary import APBS_BIN_PATH
 
     result = subprocess.run(
         [APBS_BIN_PATH, apbs_in_path.name],
-        capture_output=True, text=True, cwd=str(apbs_in_path.parent),
-    )
+        capture_output=True, text=True, cwd=str(apbs_in_path.parent),)
+
     if result.returncode != 0:
         raise RuntimeError(f"APBS failed:\n{result.stdout[-3000:]}\n{result.stderr[-2000:]}")
 
+    # ---------------------------------------------------------
+    # Sanity check: APBS-reported total charge must agree with
+    # the charge obtained directly from the PQR file.
+    # This catches APBS silently mis-parsing the PQR.
+    # ---------------------------------------------------------
+
+    atoms = parse_pqr_residues(pqr_path)
+    pqr_charge = float(atoms["charge"].sum())
+
+    mc_path = apbs_in_path.parent / "io.mc"
+
+    if mc_path.exists():
+        text = mc_path.read_text(errors="ignore")
+
+        matches = re.findall(
+            r"solute charge\s*=\s*([-\+\deE\.]+)",
+            text,
+        )
+
+        if matches:
+            apbs_charge = float(matches[-1])
+
+            if abs(apbs_charge - pqr_charge) > 0.1:
+                raise RuntimeError(
+                    "APBS/PQR charge mismatch detected. "
+                    f"PQR charge = {pqr_charge:.3f}, "
+                    f"APBS charge = {apbs_charge:.3f}. "
+                    "APBS likely mis-parsed the PQR."
+                )
+    
     dx_path = apbs_in_path.parent / f"{pot_prefix}.dx"
     if not dx_path.exists():
         raise RuntimeError(f"APBS ran but did not produce {dx_path}:\n{result.stdout[-2000:]}")
@@ -750,11 +936,18 @@ def run_apbs(apbs_in_path: Path, pot_prefix: str = "potential") -> Path:
     from gridData import Grid
     probe = Grid(str(dx_path))
     if not np.all(np.isfinite(probe.grid)):
+        raise RuntimeError(f"APBS produced a non-finite potential grid")
+
+    grid_abs_max = float(np.nanmax(np.abs(probe.grid)))
+
+    if grid_abs_max > 1e4:
         raise RuntimeError(
-            f"APBS produced a non-finite potential grid for {apbs_in_path.parent.name} "
-            "(solver likely failed to converge -- consider nonlinear=False or a different grid)."
-        )
+            f"APBS produced an unphysical potential grid "
+            f"(max abs value = {grid_abs_max:.3e} kT/e)")
+    
     return dx_path
+
+
 
 
 # ----------------------------------------------------------------------
@@ -963,10 +1156,17 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
     result_csv = struct_work_dir / "per_residue_potential.csv"
     if result_csv.exists() and not overwrite:
         log.info("%s: already processed, skipping (--overwrite to redo)", pdb_id)
-        df = pd.read_csv(result_csv)
+        # dtype=str for pdb_id: a single-valued column like "9E71" is otherwise
+        # parsed as the float 9e+71 and later written out as "9e+71", silently
+        # orphaning the structure from work/9E71/ in every downstream loader.
+        df = pd.read_csv(result_csv, dtype={"pdb_id": str})
         return {"pdb_id": pdb_id.upper(), "df": df, "skipped": True}
 
     pdb_path = download_pdb(pdb_id, raw_dir)
+    n_extra_models = keep_first_model_only(pdb_path)
+    if n_extra_models:
+        log.info("%s: kept model 1 of %d, dropped %d duplicate NMR conformers",
+                  pdb_id, n_extra_models + 1, n_extra_models)
     metadata = extract_structure_metadata(pdb_path)
     raw_ions = extract_ion_positions(pdb_path)
 
@@ -999,7 +1199,6 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
     # Examples: 216D leaves only a single cytidine residue.
     # ------------------------------------------------------------
     n_residues = len(residue_map)
-
     if n_residues < MIN_RNA_RESIDUES:
         raise RuntimeError(
             f"{clean_path}: only {n_residues} RNA residue(s) remain "
@@ -1015,18 +1214,25 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
     )
 
     reformat_pqr_for_apbs(pqr_path)
-
+    
     pot_prefix = "potential"
-    apbs_in = build_apbs_input(pqr_path, struct_work_dir, settings, pot_prefix=pot_prefix)
+    solver_used = "nonlinear"
+    apbs_in = build_apbs_input(pqr_path, struct_work_dir, settings, pot_prefix=pot_prefix,)
     try:
-        dx_path = run_apbs(apbs_in, pot_prefix=pot_prefix)
+        dx_path = run_apbs(apbs_in, pqr_path, pot_prefix=pot_prefix)
     except RuntimeError as e:
-        if "overflow" in str(e).lower() or "large potential values" in str(e).lower() \
-                or "converge" in str(e).lower():
-            log.warning("%s: nonlinear APBS failed to converge; retrying with linearized PB", pdb_id)
-            linear_settings = dataclasses.replace(settings, nonlinear=False)
-            apbs_in = build_apbs_input(pqr_path, struct_work_dir, linear_settings, pot_prefix=pot_prefix)
-            dx_path = run_apbs(apbs_in, pot_prefix=pot_prefix)
+        msg = str(e).lower()
+        if (
+            "overflow" in msg
+            or "large potential values" in msg
+            or "converge" in msg
+            or "unphysical potential grid" in msg):
+            log.warning("%s: nonlinear APBS failed to converge; retrying with linearized PB", pdb_id,)
+
+            solver_used = "linearized_fallback"
+            linear_settings = dataclasses.replace(settings, nonlinear=False,)
+            apbs_in = build_apbs_input(pqr_path, struct_work_dir, linear_settings, pot_prefix=pot_prefix,)
+            dx_path = run_apbs(apbs_in, pqr_path, pot_prefix=pot_prefix,)
         else:
             raise
 
@@ -1042,7 +1248,7 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
     # -- downstream code (and the probing script's seq_index join) should
     # keep using `resnum` as-is; `original_resnum`/`insertion_code` are for
     # inspection and for relating results back to the literature's numbering.
-    rmap = residue_map[["chain", "synthetic_resnum", "original_resnum", "insertion_code"]]
+    rmap = residue_map[["chain", "synthetic_resnum", "original_chain", "original_resnum", "insertion_code"]]
     df = df.merge(rmap, left_on=["chain", "resnum"], right_on=["chain", "synthetic_resnum"],
                   how="left").drop(columns=["synthetic_resnum"])
 
@@ -1052,8 +1258,29 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
     df["split"] = assign_split(pdb_id)
     df["resolution_A"] = metadata["resolution_A"]
     df["experimental_method"] = metadata["experimental_method"]
+    df["pb_solver"] = solver_used
+    meta = pd.DataFrame([{
+        "pdb_id": pdb_id.upper(),
+        "pb_solver": solver_used,
+        "charges_possibly_incomplete": used_assign_only,
+        "had_modified_nucleotides": had_modified,
+        "resolution_A": metadata["resolution_A"],
+        "experimental_method": metadata["experimental_method"],
+    }])
+
+    meta.to_csv(struct_work_dir / "structure_metadata.csv", index=False,)
 
     atoms = parse_pqr_residues(pqr_path)
+
+    # v2.1 guard: the number of distinct chains must survive the pdb2pqr
+    # round trip. If it doesn't, chain IDs were lost (e.g. pdb2pqr ran
+    # without --keep-chain) and every downstream key would be corrupt.
+    if atoms["chain"].nunique() != residue_map["chain"].nunique():
+        raise RuntimeError(
+            f"{pdb_id}: chain IDs lost between renumbering "
+            f"({residue_map['chain'].nunique()}) and PQR ({atoms['chain'].nunique()})"
+        )
+
     seqs, index_map = extract_sequence_and_index_map(atoms)
     if index_map.empty:
         raise RuntimeError(
@@ -1083,6 +1310,7 @@ def process_structure(pdb_id: str, raw_dir: Path, work_dir: Path,
         ions_labeled = ions_labeled.merge(
             rmap.rename(columns={
                 "chain": "nearest_chain", "synthetic_resnum": "nearest_resnum",
+                "original_chain": "nearest_original_chain",
                 "original_resnum": "nearest_original_resnum",
                 "insertion_code": "nearest_insertion_code",
             }),
@@ -1223,7 +1451,7 @@ def main():
                     all_results.append(result["df"])
                     ions_path = work_dir / pdb_id / "ions.csv"
                     if ions_path.exists():
-                        all_ions.append(pd.read_csv(ions_path))
+                        all_ions.append(pd.read_csv(ions_path, dtype={"pdb_id": str}))
     else:
         for i, pdb_id in enumerate(pdb_ids, 1):
             log.info("[%d/%d] Processing %s", i, len(pdb_ids), pdb_id)
@@ -1233,7 +1461,7 @@ def main():
                     all_results.append(result["df"])
                     ions_path = work_dir / pdb_id.upper() / "ions.csv"
                     if ions_path.exists():
-                        all_ions.append(pd.read_csv(ions_path))
+                        all_ions.append(pd.read_csv(ions_path, dtype={"pdb_id": str}))
             except Exception as e:
                 log.error("%s FAILED: %s", pdb_id, e)
                 failures.append((pdb_id, str(e), traceback.format_exc()))
