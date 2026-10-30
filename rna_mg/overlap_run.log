@@ -1,0 +1,792 @@
+nohup: ignoring input
+=== 1. RNA classes from RCSB
+4342 chains in 1873 structures
+1873 cached, 0 to fetch
+wrote /data/rna_electrostats/chain_classes.csv
+rna_class                       source  
+short oligo / duplex (<=30 nt)  rcsb-id     1998
+rRNA                            rcsb-id      357
+unspecified RNA (31-100 nt)     rcsb-id      287
+unspecified RNA (<=30 nt)       length       263
+tRNA                            rcsb-id      215
+other named ncRNA               rcsb-id      186
+rRNA                            rcsb-seq     116
+mRNA / viral / IRES             rcsb-id      114
+unspecified RNA (<=30 nt)       rcsb-id      114
+guide RNA (CRISPR)              rcsb-id       95
+riboswitch                      rcsb-id       75
+short oligo / duplex (<=30 nt)  rcsb-seq      69
+other named ncRNA               rcsb-seq      64
+snRNA / spliceosome             rcsb-id       61
+unspecified RNA (101-300 nt)    rcsb-id       53
+ribozyme / RNase P              rcsb-id       47
+tRNA                            rcsb-seq      46
+aptamer                         rcsb-id       36
+unspecified RNA (>300 nt)       rcsb-id       33
+RNA duplex / model              rcsb-id       23
+mRNA / viral / IRES             rcsb-seq      17
+unspecified RNA (31-100 nt)     length        16
+snRNA / spliceosome             rcsb-seq      14
+toxin-antitoxin RNA             rcsb-id       14
+SRP RNA                         rcsb-id        9
+unspecified RNA (<=30 nt)       rcsb-seq       4
+telomerase / TERC               rcsb-id        4
+unspecified RNA (101-300 nt)    length         4
+                                rcsb-seq       2
+unspecified RNA (31-100 nt)     rcsb-seq       2
+guide RNA (CRISPR)              rcsb-seq       1
+group II intron                 rcsb-id        1
+unspecified RNA (>300 nt)       length         1
+                                rcsb-seq       1
+matched to an RCSB RNA entity: 93.5%   (by chain id: 85.7%, by sequence only: 7.7%)
+=== 1b. PDB release dates (to split chains released before / after the models were pretrained)
+1873 structures; 1873 to fetch
+  fetched 100/1873
+  fetched 200/1873
+  fetched 300/1873
+  fetched 400/1873
+  fetched 500/1873
+  fetched 600/1873
+  fetched 700/1873
+  fetched 800/1873
+  fetched 900/1873
+  fetched 1000/1873
+  fetched 1100/1873
+  fetched 1200/1873
+  fetched 1300/1873
+  fetched 1400/1873
+  fetched 1500/1873
+  fetched 1600/1873
+  fetched 1700/1873
+  fetched 1800/1873
+  fetched 1873/1873
+wrote /data/rna_electrostats/chain_release.csv
+release_bin
+2021-2022     539
+2023-2024     572
+<=2020       2346
+>=2025        881
+unknown         4
+structures without a date: 0.1% of chains
+=== 2. similarity to the reference corpus: /data/rna_electrostats/refs/rnacentralDB
+1151 query chains
+mmseqs easy-search /data/rna_electrostats/tmp/corpus_overlap__kegk4di/query.fasta /data/rna_electrostats/refs/rnacentralDB /data/rna_electrostats/tmp/corpus_overlap__kegk4di/hits.m8 /data/rna_electrostats/tmp/corpus_overlap__kegk4di/work --search-type 3 -e 1e-3 -s 6.5 -k 12 --max-seqs 300 --threads 8 --format-output query,target,fident,qcov,tcov,alnlen,evalue,bits --split-memory-limit 24G
+wrote /data/rna_electrostats/corpus_overlap.csv
+chains with a near-identical copy in the reference: 52.3%
+chains with a hit of >= 90% identity over >= 80% of the chain: 69.5%
+count    1151.000
+mean        0.599
+std         0.470
+min         0.000
+25%         0.000
+50%         0.935
+75%         0.986
+max         1.000
+
+=== 3. ernierna: pretrained minus random within RNA classes (standard test split)
+
+ernierna_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.448   0.069  0.379  0.284  0.432
+            guide RNA (CRISPR)        10             9      -0.096  -0.129  0.034 -0.164  0.143
+             other named ncRNA        24            14       0.113   0.050  0.063 -0.047  0.188
+                          rRNA        24            11       0.492   0.075  0.417  0.385  0.521
+                    riboswitch        11             4       0.023  -0.086  0.110 -0.192  0.535
+            ribozyme / RNase P        13             6       0.043   0.006  0.037  0.008  0.347
+short oligo / duplex (<=30 nt)       219            84      -0.036   0.144 -0.180 -0.553 -0.045
+                          tRNA        16            13       0.165   0.147  0.018 -0.199  0.211
+   unspecified RNA (31-100 nt)        40            26       0.026   0.009  0.017 -0.137  0.111
+     unspecified RNA (<=30 nt)        46            21      -0.143   0.087 -0.231 -0.384 -0.158
+
+ernierna_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.166   0.081  0.085 -0.046  0.185
+            guide RNA (CRISPR)        10             9      -0.154  -0.130 -0.024 -0.235  0.155
+             other named ncRNA        24            14       0.120   0.075  0.045 -0.105  0.145
+                          rRNA        24            11       0.427   0.089  0.338  0.242  0.378
+                    riboswitch        11             4      -0.010  -0.078  0.068 -0.194  0.543
+            ribozyme / RNase P        13             6       0.038  -0.018  0.057  0.004  0.284
+short oligo / duplex (<=30 nt)       219            84      -0.052   0.174 -0.226 -0.515 -0.092
+                          tRNA        16            13       0.107   0.156 -0.049 -0.238  0.116
+   unspecified RNA (31-100 nt)        40            26      -0.011   0.012 -0.023 -0.165  0.080
+     unspecified RNA (<=30 nt)        46            21      -0.150   0.075 -0.225 -0.399 -0.159
+
+ernierna_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.402   0.064  0.338  0.246 0.370
+            guide RNA (CRISPR)        10             9       0.093  -0.026  0.119  0.031 0.239
+             other named ncRNA        24            14       0.174  -0.014  0.188  0.100 0.295
+                          rRNA        24            11       0.455   0.070  0.385  0.335 0.434
+                    riboswitch        11             4       0.116  -0.050  0.165 -0.139 0.466
+            ribozyme / RNase P        13             6       0.166   0.035  0.132  0.076 0.294
+short oligo / duplex (<=30 nt)       219            84       0.168   0.121  0.047 -0.010 0.084
+                          tRNA        16            13       0.239   0.146  0.093 -0.023 0.224
+   unspecified RNA (31-100 nt)        40            26       0.125   0.028  0.097  0.007 0.145
+     unspecified RNA (<=30 nt)        46            21       0.106   0.106 -0.000 -0.103 0.060
+
+ernierna_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.200   0.077  0.123  0.071 0.173
+            guide RNA (CRISPR)        10             9       0.116   0.004  0.112  0.028 0.211
+             other named ncRNA        24            14       0.173   0.017  0.156  0.078 0.267
+                          rRNA        24            11       0.368   0.078  0.290  0.179 0.349
+                    riboswitch        11             4       0.100  -0.041  0.141 -0.146 0.465
+            ribozyme / RNase P        13             6       0.202   0.042  0.160  0.067 0.325
+short oligo / duplex (<=30 nt)       219            84       0.154   0.137  0.018 -0.037 0.060
+                          tRNA        16            13       0.208   0.154  0.054 -0.036 0.171
+   unspecified RNA (31-100 nt)        40            26       0.110   0.031  0.079 -0.002 0.139
+     unspecified RNA (<=30 nt)        46            21       0.086   0.106 -0.020 -0.117 0.039
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3b. ernierna: within RNA classes, pooled held-out-family folds (more chains per class)
+
+ernierna_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1263           949       0.145  -0.003  0.148  0.078  0.198
+                       aptamer        30            14       0.101   0.133 -0.032 -0.101  0.052
+            guide RNA (CRISPR)        79            76      -0.128  -0.121 -0.008 -0.091  0.060
+           mRNA / viral / IRES        26            19      -0.007   0.030 -0.037 -0.149  0.027
+             other named ncRNA       129            83       0.029  -0.110  0.139  0.060  0.296
+                          rRNA        29            19       0.241   0.012  0.229  0.114  0.268
+                    riboswitch        75            48       0.148  -0.014  0.162  0.081  0.245
+            ribozyme / RNase P        24            17       0.307  -0.049  0.357  0.204  0.418
+short oligo / duplex (<=30 nt)       339           316      -0.174   0.223 -0.397 -0.564 -0.296
+           snRNA / spliceosome         9             8      -0.795  -0.151 -0.644 -0.849 -0.327
+                          tRNA       101            67       0.159   0.228 -0.068 -0.142  0.001
+           toxin-antitoxin RNA        14             4       0.116   0.352 -0.235 -0.247 -0.187
+  unspecified RNA (101-300 nt)        51            36      -0.054  -0.035 -0.019 -0.204  0.099
+   unspecified RNA (31-100 nt)       226           161       0.055   0.041  0.014 -0.024  0.045
+     unspecified RNA (<=30 nt)        93            86      -0.035   0.082 -0.118 -0.349  0.004
+     unspecified RNA (>300 nt)        26            10       0.005  -0.076  0.080  0.026  0.225
+
+ernierna_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1263           949       0.078   0.056  0.022 -0.010  0.049
+                       aptamer        30            14       0.086   0.130 -0.044 -0.112  0.052
+            guide RNA (CRISPR)        79            76      -0.168  -0.098 -0.070 -0.135 -0.004
+           mRNA / viral / IRES        26            19      -0.028   0.046 -0.074 -0.189  0.001
+             other named ncRNA       129            83       0.051  -0.008  0.059  0.001  0.110
+                          rRNA        29            19       0.194   0.029  0.165  0.052  0.236
+                    riboswitch        75            48       0.152   0.007  0.145  0.061  0.223
+            ribozyme / RNase P        24            17       0.247  -0.056  0.303  0.200  0.387
+short oligo / duplex (<=30 nt)       339           316      -0.196   0.246 -0.442 -0.607 -0.331
+           snRNA / spliceosome         9             8      -0.550  -0.110 -0.440 -0.813 -0.005
+                          tRNA       101            67       0.152   0.230 -0.078 -0.146 -0.014
+           toxin-antitoxin RNA        14             4       0.115   0.350 -0.235 -0.247 -0.185
+  unspecified RNA (101-300 nt)        51            36      -0.062  -0.040 -0.022 -0.213  0.096
+   unspecified RNA (31-100 nt)       226           161       0.043   0.042  0.001 -0.043  0.034
+     unspecified RNA (<=30 nt)        93            86      -0.070   0.100 -0.170 -0.393 -0.036
+     unspecified RNA (>300 nt)        26            10       0.006  -0.086  0.092  0.029  0.243
+
+ernierna_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all      1263           949       0.159   0.004  0.155  0.129 0.177
+                       aptamer        30            14       0.084   0.044  0.040  0.006 0.099
+            guide RNA (CRISPR)        79            76       0.115  -0.042  0.158  0.118 0.194
+           mRNA / viral / IRES        26            19       0.122   0.036  0.085  0.013 0.137
+             other named ncRNA       129            83       0.097  -0.081  0.178  0.122 0.278
+                          rRNA        29            19       0.212   0.013  0.199  0.127 0.235
+                    riboswitch        75            48       0.157   0.014  0.142  0.091 0.194
+            ribozyme / RNase P        24            17       0.241  -0.022  0.263  0.181 0.304
+short oligo / duplex (<=30 nt)       339           316       0.102   0.108 -0.006 -0.054 0.036
+           snRNA / spliceosome         9             8       0.182   0.050  0.132  0.002 0.297
+                          tRNA       101            67       0.229   0.154  0.074  0.038 0.117
+           toxin-antitoxin RNA        14             4       0.180   0.073  0.107  0.045 0.165
+  unspecified RNA (101-300 nt)        51            36       0.083  -0.006  0.089  0.020 0.150
+   unspecified RNA (31-100 nt)       226           161       0.140   0.044  0.096  0.071 0.119
+     unspecified RNA (<=30 nt)        93            86       0.131   0.079  0.053 -0.012 0.109
+     unspecified RNA (>300 nt)        26            10       0.112  -0.050  0.162  0.116 0.228
+
+ernierna_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1263           949       0.146   0.049  0.096  0.082  0.111
+                       aptamer        30            14       0.077   0.049  0.028 -0.004  0.089
+            guide RNA (CRISPR)        79            76       0.117  -0.016  0.134  0.094  0.175
+           mRNA / viral / IRES        26            19       0.094   0.054  0.040 -0.053  0.106
+             other named ncRNA       129            83       0.155  -0.010  0.165  0.129  0.210
+                          rRNA        29            19       0.164   0.024  0.140  0.086  0.192
+                    riboswitch        75            48       0.142   0.021  0.121  0.064  0.175
+            ribozyme / RNase P        24            17       0.226  -0.017  0.243  0.178  0.295
+short oligo / duplex (<=30 nt)       339           316       0.068   0.122 -0.053 -0.100 -0.012
+           snRNA / spliceosome         9             8       0.251   0.051  0.200  0.032  0.382
+                          tRNA       101            67       0.226   0.154  0.072  0.037  0.111
+           toxin-antitoxin RNA        14             4       0.180   0.072  0.108  0.045  0.165
+  unspecified RNA (101-300 nt)        51            36       0.087  -0.008  0.095  0.025  0.157
+   unspecified RNA (31-100 nt)       226           161       0.136   0.044  0.092  0.068  0.116
+     unspecified RNA (<=30 nt)        93            86       0.128   0.087  0.042 -0.016  0.093
+     unspecified RNA (>300 nt)        26            10       0.113  -0.056  0.170  0.120  0.237
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3c. ernierna: pretrained minus random by PDB release period (pooled held-out-family folds)
+
+ernierna_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff     lo    hi
+      all      1263           949       0.145  -0.003 0.148  0.078 0.198
+2021-2022       109            86       0.072  -0.037 0.108 -0.077 0.221
+2023-2024       181           147       0.137  -0.005 0.143  0.043 0.195
+   <=2020       660           507       0.156   0.060 0.097  0.014 0.164
+   >=2025       313           209       0.143  -0.038 0.182  0.066 0.241
+
+ernierna_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random   diff     lo    hi
+      all      1263           949       0.078   0.056  0.022 -0.010 0.049
+2021-2022       109            86       0.069   0.083 -0.014 -0.127 0.092
+2023-2024       181           147       0.093   0.044  0.049 -0.007 0.088
+   <=2020       660           507       0.083   0.097 -0.013 -0.052 0.022
+   >=2025       313           209       0.061  -0.013  0.074  0.007 0.127
+
+ernierna_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff    lo    hi
+      all      1263           949       0.159   0.004 0.155 0.129 0.177
+2021-2022       109            86       0.174  -0.018 0.192 0.118 0.248
+2023-2024       181           147       0.150   0.014 0.135 0.088 0.169
+   <=2020       660           507       0.183   0.051 0.132 0.090 0.175
+   >=2025       313           209       0.145  -0.028 0.173 0.134 0.204
+
+ernierna_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff    lo    hi
+      all      1263           949       0.146   0.049 0.096 0.082 0.111
+2021-2022       109            86       0.173   0.056 0.117 0.078 0.158
+2023-2024       181           147       0.145   0.057 0.087 0.060 0.119
+   <=2020       660           507       0.150   0.072 0.078 0.057 0.097
+   >=2025       313           209       0.133   0.001 0.131 0.108 0.155
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4a. ernierna: chains WITH vs WITHOUT a near-identical copy in the reference corpus
+
+ernierna_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1263           949       0.145  -0.003 0.148 0.078 0.198
+False       452           360       0.155  -0.027 0.182 0.079 0.233
+ True       554           375       0.125   0.042 0.083 0.028 0.131
+
+ernierna_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff     lo    hi
+  all      1263           949       0.078   0.056 0.022 -0.010 0.049
+False       452           360       0.073   0.006 0.067  0.012 0.116
+ True       554           375       0.090   0.079 0.010 -0.024 0.042
+
+ernierna_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1263           949       0.159   0.004 0.155 0.129 0.177
+False       452           360       0.160  -0.021 0.181 0.144 0.209
+ True       554           375       0.159   0.039 0.120 0.092 0.148
+
+ernierna_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1263           949       0.146   0.049 0.096 0.082 0.111
+False       452           360       0.155   0.015 0.140 0.118 0.160
+ True       554           375       0.153   0.060 0.093 0.074 0.111
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4b. ernierna: by best identity to the corpus (including identical copies)
+
+ernierna_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1263           949       0.145  -0.003  0.148  0.078  0.198
+(-0.001, 0.5]       189           174      -0.112   0.086 -0.198 -0.355 -0.092
+   (0.7, 0.9]        62            52       0.229   0.005  0.225  0.043  0.261
+ (0.9, 0.995]       167           123       0.160  -0.027  0.187  0.091  0.251
+ (0.995, 1.0]       588           390       0.125   0.007  0.118  0.042  0.177
+
+ernierna_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1263           949       0.078   0.056  0.022 -0.010  0.049
+(-0.001, 0.5]       189           174      -0.110   0.117 -0.227 -0.363 -0.122
+   (0.7, 0.9]        62            52       0.096  -0.019  0.115  0.025  0.184
+ (0.9, 0.995]       167           123       0.103   0.015  0.088  0.031  0.137
+ (0.995, 1.0]       588           390       0.086   0.065  0.022 -0.013  0.054
+
+ernierna_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random  diff    lo    hi
+          all      1263           949       0.159   0.004 0.155 0.129 0.177
+(-0.001, 0.5]       189           174       0.142   0.069 0.074 0.026 0.120
+   (0.7, 0.9]        62            52       0.229  -0.009 0.238 0.155 0.283
+ (0.9, 0.995]       167           123       0.166  -0.020 0.187 0.146 0.224
+ (0.995, 1.0]       588           390       0.146   0.017 0.128 0.101 0.154
+
+ernierna_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random  diff    lo    hi
+          all      1263           949       0.146   0.049 0.096 0.082 0.111
+(-0.001, 0.5]       189           174       0.148   0.081 0.067 0.024 0.108
+   (0.7, 0.9]        62            52       0.166  -0.016 0.182 0.131 0.230
+ (0.9, 0.995]       167           123       0.175   0.018 0.157 0.128 0.185
+ (0.995, 1.0]       588           390       0.148   0.052 0.095 0.078 0.113
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3. rnafm: pretrained minus random within RNA classes (standard test split)
+
+rnafm_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.409   0.069  0.341  0.190 0.378
+            guide RNA (CRISPR)        10             9      -0.091  -0.163  0.071 -0.144 0.154
+             other named ncRNA        24            14       0.065   0.040  0.025 -0.020 0.139
+                          rRNA        24            11       0.446   0.075  0.372  0.271 0.417
+                    riboswitch        11             4       0.111  -0.019  0.130  0.035 0.250
+            ribozyme / RNase P        13             6       0.038   0.044 -0.006 -0.031 0.114
+short oligo / duplex (<=30 nt)       219            84       0.021   0.035 -0.013 -0.093 0.032
+                          tRNA        16            13       0.250   0.134  0.116  0.014 0.206
+   unspecified RNA (31-100 nt)        40            26       0.043  -0.029  0.072  0.024 0.168
+     unspecified RNA (<=30 nt)        46            21      -0.049  -0.004 -0.045 -0.158 0.057
+
+rnafm_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.181   0.043  0.138  0.043 0.231
+            guide RNA (CRISPR)        10             9      -0.130  -0.148  0.018 -0.147 0.103
+             other named ncRNA        24            14       0.075   0.053  0.022 -0.007 0.142
+                          rRNA        24            11       0.406   0.076  0.330  0.197 0.374
+                    riboswitch        11             4       0.101  -0.022  0.123  0.033 0.257
+            ribozyme / RNase P        13             6       0.027   0.026  0.001 -0.027 0.066
+short oligo / duplex (<=30 nt)       219            84      -0.015   0.021 -0.036 -0.111 0.024
+                          tRNA        16            13       0.230   0.142  0.087 -0.004 0.175
+   unspecified RNA (31-100 nt)        40            26       0.040  -0.031  0.070  0.024 0.152
+     unspecified RNA (<=30 nt)        46            21      -0.051  -0.007 -0.044 -0.150 0.041
+
+rnafm_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.351   0.092  0.258  0.127 0.314
+            guide RNA (CRISPR)        10             9       0.084   0.039  0.045 -0.035 0.081
+             other named ncRNA        24            14       0.144   0.072  0.072  0.018 0.133
+                          rRNA        24            11       0.394   0.093  0.300  0.185 0.345
+                    riboswitch        11             4       0.078   0.017  0.061 -0.062 0.187
+            ribozyme / RNase P        13             6       0.137   0.127  0.010 -0.015 0.078
+short oligo / duplex (<=30 nt)       219            84       0.133   0.133  0.000 -0.074 0.043
+                          tRNA        16            13       0.300   0.149  0.151  0.073 0.236
+   unspecified RNA (31-100 nt)        40            26       0.117   0.054  0.063  0.034 0.112
+     unspecified RNA (<=30 nt)        46            21       0.136   0.187 -0.051 -0.124 0.032
+
+rnafm_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo    hi
+                           all       420           181       0.181   0.101  0.079  0.026 0.139
+            guide RNA (CRISPR)        10             9       0.100   0.077  0.023 -0.040 0.065
+             other named ncRNA        24            14       0.144   0.083  0.060  0.009 0.124
+                          rRNA        24            11       0.345   0.091  0.254  0.135 0.311
+                    riboswitch        11             4       0.062   0.011  0.050 -0.067 0.191
+            ribozyme / RNase P        13             6       0.149   0.123  0.026 -0.007 0.081
+short oligo / duplex (<=30 nt)       219            84       0.065   0.108 -0.043 -0.114 0.010
+                          tRNA        16            13       0.302   0.163  0.139  0.070 0.220
+   unspecified RNA (31-100 nt)        40            26       0.126   0.064  0.062  0.034 0.099
+     unspecified RNA (<=30 nt)        46            21       0.159   0.206 -0.047 -0.114 0.017
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3b. rnafm: within RNA classes, pooled held-out-family folds (more chains per class)
+
+rnafm_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1260           947       0.120  -0.004  0.124  0.076  0.162
+                       aptamer        30            14       0.056   0.085 -0.029 -0.086  0.074
+            guide RNA (CRISPR)        79            76      -0.023  -0.120  0.097  0.047  0.132
+           mRNA / viral / IRES        26            19      -0.004  -0.070  0.066 -0.028  0.135
+             other named ncRNA       128            82      -0.002  -0.028  0.026 -0.012  0.117
+                          rRNA        31            20       0.187   0.013  0.174  0.092  0.220
+                    riboswitch        75            48       0.049   0.002  0.046  0.018  0.079
+            ribozyme / RNase P        21            14      -0.001  -0.051  0.050 -0.010  0.116
+short oligo / duplex (<=30 nt)       338           315      -0.082  -0.151  0.069 -0.011  0.170
+           snRNA / spliceosome         9             8      -0.237  -0.205 -0.032 -0.306  0.282
+                          tRNA       100            66       0.349   0.165  0.184  0.142  0.219
+           toxin-antitoxin RNA        14             4       0.122   0.242 -0.120 -0.182 -0.036
+  unspecified RNA (101-300 nt)        51            36       0.035  -0.093  0.128  0.077  0.183
+   unspecified RNA (31-100 nt)       227           162       0.081   0.003  0.079  0.046  0.117
+     unspecified RNA (<=30 nt)        93            86       0.131  -0.083  0.214  0.130  0.325
+     unspecified RNA (>300 nt)        26            10       0.003  -0.092  0.095  0.069  0.128
+
+rnafm_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1260           947       0.101   0.013  0.088  0.070  0.107
+                       aptamer        30            14       0.039   0.079 -0.040 -0.100  0.069
+            guide RNA (CRISPR)        79            76      -0.038  -0.115  0.076  0.038  0.115
+           mRNA / viral / IRES        26            19      -0.008  -0.070  0.062 -0.018  0.131
+             other named ncRNA       128            82       0.042   0.005  0.037  0.002  0.087
+                          rRNA        31            20       0.160   0.016  0.144  0.088  0.187
+                    riboswitch        75            48       0.055   0.013  0.042  0.016  0.072
+            ribozyme / RNase P        21            14      -0.011  -0.049  0.037 -0.021  0.100
+short oligo / duplex (<=30 nt)       338           315      -0.153  -0.243  0.091  0.006  0.184
+           snRNA / spliceosome         9             8      -0.214  -0.207 -0.008 -0.235  0.247
+                          tRNA       100            66       0.344   0.164  0.179  0.140  0.215
+           toxin-antitoxin RNA        14             4       0.122   0.241 -0.119 -0.182 -0.036
+  unspecified RNA (101-300 nt)        51            36       0.033  -0.089  0.122  0.074  0.172
+   unspecified RNA (31-100 nt)       227           162       0.078   0.006  0.071  0.041  0.106
+     unspecified RNA (<=30 nt)        93            86       0.117  -0.123  0.240  0.156  0.343
+     unspecified RNA (>300 nt)        26            10       0.005  -0.092  0.096  0.065  0.135
+
+rnafm_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1260           947       0.135   0.058  0.077  0.061  0.093
+                       aptamer        30            14       0.048   0.037  0.011 -0.012  0.053
+            guide RNA (CRISPR)        79            76       0.118   0.073  0.045  0.021  0.067
+           mRNA / viral / IRES        26            19       0.123   0.067  0.056 -0.021  0.117
+             other named ncRNA       128            82       0.085   0.044  0.041  0.017  0.093
+                          rRNA        31            20       0.154   0.052  0.102  0.061  0.144
+                    riboswitch        75            48       0.100   0.065  0.036  0.025  0.049
+            ribozyme / RNase P        21            14       0.104   0.046  0.058  0.023  0.098
+short oligo / duplex (<=30 nt)       338           315       0.129   0.142 -0.013 -0.043  0.017
+           snRNA / spliceosome         9             8       0.229   0.125  0.103  0.003  0.193
+                          tRNA       100            66       0.305   0.122  0.182  0.147  0.219
+           toxin-antitoxin RNA        14             4       0.113   0.209 -0.096 -0.142 -0.083
+  unspecified RNA (101-300 nt)        51            36       0.098   0.047  0.051  0.028  0.081
+   unspecified RNA (31-100 nt)       227           162       0.139   0.067  0.072  0.042  0.103
+     unspecified RNA (<=30 nt)        93            86       0.159   0.183 -0.024 -0.076  0.019
+     unspecified RNA (>300 nt)        26            10       0.087   0.032  0.056  0.044  0.072
+
+rnafm_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1260           947       0.146   0.084  0.062  0.051  0.074
+                       aptamer        30            14       0.034   0.023  0.011 -0.010  0.051
+            guide RNA (CRISPR)        79            76       0.117   0.084  0.034  0.014  0.054
+           mRNA / viral / IRES        26            19       0.102   0.077  0.024 -0.038  0.074
+             other named ncRNA       128            82       0.136   0.083  0.053  0.029  0.083
+                          rRNA        31            20       0.131   0.050  0.081  0.061  0.104
+                    riboswitch        75            48       0.091   0.059  0.033  0.019  0.047
+            ribozyme / RNase P        21            14       0.090   0.040  0.050  0.007  0.098
+short oligo / duplex (<=30 nt)       338           315       0.102   0.138 -0.036 -0.069 -0.005
+           snRNA / spliceosome         9             8       0.211   0.176  0.035 -0.167  0.198
+                          tRNA       100            66       0.303   0.120  0.183  0.147  0.218
+           toxin-antitoxin RNA        14             4       0.111   0.208 -0.096 -0.139 -0.082
+  unspecified RNA (101-300 nt)        51            36       0.100   0.045  0.054  0.031  0.084
+   unspecified RNA (31-100 nt)       227           162       0.137   0.074  0.063  0.034  0.092
+     unspecified RNA (<=30 nt)        93            86       0.150   0.193 -0.043 -0.091  0.001
+     unspecified RNA (>300 nt)        26            10       0.089   0.034  0.056  0.043  0.072
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3c. rnafm: pretrained minus random by PDB release period (pooled held-out-family folds)
+
+rnafm_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff    lo    hi
+      all      1260           947       0.120  -0.004 0.124 0.076 0.162
+2021-2022       109            86       0.081  -0.014 0.095 0.037 0.145
+2023-2024       181           147       0.102  -0.007 0.109 0.077 0.133
+   <=2020       660           507       0.140   0.037 0.103 0.060 0.153
+   >=2025       310           207       0.114  -0.028 0.143 0.042 0.192
+
+rnafm_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff     lo    hi
+      all      1260           947       0.101   0.013 0.088  0.070 0.107
+2021-2022       109            86       0.091   0.033 0.057 -0.009 0.126
+2023-2024       181           147       0.110   0.020 0.090  0.058 0.134
+   <=2020       660           507       0.118   0.038 0.080  0.058 0.105
+   >=2025       310           207       0.068  -0.039 0.106  0.058 0.150
+
+rnafm_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff    lo    hi
+      all      1260           947       0.135   0.058 0.077 0.061 0.093
+2021-2022       109            86       0.169   0.067 0.102 0.049 0.160
+2023-2024       181           147       0.139   0.068 0.071 0.051 0.096
+   <=2020       660           507       0.156   0.071 0.084 0.066 0.104
+   >=2025       310           207       0.117   0.045 0.072 0.040 0.104
+
+rnafm_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random  diff    lo    hi
+      all      1260           947       0.146   0.084 0.062 0.051 0.074
+2021-2022       109            86       0.180   0.106 0.074 0.020 0.138
+2023-2024       181           147       0.156   0.083 0.073 0.038 0.108
+   <=2020       660           507       0.156   0.094 0.062 0.046 0.078
+   >=2025       310           207       0.114   0.061 0.053 0.035 0.071
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4a. rnafm: chains WITH vs WITHOUT a near-identical copy in the reference corpus
+
+rnafm_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1260           947       0.120  -0.004 0.124 0.076 0.162
+False       454           361       0.120  -0.019 0.139 0.063 0.181
+ True       550           373       0.119   0.028 0.092 0.062 0.138
+
+rnafm_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1260           947       0.101   0.013 0.088 0.070 0.107
+False       454           361       0.095  -0.023 0.118 0.081 0.151
+ True       550           373       0.114   0.045 0.068 0.047 0.088
+
+rnafm_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1260           947       0.135   0.058 0.077 0.061 0.093
+False       454           361       0.127   0.053 0.074 0.051 0.094
+ True       550           373       0.148   0.066 0.083 0.061 0.112
+
+rnafm_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff    lo    hi
+  all      1260           947       0.146   0.084 0.062 0.051 0.074
+False       454           361       0.150   0.082 0.068 0.049 0.086
+ True       550           373       0.152   0.082 0.070 0.054 0.087
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4b. rnafm: by best identity to the corpus (including identical copies)
+
+rnafm_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random  diff    lo    hi
+          all      1260           947       0.120  -0.004 0.124 0.076 0.162
+(-0.001, 0.5]       189           174       0.022  -0.110 0.132 0.059 0.201
+   (0.7, 0.9]        62            52       0.181  -0.011 0.193 0.104 0.213
+ (0.9, 0.995]       169           124       0.125  -0.014 0.139 0.094 0.183
+ (0.995, 1.0]       584           388       0.107   0.004 0.103 0.041 0.159
+
+rnafm_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random  diff    lo    hi
+          all      1260           947       0.101   0.013 0.088 0.070 0.107
+(-0.001, 0.5]       189           174       0.026  -0.117 0.143 0.068 0.214
+   (0.7, 0.9]        62            52       0.105  -0.054 0.158 0.100 0.204
+ (0.9, 0.995]       169           124       0.132   0.008 0.124 0.091 0.159
+ (0.995, 1.0]       584           388       0.104   0.036 0.068 0.047 0.091
+
+rnafm_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random  diff     lo    hi
+          all      1260           947       0.135   0.058 0.077  0.061 0.093
+(-0.001, 0.5]       189           174       0.175   0.160 0.015 -0.030 0.057
+   (0.7, 0.9]        62            52       0.159   0.048 0.111  0.066 0.129
+ (0.9, 0.995]       169           124       0.140   0.052 0.087  0.064 0.137
+ (0.995, 1.0]       584           388       0.128   0.061 0.068  0.047 0.089
+
+rnafm_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo    hi
+          all      1260           947       0.146   0.084  0.062  0.051 0.074
+(-0.001, 0.5]       189           174       0.172   0.174 -0.002 -0.040 0.032
+   (0.7, 0.9]        62            52       0.136   0.041  0.095  0.044 0.146
+ (0.9, 0.995]       169           124       0.173   0.071  0.102  0.077 0.130
+ (0.995, 1.0]       584           388       0.144   0.079  0.065  0.051 0.081
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3. rnabert: pretrained minus random within RNA classes (standard test split)
+
+rnabert_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.111   0.079  0.032  0.003  0.058
+            guide RNA (CRISPR)        10             9      -0.145  -0.166  0.021 -0.035  0.050
+             other named ncRNA        24            14       0.104   0.075  0.029 -0.013  0.056
+                          rRNA        24            11       0.145   0.099  0.046  0.015  0.097
+                    riboswitch        11             4      -0.022  -0.008 -0.014 -0.061  0.049
+            ribozyme / RNase P        13             6       0.054   0.053  0.001 -0.015  0.055
+short oligo / duplex (<=30 nt)       219            84       0.007   0.093 -0.087 -0.223 -0.041
+                          tRNA        16            13       0.135   0.154 -0.019 -0.052  0.016
+   unspecified RNA (31-100 nt)        40            26      -0.025  -0.024 -0.000 -0.036  0.024
+     unspecified RNA (<=30 nt)        46            21      -0.002   0.046 -0.048 -0.174  0.006
+
+rnabert_std  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.063   0.072 -0.009 -0.033  0.008
+            guide RNA (CRISPR)        10             9      -0.150  -0.138 -0.012 -0.127  0.048
+             other named ncRNA        24            14       0.122   0.091  0.031 -0.018  0.054
+                          rRNA        24            11       0.141   0.101  0.041  0.011  0.079
+                    riboswitch        11             4      -0.022  -0.006 -0.017 -0.066  0.049
+            ribozyme / RNase P        13             6       0.035   0.030  0.005 -0.018  0.050
+short oligo / duplex (<=30 nt)       219            84      -0.006   0.104 -0.109 -0.219 -0.061
+                          tRNA        16            13       0.152   0.165 -0.013 -0.043  0.017
+   unspecified RNA (31-100 nt)        40            26      -0.030  -0.020 -0.010 -0.053  0.022
+     unspecified RNA (<=30 nt)        46            21      -0.016   0.038 -0.054 -0.217  0.007
+
+rnabert_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.138   0.121  0.017 -0.011  0.043
+            guide RNA (CRISPR)        10             9       0.049   0.053 -0.003 -0.030  0.025
+             other named ncRNA        24            14       0.099   0.075  0.024  0.010  0.042
+                          rRNA        24            11       0.164   0.137  0.027 -0.014  0.074
+                    riboswitch        11             4       0.050   0.030  0.019 -0.025  0.067
+            ribozyme / RNase P        13             6       0.140   0.135  0.005 -0.002  0.033
+short oligo / duplex (<=30 nt)       219            84       0.118   0.177 -0.059 -0.119 -0.016
+                          tRNA        16            13       0.172   0.151  0.021  0.002  0.043
+   unspecified RNA (31-100 nt)        40            26       0.051   0.059 -0.008 -0.035  0.010
+     unspecified RNA (<=30 nt)        46            21       0.157   0.197 -0.040 -0.107  0.002
+
+rnabert_std  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all       420           181       0.111   0.127 -0.016 -0.032 -0.001
+            guide RNA (CRISPR)        10             9       0.086   0.086  0.000 -0.033  0.034
+             other named ncRNA        24            14       0.113   0.091  0.022  0.008  0.045
+                          rRNA        24            11       0.148   0.131  0.017 -0.022  0.057
+                    riboswitch        11             4       0.044   0.028  0.016 -0.030  0.067
+            ribozyme / RNase P        13             6       0.139   0.133  0.007 -0.001  0.021
+short oligo / duplex (<=30 nt)       219            84       0.092   0.159 -0.067 -0.116 -0.028
+                          tRNA        16            13       0.186   0.168  0.018 -0.006  0.042
+   unspecified RNA (31-100 nt)        40            26       0.055   0.069 -0.014 -0.041  0.007
+     unspecified RNA (<=30 nt)        46            21       0.151   0.218 -0.067 -0.140 -0.019
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3b. rnabert: within RNA classes, pooled held-out-family folds (more chains per class)
+
+rnabert_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1255           945       0.018   0.002  0.016  0.004  0.029
+                       aptamer        30            14       0.085   0.106 -0.021 -0.060  0.011
+            guide RNA (CRISPR)        79            76      -0.102  -0.114  0.012 -0.012  0.033
+           mRNA / viral / IRES        26            19      -0.041  -0.056  0.015 -0.025  0.050
+             other named ncRNA       129            83       0.021  -0.040  0.061  0.022  0.111
+                          rRNA        27            18       0.034   0.034  0.000 -0.011  0.017
+                    riboswitch        75            48       0.008  -0.005  0.012 -0.003  0.026
+            ribozyme / RNase P        21            14      -0.028  -0.069  0.041  0.008  0.074
+short oligo / duplex (<=30 nt)       339           316      -0.200   0.070 -0.270 -0.368 -0.212
+           snRNA / spliceosome         9             8      -0.316  -0.109 -0.207 -0.381 -0.077
+                          tRNA        99            65       0.165   0.187 -0.022 -0.039 -0.004
+           toxin-antitoxin RNA        14             4       0.111   0.235 -0.124 -0.156 -0.089
+  unspecified RNA (101-300 nt)        50            35      -0.064  -0.119  0.056  0.028  0.083
+   unspecified RNA (31-100 nt)       227           162       0.015   0.016 -0.001 -0.014  0.010
+     unspecified RNA (<=30 nt)        93            86      -0.122   0.098 -0.220 -0.305 -0.167
+     unspecified RNA (>300 nt)        25             9      -0.038  -0.073  0.035  0.015  0.068
+
+rnabert_fam  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1255           945       0.026   0.040 -0.014 -0.023 -0.005
+                       aptamer        30            14       0.074   0.102 -0.029 -0.063  0.009
+            guide RNA (CRISPR)        79            76      -0.108  -0.096 -0.012 -0.041  0.018
+           mRNA / viral / IRES        26            19      -0.055  -0.033 -0.022 -0.102  0.026
+             other named ncRNA       129            83       0.050   0.024  0.026  0.002  0.051
+                          rRNA        27            18       0.045   0.032  0.013 -0.006  0.038
+                    riboswitch        75            48       0.019   0.012  0.007 -0.011  0.024
+            ribozyme / RNase P        21            14      -0.025  -0.062  0.037  0.013  0.063
+short oligo / duplex (<=30 nt)       339           316      -0.294   0.043 -0.337 -0.447 -0.263
+           snRNA / spliceosome         9             8      -0.236  -0.033 -0.202 -0.358 -0.071
+                          tRNA        99            65       0.164   0.192 -0.028 -0.042 -0.012
+           toxin-antitoxin RNA        14             4       0.111   0.235 -0.124 -0.156 -0.089
+  unspecified RNA (101-300 nt)        50            35      -0.059  -0.109  0.051  0.024  0.078
+   unspecified RNA (31-100 nt)       227           162       0.016   0.021 -0.004 -0.018  0.006
+     unspecified RNA (<=30 nt)        93            86      -0.159   0.100 -0.259 -0.349 -0.195
+     unspecified RNA (>300 nt)        25             9      -0.038  -0.073  0.035  0.015  0.067
+
+rnabert_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1255           945       0.070   0.058  0.012  0.005  0.018
+                       aptamer        30            14       0.067   0.058  0.009 -0.027  0.033
+            guide RNA (CRISPR)        79            76       0.075   0.079 -0.004 -0.019  0.009
+           mRNA / viral / IRES        26            19       0.071   0.088 -0.017 -0.047  0.012
+             other named ncRNA       129            83       0.072   0.030  0.042  0.032  0.056
+                          rRNA        27            18       0.061   0.047  0.014  0.008  0.026
+                    riboswitch        75            48       0.076   0.066  0.010 -0.003  0.020
+            ribozyme / RNase P        21            14       0.060   0.040  0.020  0.005  0.030
+short oligo / duplex (<=30 nt)       339           316       0.088   0.191 -0.103 -0.128 -0.079
+           snRNA / spliceosome         9             8       0.154   0.166 -0.012 -0.056  0.028
+                          tRNA        99            65       0.117   0.144 -0.027 -0.038 -0.013
+           toxin-antitoxin RNA        14             4       0.223   0.147  0.076 -0.024  0.092
+  unspecified RNA (101-300 nt)        50            35       0.079   0.048  0.031  0.011  0.052
+   unspecified RNA (31-100 nt)       227           162       0.061   0.070 -0.009 -0.020  0.002
+     unspecified RNA (<=30 nt)        93            86       0.112   0.178 -0.067 -0.096 -0.032
+     unspecified RNA (>300 nt)        25             9       0.038   0.013  0.026  0.012  0.038
+
+rnabert_fam  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by rna_class
+                         group  n_chains  n_structures  pretrained  random   diff     lo     hi
+                           all      1255           945       0.082   0.093 -0.011 -0.018 -0.005
+                       aptamer        30            14       0.059   0.049  0.010 -0.019  0.030
+            guide RNA (CRISPR)        79            76       0.071   0.094 -0.023 -0.041 -0.005
+           mRNA / viral / IRES        26            19       0.071   0.105 -0.034 -0.068 -0.006
+             other named ncRNA       129            83       0.103   0.077  0.026  0.014  0.036
+                          rRNA        27            18       0.068   0.041  0.027  0.009  0.040
+                    riboswitch        75            48       0.072   0.063  0.010 -0.001  0.019
+            ribozyme / RNase P        21            14       0.050   0.037  0.013 -0.005  0.028
+short oligo / duplex (<=30 nt)       339           316       0.081   0.191 -0.110 -0.135 -0.087
+           snRNA / spliceosome         9             8       0.185   0.204 -0.018 -0.075  0.030
+                          tRNA        99            65       0.113   0.143 -0.030 -0.041 -0.017
+           toxin-antitoxin RNA        14             4       0.222   0.147  0.076 -0.026  0.092
+  unspecified RNA (101-300 nt)        50            35       0.081   0.052  0.030  0.008  0.053
+   unspecified RNA (31-100 nt)       227           162       0.064   0.076 -0.012 -0.024 -0.001
+     unspecified RNA (<=30 nt)        93            86       0.112   0.192 -0.080 -0.115 -0.045
+     unspecified RNA (>300 nt)        25             9       0.038   0.013  0.026  0.013  0.038
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 3c. rnabert: pretrained minus random by PDB release period (pooled held-out-family folds)
+
+rnabert_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random   diff     lo    hi
+      all      1255           945       0.018   0.002  0.016  0.004 0.029
+2021-2022       109            86      -0.011  -0.023  0.012 -0.025 0.040
+2023-2024       181           147       0.003  -0.007  0.009 -0.003 0.027
+   <=2020       662           508       0.059   0.061 -0.003 -0.014 0.006
+   >=2025       303           204      -0.005  -0.039  0.034  0.012 0.066
+
+rnabert_rel  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random   diff     lo     hi
+      all      1255           945       0.026   0.040 -0.014 -0.023 -0.005
+2021-2022       109            86       0.016   0.050 -0.034 -0.072  0.001
+2023-2024       181           147       0.034   0.048 -0.013 -0.031 -0.000
+   <=2020       662           508       0.044   0.070 -0.026 -0.039 -0.014
+   >=2025       303           204      -0.014  -0.028  0.014 -0.004  0.031
+
+rnabert_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random   diff     lo    hi
+      all      1255           945       0.070   0.058  0.012  0.005 0.018
+2021-2022       109            86       0.089   0.075  0.014 -0.012 0.037
+2023-2024       181           147       0.061   0.062 -0.001 -0.014 0.010
+   <=2020       662           508       0.093   0.091  0.002 -0.007 0.009
+   >=2025       303           204       0.053   0.029  0.024  0.014 0.034
+
+rnabert_rel  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by release_bin
+    group  n_chains  n_structures  pretrained  random   diff     lo     hi
+      all      1255           945       0.082   0.093 -0.011 -0.018 -0.005
+2021-2022       109            86       0.112   0.124 -0.012 -0.035  0.009
+2023-2024       181           147       0.078   0.094 -0.016 -0.027 -0.004
+   <=2020       662           508       0.089   0.106 -0.016 -0.026 -0.008
+   >=2025       303           204       0.063   0.059  0.004 -0.009  0.014
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4a. rnabert: chains WITH vs WITHOUT a near-identical copy in the reference corpus
+
+rnabert_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random   diff     lo    hi
+  all      1255           945       0.018   0.002  0.016  0.004 0.029
+False       450           358       0.002  -0.026  0.028  0.012 0.050
+ True       548           371       0.045   0.045 -0.000 -0.009 0.008
+
+rnabert_copy  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random   diff     lo     hi
+  all      1255           945       0.026   0.040 -0.014 -0.023 -0.005
+False       450           358      -0.002   0.001 -0.003 -0.020  0.012
+ True       548           371       0.056   0.064 -0.008 -0.017  0.001
+
+rnabert_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random  diff     lo    hi
+  all      1255           945       0.070   0.058 0.012  0.005 0.018
+False       450           358       0.059   0.037 0.022  0.013 0.030
+ True       548           371       0.084   0.083 0.001 -0.006 0.007
+
+rnabert_copy  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by near_identical_copy
+group  n_chains  n_structures  pretrained  random   diff     lo     hi
+  all      1255           945       0.082   0.093 -0.011 -0.018 -0.005
+False       450           358       0.079   0.082 -0.003 -0.014  0.008
+ True       548           371       0.087   0.091 -0.004 -0.012  0.003
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv
+
+=== 4b. rnabert: by best identity to the corpus (including identical copies)
+
+rnabert_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1255           945       0.018   0.002  0.016  0.004  0.029
+(-0.001, 0.5]       189           174      -0.119   0.048 -0.167 -0.225 -0.118
+   (0.7, 0.9]        61            51       0.011  -0.029  0.040  0.026  0.073
+ (0.9, 0.995]       167           122       0.002  -0.017  0.019 -0.002  0.054
+ (0.995, 1.0]       581           386       0.030   0.015  0.014 -0.000  0.027
+
+rnabert_ovl  potential_mean_kT_e_12A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1255           945       0.026   0.040 -0.014 -0.023 -0.005
+(-0.001, 0.5]       189           174      -0.130   0.080 -0.210 -0.266 -0.167
+   (0.7, 0.9]        61            51      -0.016  -0.056  0.040  0.024  0.063
+ (0.9, 0.995]       167           122       0.026   0.018  0.008 -0.007  0.025
+ (0.995, 1.0]       581           386       0.050   0.053 -0.003 -0.013  0.008
+
+rnabert_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, micro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1255           945       0.070   0.058  0.012  0.005  0.018
+(-0.001, 0.5]       189           174       0.115   0.181 -0.067 -0.091 -0.042
+   (0.7, 0.9]        61            51       0.073   0.049  0.024  0.012  0.042
+ (0.9, 0.995]       167           122       0.052   0.034  0.018  0.005  0.031
+ (0.995, 1.0]       581           386       0.077   0.067  0.010 -0.000  0.018
+
+rnabert_ovl  potential_mean_kT_e_4A  shared variance, pretrained minus random, macro, grouped by best_fident
+        group  n_chains  n_structures  pretrained  random   diff     lo     hi
+          all      1255           945       0.082   0.093 -0.011 -0.018 -0.005
+(-0.001, 0.5]       189           174       0.129   0.199 -0.071 -0.096 -0.047
+   (0.7, 0.9]        61            51       0.056   0.037  0.019  0.006  0.033
+ (0.9, 0.995]       167           122       0.073   0.067  0.006 -0.008  0.021
+ (0.995, 1.0]       581           386       0.085   0.086 -0.002 -0.009  0.006
+
+wrote /data/rna_electrostats/controls_matched/analysis/bygroup.csv

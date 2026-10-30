@@ -1,0 +1,508 @@
+#!/usr/bin/env python
+"""
+Figures for the RNA-LM electrostatics audit paper.
+
+    python make_figures.py --root /data/rna_electrostats --out figures
+
+Each figure is built only if its input exists; missing inputs are reported and skipped.
+Outputs svg (vector, for the paper) + PNG (preview).
+
+Figures
+  fig1_staircase      how probe R^2 falls as controls are added (from staircase_values.csv, see below)
+  fig2_partition      shared / unique variance partition (audit_variance_partition.csv), micro + macro
+  fig3_unique_lm      unique-LM variance with bootstrap CIs, for each control set
+  fig4_ladder         R^2 of each predictor set with CIs (audit_probe_r2.csv)
+  fig5_physics        Coulomb vs structure controls (coulomb_residual_report.csv)
+  fig6_crossmodel     cross-model agreement: electrostatic targets vs geometry-target control
+  fig7_benchmark      predicted-structure benchmark (chain_metrics_with_excess.csv, excess_vs_null.csv)
+  fig8_controls       pretrained vs random-init vs leave-family-out  (--compare label=path ...)
+
+Expected layout (override with flags)
+  <root>/centered_latent_v3/<model>/audit_variance_partition.csv, audit_probe_r2.csv
+  <root>/centered_latent_v3/cross_model/cross_model_agreement_centered_base_resid.csv
+  <root>/centered_latent_v3/cross_model/cross_model_agreement_swap_geom.csv
+  <root>/coulomb_report/coulomb_residual_report.csv
+  <root>/bench_out/chain_metrics_with_excess.csv, excess_vs_null.csv
+  <root>/probe_all_models_v2/all_probe_results.csv       (raw probe R^2, used as step 0 of fig1)
+
+Fig 1 data (all CSV, nothing hard-coded)
+  step 0 "raw"   : <root>/probe_all_models_v2/all_probe_results.csv, rows with probe == "final_test"
+  later steps    : <v3>/<model>/<variant>/pls_dimensionality_sweep.csv, column single_target_ceiling_r2
+                   (variants: centered, centered_base_resid, centered_struct_gbm,
+                    centered_dssr_ctx_gbm, centered_dssr_ctx_coulomb_gbm)
+  Pass --staircase my.csv (columns model,target,step,r2) to override.
+"""
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+# ----------------------------------------------------------------------------------------------
+# style
+# ----------------------------------------------------------------------------------------------
+MODELS = ["rnabert", "rnafm", "splicebert", "ernierna"]
+MODEL_LABEL = {"rnabert": "RNABERT", "rnafm": "RNA-FM", "splicebert": "SpliceBERT", "ernierna": "ERNIE-RNA"}
+MODEL_COLOR = {"rnabert": "#999999", "rnafm": "#0072B2", "splicebert": "#009E73", "ernierna": "#D55E00"}
+TARGET_LABEL = {
+    "potential_at_c1prime_kT_e": "C1' point potential",
+    "potential_mean_kT_e_4A": "4 Å sphere mean",
+    "potential_mean_kT_e_8A": "8 Å sphere mean",
+    "potential_mean_kT_e_12A": "12 Å sphere mean",
+    "c1p": "C1' point potential", "p": "P point potential",
+    "m4": "4 Å sphere mean", "m8": "8 Å sphere mean", "m12": "12 Å sphere mean",
+}
+PRED_LABEL = {
+    "lm_ridge_full": "LM (ridge, full)",
+    "lm_gbm_pca": "LM (GBM, 64 PCs)",
+    "controls_geom": "Structure",
+    "controls_geom+lm": "Structure + LM",
+    "controls_geom_coulomb": "Structure + Coulomb",
+    "controls_geom_coulomb+lm": "Structure + Coulomb + LM",
+}
+COMP_COLOR = {"unique_lm": "#D55E00", "shared": "#E69F00", "unique_controls": "#56B4E9", "unexplained": "#DDDDDD"}
+COMP_LABEL = {"unique_lm": "unique to LM", "shared": "shared", "unique_controls": "unique to controls",
+              "unexplained": "unexplained"}
+
+plt.rcParams.update({
+    "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8, "legend.fontsize": 7,
+    "xtick.labelsize": 7, "ytick.labelsize": 7, "axes.spines.top": False, "axes.spines.right": False,
+    "figure.dpi": 600, "savefig.dpi": 600, "pdf.fonttype": 42, "ps.fonttype": 42,
+})
+
+
+def save(fig, outdir: Path, name: str):
+    outdir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(outdir / f"{name}.svg", bbox_inches="tight")
+    fig.savefig(outdir / f"{name}.png", bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {outdir / name}.svg/.png")
+
+
+def need(path: Path, what: str):
+    if not path.exists():
+        print(f"  [skip] {what}: {path} not found")
+        return False
+    return True
+
+
+def panel_letter(ax, s):
+    ax.text(-0.14, 1.06, s, transform=ax.transAxes, fontsize=10, fontweight="bold", va="bottom")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 1: staircase
+# ----------------------------------------------------------------------------------------------
+STEPS = {
+    "raw": "Raw probe\n(best layer)",
+    "centered": "Within-chain\ncentered",
+    "base_resid": "− residue\nidentity",
+    "struct": "− 3D structure\ncontrols",
+    "dssr_ctx": "− structure, DSSR,\nsequence context",
+    "dssr_ctx_coulomb": "− all of the above\n+ Coulomb",
+}
+STEP_VARIANT = {  # staircase step -> variant directory written by centered_latent_manifold.py
+    "centered": "centered",
+    "base_resid": "centered_base_resid",
+    "struct": "centered_struct_gbm",
+    "dssr_ctx": "centered_dssr_ctx_gbm",
+    "dssr_ctx_coulomb": "centered_dssr_ctx_coulomb_gbm",
+}
+STAIR_TARGETS = ["potential_at_c1prime_kT_e", "potential_mean_kT_e_4A", "potential_mean_kT_e_8A",
+                 "potential_mean_kT_e_12A"]
+
+
+def staircase_from_csvs(root: Path, v3: Path, targets=STAIR_TARGETS) -> pd.DataFrame:
+    rows, missing = [], []
+    # step 0: raw probe, final held-out numbers only (the file also holds per-layer linear/mlp rows)
+    raw = root / "probe_all_models_v2" / "all_probe_results.csv"
+    if raw.exists():
+        d = pd.read_csv(raw)
+        if "probe" in d:
+            d = d[d.probe == "final_test"]
+        d = d[d.label_column.isin(targets)]
+        for (m, t), g in d.groupby(["model", "label_column"]):
+            rows.append({"model": m, "target": t, "step": "raw", "r2": float(g.r2.iloc[0])})
+    else:
+        missing.append(str(raw))
+    # later steps: single-target ridge ceilings at the shared layer
+    for m in MODELS:
+        for step, variant in STEP_VARIANT.items():
+            f = v3 / m / variant / "pls_dimensionality_sweep.csv"
+            if not f.exists():
+                missing.append(str(f))
+                continue
+            d = pd.read_csv(f).drop_duplicates("target")
+            for _, r in d[d.target.isin(targets)].iterrows():
+                rows.append({"model": m, "target": r.target, "step": step, "r2": float(r.single_target_ceiling_r2)})
+    if missing:
+        print(f"  [note] fig1: {len(missing)} input file(s) missing, e.g. {missing[0]}")
+    return pd.DataFrame(rows, columns=["model", "target", "step", "r2"])
+
+
+def fig_staircase(stair: pd.DataFrame, outdir: Path, targets=None):
+    if stair.empty:
+        print("  [skip] fig1: no data")
+        return
+    stair = stair.groupby(["model", "target", "step"], as_index=False).r2.mean()   # one value per cell
+    targets = [t for t in (targets or STAIR_TARGETS) if t in set(stair.target)]
+    steps = [s for s in STEPS if s in set(stair.step)]
+    fig, axes = plt.subplots(1, len(targets), figsize=(2.6 * len(targets) + 0.4, 2.8), sharey=True)
+    axes = np.atleast_1d(axes)
+    x = np.arange(len(steps))
+    for ax, t in zip(axes, targets):
+        for m in MODELS:
+            d = stair[(stair.model == m) & (stair.target == t)].set_index("step")
+            if d.empty:
+                continue
+            y = [d.r2.get(s, np.nan) for s in steps]
+            ax.plot(x, y, "-o", ms=3, lw=1.2, color=MODEL_COLOR[m], label=MODEL_LABEL[m])
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xticks(x)
+        ax.set_xticklabels([STEPS[s] for s in steps], rotation=60, ha="right", fontsize=6)
+        ax.set_title(TARGET_LABEL.get(t, t))
+    axes[0].set_ylabel("test $R^2$")
+    axes[-1].legend(frameon=False, loc="upper right", fontsize=6)
+    fig.tight_layout()
+    save(fig, outdir, "fig1_staircase")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 2, 3, 4: audit
+# ----------------------------------------------------------------------------------------------
+AUDIT_TARGETS = ["potential_at_c1prime_kT_e", "potential_mean_kT_e_4A", "potential_mean_kT_e_12A"]
+
+
+def load_audit(v3: Path, fname: str, models=MODELS) -> pd.DataFrame:
+    frames = []
+    for m in models:
+        p = v3 / m / fname
+        if p.exists():
+            frames.append(pd.read_csv(p).assign(model=m))
+        else:
+            print(f"  [note] missing {p}")
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def fig_partition(part: pd.DataFrame, outdir: Path, controls: str):
+    d = part[part.controls == controls]
+    if d.empty:
+        print(f"  [skip] partition: no rows for controls={controls}")
+        return
+    fig, axes = plt.subplots(2, len(AUDIT_TARGETS), figsize=(2.5 * len(AUDIT_TARGETS), 4.4), sharey=True)
+    comps = ["unique_lm", "shared", "unique_controls", "unexplained"]
+    models = [m for m in MODELS if m in set(d.model)]
+    for i, w in enumerate(["micro", "macro"]):
+        for j, t in enumerate(AUDIT_TARGETS):
+            ax = axes[i, j]
+            dd = d[(d.weighting == w) & (d.target == t)]
+            bottom = np.zeros(len(models))
+            for c in comps:
+                v = np.array([dd[(dd.model == m) & (dd.component == c)].value.mean() for m in models])
+                v = np.nan_to_num(v)
+                ax.bar(range(len(models)), np.clip(v, 0, None), bottom=bottom, color=COMP_COLOR[c],
+                       label=COMP_LABEL[c] if (i == 0 and j == 0) else None, width=0.7, edgecolor="white", lw=0.4)
+                bottom += np.clip(v, 0, None)
+            ax.set_xticks(range(len(models)))
+            ax.set_xticklabels([MODEL_LABEL[m] for m in models], rotation=40, ha="right")
+            ax.set_ylim(0, 1)
+            if i == 0:
+                ax.set_title(TARGET_LABEL.get(t, t))
+            if j == 0:
+                ax.set_ylabel(f"{w}-weighted\nfraction of variance")
+    axes[0, 0].legend(frameon=False, loc="upper left", bbox_to_anchor=(0, -0.0), ncol=1, fontsize=6)
+    fig.suptitle(f"Variance partition; controls = {controls}  (negative components clipped to 0; see fig3)", y=1.0,
+                 fontsize=8)
+    fig.tight_layout()
+    save(fig, outdir, "fig2_partition")
+
+
+def fig_unique(part: pd.DataFrame, outdir: Path):
+    d = part[part.component == "unique_lm"]
+    if d.empty:
+        return
+    ctrls = [c for c in ["controls_geom", "controls_geom_coulomb"] if c in set(d.controls)]
+    fig, axes = plt.subplots(1, len(AUDIT_TARGETS), figsize=(2.6 * len(AUDIT_TARGETS), 2.8), sharey=True)
+    axes = np.atleast_1d(axes)
+    models = [m for m in MODELS if m in set(d.model)]
+    markers = {"micro": "o", "macro": "s"}
+    for ax, t in zip(axes, AUDIT_TARGETS):
+        k = 0
+        ticks, labs = [], []
+        for ci, c in enumerate(ctrls):
+            for m in models:
+                for wi, w in enumerate(["micro", "macro"]):
+                    r = d[(d.model == m) & (d.target == t) & (d.controls == c) & (d.weighting == w)]
+                    if r.empty:
+                        continue
+                    r = r.iloc[0]
+                    xx = k + 0.18 * (wi - 0.5)
+                    ax.errorbar(xx, r.value, yerr=[[r.value - r.lo], [r.hi - r.value]], fmt=markers[w], ms=3.5,
+                                color=MODEL_COLOR[m], mfc=MODEL_COLOR[m] if w == "micro" else "white", capsize=1.5,
+                                lw=0.8)
+                ticks.append(k)
+                labs.append(MODEL_LABEL[m])
+                k += 1
+            k += 0.6
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(labs, rotation=60, ha="right", fontsize=6)
+        ax.set_title(TARGET_LABEL.get(t, t), pad=14)
+        # control-set labels
+        n = len(models)
+        for ci, c in enumerate(ctrls):
+            ax.text(ci * (n + 0.6) + (n - 1) / 2, ax.get_ylim()[1], PRED_LABEL.get(c, c).replace("Structure", "Struct."),
+                    ha="center", va="bottom", fontsize=6, color="0.3")
+    axes[0].set_ylabel("variance explained only by the LM\n(Δ$R^2$, 95% bootstrap CI)")
+    axes[-1].plot([], [], "ko", ms=3.5, label="micro (all residues equal)")
+    axes[-1].plot([], [], "ks", ms=3.5, mfc="white", label="macro (all chains equal)")
+    h, l = axes[-1].get_legend_handles_labels()
+    fig.legend(h, l, frameon=False, loc="lower center", ncol=2, fontsize=6.5, bbox_to_anchor=(0.5, -0.04))
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    save(fig, outdir, "fig3_unique_lm")
+
+
+def fig_ladder(probe: pd.DataFrame, outdir: Path, weighting: str = "macro"):
+    if probe.empty:
+        return
+    preds = [p for p in PRED_LABEL if p in set(probe.predictors)]
+    fig, axes = plt.subplots(2, len(AUDIT_TARGETS), figsize=(2.9 * len(AUDIT_TARGETS), 4.8), sharey="row")
+    models = [m for m in MODELS if m in set(probe.model)]
+    for i, w in enumerate(["macro", "micro"]):
+        for j, t in enumerate(AUDIT_TARGETS):
+            ax = axes[i, j]
+            width = 0.8 / max(len(models), 1)
+            for mi, m in enumerate(models):
+                d = probe[(probe.model == m) & (probe.target == t)].set_index("predictors")
+                y = np.array([d[f"{w}_r2"].get(p, np.nan) for p in preds])
+                lo = np.array([d[f"{w}_lo"].get(p, np.nan) for p in preds])
+                hi = np.array([d[f"{w}_hi"].get(p, np.nan) for p in preds])
+                xs = np.arange(len(preds)) + (mi - (len(models) - 1) / 2) * width
+                ax.bar(xs, y, width=width * 0.92, color=MODEL_COLOR[m], label=MODEL_LABEL[m] if (i == 0 and j == 0) else None)
+                ax.errorbar(xs, y, yerr=[np.nan_to_num(y - lo), np.nan_to_num(hi - y)], fmt="none", ecolor="k", lw=0.5, capsize=0.8)
+            ax.axhline(0, color="k", lw=0.5)
+            ax.set_xticks(range(len(preds)))
+            ax.set_xticklabels([PRED_LABEL[p] for p in preds], rotation=60, ha="right", fontsize=6)
+            if i == 0:
+                ax.set_title(TARGET_LABEL.get(t, t))
+            if j == 0:
+                ax.set_ylabel(f"{w} $R^2$ (within-chain centered)")
+    axes[0, 0].legend(frameon=False, fontsize=6, loc="upper left")
+    fig.tight_layout()
+    save(fig, outdir, "fig4_ladder")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 5: physics baseline
+# ----------------------------------------------------------------------------------------------
+def fig_physics(path: Path, outdir: Path, include_p: bool = False):
+    d = pd.read_csv(path)
+    order = ["m4", "m8", "m12", "c1p"] + (["p"] if include_p else [])
+    d = d[d.target.isin(order)]
+    series = [("calibrated_coulomb", "centered_test_r2", "Screened Coulomb (fitted)", "#009E73"),
+              ("controls_only_gbm", "centered_test_r2", "Structure + DSSR controls", "#56B4E9"),
+              ("coulomb_only_gbm", "centered_test_r2", "Coulomb features (GBM)", "#CC79A7"),
+              ("controls_plus_coulomb_gbm", "centered_test_r2", "Controls + Coulomb", "#0072B2")]
+    fig, ax = plt.subplots(figsize=(4.8, 2.9))
+    w = 0.8 / len(series)
+    for k, (model, col, lab, colr) in enumerate(series):
+        y = [d[(d.target == t) & (d.model == model)][col].mean() for t in order]
+        xs = np.arange(len(order)) + (k - (len(series) - 1) / 2) * w
+        ax.bar(xs, y, width=w * 0.92, color=colr, label=lab)
+        for x_, y_ in zip(xs, y):
+            if np.isfinite(y_):
+                ax.text(x_, y_ + 0.01, f"{y_:.2f}", ha="center", va="bottom", fontsize=5.5)
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels([TARGET_LABEL[t] for t in order])
+    ax.set_ylabel("within-chain-centered test $R^2$")
+    ax.set_ylim(0, 0.9)
+    ax.legend(frameon=False, ncol=2, loc="upper right", fontsize=6)
+    fig.tight_layout()
+    save(fig, outdir, "fig5_physics")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 6: cross-model agreement
+# ----------------------------------------------------------------------------------------------
+def fig_crossmodel(estat: Path, swap: Path, outdir: Path):
+    e = pd.read_csv(estat).assign(kind="electrostatic targets")
+    s = pd.read_csv(swap).assign(kind="geometry-target control")
+    d = pd.concat([e, s])
+    conds = [c for c in ["raw_scores", "nuisance_removed", "within_chain_clean"] if c in set(d.condition)]
+    d["pair"] = d.model_a.map(MODEL_LABEL) + " – " + d.model_b.map(MODEL_LABEL)
+    pairs = list(dict.fromkeys(d.pair))
+    shuf = d[d.condition == "shuffle_within_chain"].mean_canonical_corr.mean() if "shuffle_within_chain" in set(d.condition) else np.nan
+    fig, axes = plt.subplots(1, len(conds), figsize=(2.9 * len(conds), 3.0), sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, c in zip(axes, conds):
+        for ki, (kind, colr) in enumerate([("electrostatic targets", "#D55E00"), ("geometry-target control", "#999999")]):
+            y = [d[(d.pair == p) & (d.condition == c) & (d.kind == kind)].mean_canonical_corr.mean() for p in pairs]
+            xs = np.arange(len(pairs)) + (ki - 0.5) * 0.38
+            ax.bar(xs, y, width=0.36, color=colr, label=kind if c == conds[0] else None)
+        if np.isfinite(shuf):
+            ax.axhline(shuf, color="k", lw=0.6, ls="--")
+        ax.set_xticks(range(len(pairs)))
+        ax.set_xticklabels(pairs, rotation=60, ha="right", fontsize=6)
+        ax.set_title(c.replace("_", " "))
+    axes[0].set_ylabel("mean test canonical correlation (k=5)")
+    axes[0].legend(frameon=False, fontsize=6, loc="upper left")
+    fig.tight_layout()
+    save(fig, outdir, "fig6_crossmodel")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 7: predicted-structure benchmark
+# ----------------------------------------------------------------------------------------------
+def fig_benchmark(metrics: Path, excess: Path | None, outdir: Path):
+    d = pd.read_csv(metrics)
+    if "status" in d:
+        d = d[d.status == "ok"]
+    show = [f"pred_pearson_{q}" for q in ("m4", "m8", "m12") if f"pred_pearson_{q}" in d.columns]
+    if not show or "lddt_c1p" not in d:
+        print("  [skip] fig7: expected columns lddt_c1p / pred_pearson_m4.. not found")
+        return
+    have_ex = excess is not None and excess.exists()
+    fig, axes = plt.subplots(1, len(show) + (1 if have_ex else 0), figsize=(2.7 * (len(show) + have_ex), 2.9))
+    axes = np.atleast_1d(axes)
+    from scipy import stats
+    for ax, c in zip(axes, show):
+        ok = d[["lddt_c1p", c]].dropna()
+        ax.scatter(ok.lddt_c1p, ok[c], s=7, alpha=0.6, color="#0072B2", lw=0)
+        rho = stats.spearmanr(ok.lddt_c1p, ok[c]).statistic
+        ax.text(0.04, 0.05, f"Spearman ρ = {rho:.2f}\nn = {len(ok)} chains", transform=ax.transAxes, fontsize=6.5)
+        ax.set_xlabel("C1′-lDDT of prediction")
+        ax.set_ylabel("within-chain Pearson with native map")
+        ax.set_title(TARGET_LABEL.get(c.replace("pred_pearson_", ""), c.replace("pred_pearson_", "")), fontsize=8)
+        ax.set_ylim(top=1.0)
+    if have_ex:
+        e = pd.read_csv(excess)
+        ax = axes[-1]
+        kinds = list(dict.fromkeys(e["null"]))
+        qtys = list(dict.fromkeys(e["qty"]))
+        w = 0.8 / max(len(qtys), 1)
+        for qi, q in enumerate(qtys):
+            r = e[e.qty == q].set_index("null")
+            y = np.array([r.median_excess.get(k, np.nan) for k in kinds])
+            lo = np.array([r.ci_lo.get(k, np.nan) for k in kinds])
+            hi = np.array([r.ci_hi.get(k, np.nan) for k in kinds])
+            xs = np.arange(len(kinds)) + (qi - (len(qtys) - 1) / 2) * w
+            ax.errorbar(xs, y, yerr=[y - lo, hi - y], fmt="o", ms=3.5, capsize=1.5, lw=0.8,
+                        label=TARGET_LABEL.get(q, q))
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xticks(range(len(kinds)))
+        ax.set_xticklabels(kinds, rotation=30)
+        ax.set_ylabel("prediction − matched null (median, 95% CI)")
+        ax.set_title("vs distortion nulls", fontsize=8)
+        ax.legend(frameon=False, fontsize=6)
+    fig.tight_layout()
+    save(fig, outdir, "fig7_benchmark")
+
+
+# ----------------------------------------------------------------------------------------------
+# Fig 8: pretrained vs random-init vs family folds
+# ----------------------------------------------------------------------------------------------
+def fig_controls(runs: list[str], outdir: Path, controls: str, weighting: str):
+    frames = []
+    for item in runs:
+        label, _, path = item.partition("=")
+        p = Path(path)
+        if not p.exists():
+            print(f"  [note] missing {p}")
+            continue
+        frames.append(pd.read_csv(p).assign(run=label))
+    if not frames:
+        print("  [skip] fig8: no readable runs")
+        return
+    d = pd.concat(frames)
+    d = d[(d.controls == controls) & (d.weighting == weighting) & d.component.isin(["unique_lm", "shared"])]
+    labels = list(dict.fromkeys(r.partition("=")[0] for r in runs if r.partition("=")[0] in set(d.run)))
+    fig, axes = plt.subplots(1, len(AUDIT_TARGETS), figsize=(2.7 * len(AUDIT_TARGETS), 2.8), sharey=True)
+    axes = np.atleast_1d(axes)
+    for ax, t in zip(axes, AUDIT_TARGETS):
+        for ci, comp in enumerate(["shared", "unique_lm"]):
+            g = d[(d.target == t) & (d.component == comp)].groupby("run").value.agg(["mean", "min", "max"])
+            xs = np.arange(len(labels)) + (ci - 0.5) * 0.38
+            y = np.array([g["mean"].get(l, np.nan) for l in labels])
+            lo = np.array([g["min"].get(l, np.nan) for l in labels])
+            hi = np.array([g["max"].get(l, np.nan) for l in labels])
+            ax.bar(xs, y, width=0.36, color=COMP_COLOR[comp], label=COMP_LABEL[comp] if t == AUDIT_TARGETS[0] else None)
+            ax.errorbar(xs, y, yerr=[np.nan_to_num(y - lo), np.nan_to_num(hi - y)], fmt="none", ecolor="k", lw=0.6, capsize=1.2)
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=30, ha="right")
+        ax.set_title(TARGET_LABEL.get(t, t))
+    axes[0].set_ylabel(f"fraction of variance ({weighting})")
+    axes[0].legend(frameon=False, fontsize=6)
+    fig.tight_layout()
+    save(fig, outdir, "fig8_controls")
+
+
+# ----------------------------------------------------------------------------------------------
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--root", type=Path, default=Path("/data/rna_electrostats"))
+    ap.add_argument("--out", type=Path, default=Path("figures"))
+    ap.add_argument("--v3", type=Path, default=None, help="default <root>/centered_latent_v3")
+    ap.add_argument("--staircase", type=Path, default=None, help="CSV with model,target,step,r2 (overrides built-in)")
+    ap.add_argument("--controls", default="controls_geom_coulomb", help="control set for fig2 / fig8")
+    ap.add_argument("--compare", nargs="*", default=[], help="label=audit_variance_partition.csv (fig8)")
+    ap.add_argument("--compare-weighting", default="macro", choices=["micro", "macro"])
+    ap.add_argument("--include-p", action="store_true", help="include P point value in fig5 (not recommended)")
+    ap.add_argument("--only", nargs="*", default=None, help="subset, e.g. --only fig1 fig2")
+    a = ap.parse_args()
+
+    root, v3 = a.root, a.v3 or (a.root / "centered_latent_v3")
+    want = lambda k: a.only is None or any(k.startswith(o) for o in a.only)  # noqa: E731
+    print(f"root={root}  out={a.out}")
+
+    if want("fig1"):
+        st = pd.read_csv(a.staircase) if a.staircase else staircase_from_csvs(root, v3)
+        fig_staircase(st, a.out)
+
+    part = probe = pd.DataFrame()
+    if any(want(k) for k in ("fig2", "fig3", "fig4")):
+        part = load_audit(v3, "audit_variance_partition.csv")
+        probe = load_audit(v3, "audit_probe_r2.csv")
+    if want("fig2") and not part.empty:
+        fig_partition(part, a.out, a.controls)
+    if want("fig3") and not part.empty:
+        fig_unique(part, a.out)
+    if want("fig4") and not probe.empty:
+        fig_ladder(probe, a.out)
+
+    if want("fig5"):
+        p = root / "coulomb_report" / "coulomb_residual_report.csv"
+        if need(p, "fig5"):
+            fig_physics(p, a.out, a.include_p)
+
+    if want("fig6"):
+        e = v3 / "cross_model" / "cross_model_agreement_centered_base_resid.csv"
+        s = v3 / "cross_model" / "cross_model_agreement_swap_geom.csv"
+        if need(e, "fig6 (electrostatic)") and need(s, "fig6 (swap)"):
+            fig_crossmodel(e, s, a.out)
+
+    if want("fig7"):
+        m = root / "bench_out" / "chain_metrics_with_excess.csv"
+        if not m.exists():
+            m = root / "bench_out" / "chain_metrics.csv"
+            print("  [note] fig7: run `predicted_structure_benchmark.py summarize --outdir <bench_out>` to get the "
+                  "null-comparison panel")
+        if need(m, "fig7"):
+            fig_benchmark(m, root / "bench_out" / "excess_vs_null.csv", a.out)
+
+    if want("fig8") and a.compare:
+        fig_controls(a.compare, a.out, a.controls, a.compare_weighting)
+
+    print("done")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

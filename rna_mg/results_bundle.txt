@@ -1,0 +1,104 @@
+################ BENCHMARK COULOMB
+chains scored: 0 of 189 (failed: 189)################ BENCHMARK APBS
+chains scored: 0 of 189 (failed: 189)################ MG PILOT
+structures analysed: 10; skipped: 0; failed: 0
+chains: 23; median ions per structure: 7; chains kept after dropping solver-mismatched rows
+
+=== mg_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 0.995 (IQR 0.986..0.999); RMSE of the within-chain change 3.13 kT/e; variance of the label changed 1.1% (median); global offset (mean change) +1.07 kT/e
+  [m4] chain-median Pearson 0.988 (IQR 0.872..0.998); RMSE of the within-chain change 1.97 kT/e; variance of the label changed 2.9% (median); global offset (mean change) +0.77 kT/e
+  [m8] chain-median Pearson 0.972 (IQR 0.789..0.993); RMSE of the within-chain change 2.15 kT/e; variance of the label changed 7.2% (median); global offset (mean change) +0.98 kT/e
+  [m12] chain-median Pearson 0.990 (IQR 0.907..0.995); RMSE of the within-chain change 1.15 kT/e; variance of the label changed 5.7% (median); global offset (mean change) +0.89 kT/e
+
+=== mg0_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 1.000 (IQR 0.998..1.000); RMSE of the within-chain change 1.03 kT/e; variance of the label changed 0.1% (median); global offset (mean change) -0.20 kT/e
+  [m4] chain-median Pearson 0.999 (IQR 0.998..0.999); RMSE of the within-chain change 0.55 kT/e; variance of the label changed 0.3% (median); global offset (mean change) -0.19 kT/e
+  [m8] chain-median Pearson 0.999 (IQR 0.998..1.000); RMSE of the within-chain change 0.26 kT/e; variance of the label changed 0.2% (median); global offset (mean change) -0.17 kT/e
+  [m12] chain-median Pearson 1.000 (IQR 0.999..1.000); RMSE of the within-chain change 0.17 kT/e; variance of the label changed 0.2% (median); global offset (mean change) -0.15 kT/e
+
+=== mg_r0.79: how the change depends on distance to the nearest Mg2+ (within-chain centred) ===
+  [c1p] (0.0, 4.0] A: n=8, rms change 99.64 kT/e (306% of label sd); (4.0, 6.0] A: n=56, rms change 19.92 kT/e (61% of label sd); (6.0, 8.0] A: n=141, rms change 5.93 kT/e (18% of label sd); (8.0, 12.0] A: n=322, rms change 4.41 kT/e (14% of label sd); (12.0, 20.0] A: n=442, rms change 3.77 kT/e (12% of label sd); (20.0, 1000000000.0] A: n=315, rms change 2.70 kT/e (8% of label sd)
+  [m4] (0.0, 4.0] A: n=8, rms change 89.54 kT/e (756% of label sd); (4.0, 6.0] A: n=56, rms change 21.58 kT/e (182% of label sd); (6.0, 8.0] A: n=141, rms change 5.74 kT/e (48% of label sd); (8.0, 12.0] A: n=322, rms change 3.94 kT/e (33% of label sd); (12.0, 20.0] A: n=442, rms change 3.21 kT/e (27% of label sd); (20.0, 1000000000.0] A: n=315, rms change 1.81 kT/e (15% of label sd)
+  [m8] (0.0, 4.0] A: n=8, rms change 26.97 kT/e (345% of label sd); (4.0, 6.0] A: n=56, rms change 13.74 kT/e (176% of label sd); (6.0, 8.0] A: n=141, rms change 6.33 kT/e (81% of label sd); (8.0, 12.0] A: n=322, rms change 2.57 kT/e (33% of label sd); (12.0, 20.0] A: n=442, rms change 2.34 kT/e (30% of label sd); (20.0, 1000000000.0] A: n=315, rms change 1.50 kT/e (19% of label sd)
+  [m12] (0.0, 4.0] A: n=8, rms change 7.91 kT/e (138% of label sd); (4.0, 6.0] A: n=56, rms change 6.12 kT/e (107% of label sd); (6.0, 8.0] A: n=141, rms change 3.63 kT/e (63% of label sd); (8.0, 12.0] A: n=322, rms change 2.10 kT/e (37% of label sd); (12.0, 20.0] A: n=442, rms change 1.60 kT/e (28% of label sd); (20.0, 1000000000.0] A: n=315, rms change 1.20 kT/e (21% of label sd)
+
+=== control mg0_r0.79 (same cavity, charge 0): this is the NON-charge part of the change ===
+  [m8] (0.0, 4.0] A: rms change 1.03 kT/e; (4.0, 6.0] A: rms change 1.38 kT/e; (6.0, 8.0] A: rms change 0.84 kT/e; (8.0, 12.0] A: rms change 0.33 kT/e; (12.0, 20.0] A: rms change 0.25 kT/e; (20.0, 1000000000.0] A: rms change 0.21 kT/e
+
+PLAIN READING (m8, first radius):
+  Median within-chain correlation 0.972: keeping Mg2+ barely reorders the residues. Ion-free labels are a harmless simplification for the within-chain audit; state it in one sentence.################ CONTROLS ernierna (pretrained file: /data/rna_electrostats/centered_latent_v3/ernierna/audit_variance_partition.csv)
+
+potential_at_c1prime_kT_e  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.003   random: -0.002   family: -0.003 [-0.006..+0.000, n=5]
+  shared           pretrained: +0.603   random: +0.368   family: +0.637 [+0.574..+0.742, n=5]
+  unique_controls  pretrained: +0.193   random: +0.428   family: +0.201 [+0.138..+0.243, n=5]
+  unexplained      pretrained: +0.202   random: +0.206   family: +0.164 [+0.121..+0.189, n=5]
+
+potential_mean_kT_e_12A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.015   random: +0.010   family: -0.003 [-0.010..+0.005, n=5]
+  shared           pretrained: +0.448   random: +0.069   family: +0.121 [+0.032..+0.213, n=5]
+  unique_controls  pretrained: +0.296   random: +0.674   family: +0.679 [+0.562..+0.763, n=5]
+  unexplained      pretrained: +0.241   random: +0.247   family: +0.204 [+0.182..+0.227, n=5]
+
+potential_mean_kT_e_4A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.001   random: -0.006   family: -0.004 [-0.010..+0.000, n=5]
+  shared           pretrained: +0.402   random: +0.076   family: +0.158 [+0.095..+0.204, n=5]
+  unique_controls  pretrained: +0.345   random: +0.671   family: +0.615 [+0.585..+0.666, n=5]
+  unexplained      pretrained: +0.252   random: +0.259   family: +0.231 [+0.210..+0.241, n=5]
+################ CONTROLS rnafm (pretrained file: /data/rna_electrostats/centered_latent_v3/rnafm/audit_variance_partition.csv)
+
+potential_at_c1prime_kT_e  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.003   random: -0.003   family: -0.003 [-0.006..+0.000, n=5]
+  shared           pretrained: +0.560   random: +0.508   family: +0.590 [+0.473..+0.739, n=5]
+  unique_controls  pretrained: +0.232   random: +0.283   family: +0.250 [+0.141..+0.358, n=5]
+  unexplained      pretrained: +0.211   random: +0.211   family: +0.163 [+0.121..+0.192, n=5]
+
+potential_mean_kT_e_12A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.002   random: +0.004   family: -0.001 [-0.008..+0.003, n=5]
+  shared           pretrained: +0.409   random: +0.074   family: +0.083 [+0.022..+0.142, n=5]
+  unique_controls  pretrained: +0.358   random: +0.692   family: +0.710 [+0.642..+0.767, n=5]
+  unexplained      pretrained: +0.235   random: +0.229   family: +0.209 [+0.183..+0.237, n=5]
+
+potential_mean_kT_e_4A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.003   random: +0.009   family: -0.004 [-0.008..+0.002, n=5]
+  shared           pretrained: +0.351   random: +0.085   family: +0.126 [+0.091..+0.180, n=5]
+  unique_controls  pretrained: +0.404   random: +0.670   family: +0.644 [+0.584..+0.669, n=5]
+  unexplained      pretrained: +0.248   random: +0.236   family: +0.234 [+0.211..+0.255, n=5]
+################ CONTROLS splicebert (pretrained file: /data/rna_electrostats/centered_latent_v3/splicebert/audit_variance_partition.csv)
+
+potential_at_c1prime_kT_e  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.003   random: -0.006   family: -0.002 [-0.004..+0.000, n=5]
+  shared           pretrained: +0.417   random: +0.512   family: +0.494 [+0.442..+0.562, n=5]
+  unique_controls  pretrained: +0.379   random: +0.284   family: +0.345 [+0.268..+0.379, n=5]
+  unexplained      pretrained: +0.208   random: +0.211   family: +0.164 [+0.122..+0.187, n=5]
+
+potential_mean_kT_e_12A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.014   random: +0.005   family: -0.005 [-0.010..+0.003, n=5]
+  shared           pretrained: +0.206   random: +0.074   family: +0.041 [-0.008..+0.111, n=5]
+  unique_controls  pretrained: +0.538   random: +0.670   family: +0.758 [+0.664..+0.796, n=5]
+  unexplained      pretrained: +0.242   random: +0.251   family: +0.205 [+0.179..+0.223, n=5]
+
+potential_mean_kT_e_4A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.004   random: -0.001   family: -0.002 [-0.004..-0.000, n=5]
+  shared           pretrained: +0.199   random: +0.093   family: +0.079 [+0.045..+0.133, n=5]
+  unique_controls  pretrained: +0.548   random: +0.654   family: +0.694 [+0.656..+0.717, n=5]
+  unexplained      pretrained: +0.249   random: +0.253   family: +0.229 [+0.211..+0.243, n=5]
+################ CONTROLS rnabert (pretrained file: /data/rna_electrostats/centered_latent_v3/rnabert/audit_variance_partition.csv)
+
+potential_at_c1prime_kT_e  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.002   random: -0.001   family: -0.002 [-0.005..+0.001, n=5]
+  shared           pretrained: +0.629   random: +0.631   family: +0.660 [+0.611..+0.739, n=5]
+  unique_controls  pretrained: +0.209   random: +0.206   family: +0.191 [+0.139..+0.222, n=5]
+  unexplained      pretrained: +0.164   random: +0.163   family: +0.151 [+0.125..+0.169, n=5]
+
+potential_mean_kT_e_12A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: +0.001   random: +0.005   family: -0.005 [-0.010..+0.001, n=5]
+  shared           pretrained: +0.111   random: +0.077   family: +0.011 [-0.011..+0.038, n=5]
+  unique_controls  pretrained: +0.672   random: +0.705   family: +0.791 [+0.754..+0.827, n=5]
+  unexplained      pretrained: +0.216   random: +0.212   family: +0.203 [+0.187..+0.220, n=5]
+
+potential_mean_kT_e_4A  [controls_geom_coulomb, micro]
+  unique_lm        pretrained: -0.001   random: -0.002   family: -0.005 [-0.008..-0.002, n=5]
+  shared           pretrained: +0.138   random: +0.117   family: +0.070 [+0.044..+0.089, n=5]
+  unique_controls  pretrained: +0.629   random: +0.650   family: +0.705 [+0.685..+0.732, n=5]
+  unexplained      pretrained: +0.234   random: +0.235   family: +0.229 [+0.211..+0.244, n=5]

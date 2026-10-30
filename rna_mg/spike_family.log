@@ -1,0 +1,12 @@
+nohup: ignoring input
+[run ] famspike_t0.5_fold0/ernierna  layer 11  10:09:59
+[run ] famspike_t0.5_fold1/ernierna  layer 11  10:18:09
+[run ] famspike_t0.5_fold2/ernierna  layer 11  10:26:26
+[run ] famspike_t0.5_fold3/ernierna  layer 11  10:34:55
+[run ] famspike_t0.5_fold4/ernierna  layer 11  10:44:21
+[run ] famspike_t0.5_fold0/rnafm  layer 11  10:52:39
+[run ] famspike_t0.5_fold1/rnafm  layer 11  10:59:27
+[run ] famspike_t0.5_fold2/rnafm  layer 11  11:06:50
+[run ] famspike_t0.5_fold3/rnafm  layer 11  11:14:31
+[run ] famspike_t0.5_fold4/rnafm  layer 11  11:21:45
+done. Next: bash run_spike_family_analysis.sh

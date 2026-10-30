@@ -1,0 +1,51 @@
+################ BENCH COULOMB (first line must say failed: 0)
+chains scored: 189 of 189 (failed: 0)
+median C1' RMSD 5.11 A, median C1'-lDDT 0.696
+
+[c1p] pred-vs-native within-chain Pearson: median 0.652 (95% CI 0.584..0.720); median W1/sd 0.497
+    vs RMSD-matched 'jitter' null (median 0.489): excess = pred - null median +0.085 (CI +0.052..+0.125); pred worse in 35% of chains; Wilcoxon p=1.13e-06
+    vs RMSD-matched 'jitterL' null (median 0.880): excess = pred - null median -0.161 (CI -0.207..-0.129); pred worse in 95% of chains; Wilcoxon p=1.5e-29
+    vs RMSD-matched 'smooth' null (median 0.452): excess = pred - null median +0.103 (CI +0.056..+0.169); pred worse in 32% of chains; Wilcoxon p=9.56e-12
+    vs RMSD-matched 'smoothL' null (median 0.739): excess = pred - null median -0.070 (CI -0.088..-0.047); pred worse in 76% of chains; Wilcoxon p=4.52e-11
+    Spearman(RMSD, pred Pearson) = -0.73; Spearman(lDDT, pred Pearson) = 0.77
+
+[m4] pred-vs-native within-chain Pearson: median 0.749 (95% CI 0.657..0.814); median W1/sd 0.336
+    vs RMSD-matched 'jitter' null (median 0.646): excess = pred - null median +0.046 (CI +0.017..+0.068); pred worse in 35% of chains; Wilcoxon p=1.45e-07
+    vs RMSD-matched 'jitterL' null (median 0.920): excess = pred - null median -0.146 (CI -0.203..-0.103); pred worse in 98% of chains; Wilcoxon p=1.69e-31
+    vs RMSD-matched 'smooth' null (median 0.604): excess = pred - null median +0.069 (CI +0.031..+0.114); pred worse in 32% of chains; Wilcoxon p=1.32e-09
+    vs RMSD-matched 'smoothL' null (median 0.834): excess = pred - null median -0.057 (CI -0.092..-0.039); pred worse in 77% of chains; Wilcoxon p=1.33e-15
+    Spearman(RMSD, pred Pearson) = -0.79; Spearman(lDDT, pred Pearson) = 0.82
+
+[m8] pred-vs-native within-chain Pearson: median 0.827 (95% CI 0.762..0.882); median W1/sd 0.245
+    vs RMSD-matched 'jitter' null (median 0.733): excess = pred - null median +0.043 (CI +0.024..+0.066); pred worse in 25% of chains; Wilcoxon p=3.89e-13
+    vs RMSD-matched 'jitterL' null (median 0.953): excess = pred - null median -0.118 (CI -0.155..-0.071); pred worse in 99% of chains; Wilcoxon p=2.69e-32
+    vs RMSD-matched 'smooth' null (median 0.715): excess = pred - null median +0.051 (CI +0.023..+0.087); pred worse in 32% of chains; Wilcoxon p=6.32e-10
+    vs RMSD-matched 'smoothL' null (median 0.899): excess = pred - null median -0.050 (CI -0.081..-0.026); pred worse in 81% of chains; Wilcoxon p=2.25e-18
+    Spearman(RMSD, pred Pearson) = -0.85; Spearman(lDDT, pred Pearson) = 0.88
+
+[m12] pred-vs-native within-chain Pearson: median 0.855 (95% CI 0.795..0.920); median W1/sd 0.198
+    vs RMSD-matched 'jitter' null (median 0.794): excess = pred - null median +0.034 (CI +0.018..+0.056); pred worse in 24% of chains; Wilcoxon p=1.25e-12
+    vs RMSD-matched 'jitterL' null (median 0.973): excess = pred - null median -0.110 (CI -0.142..-0.057); pred worse in 100% of chains; Wilcoxon p=9.14e-33
+    vs RMSD-matched 'smooth' null (median 0.797): excess = pred - null median +0.030 (CI +0.017..+0.053); pred worse in 31% of chains; Wilcoxon p=3.15e-08
+    vs RMSD-matched 'smoothL' null (median 0.933): excess = pred - null median -0.047 (CI -0.083..-0.021); pred worse in 84% of chains; Wilcoxon p=5.48e-22
+    Spearman(RMSD, pred Pearson) = -0.86; Spearman(lDDT, pred Pearson) = 0.89
+
+Null kinds: smooth/jitter are matched on C1' RMSD; smoothL/jitterL are matched on C1' lDDT.
+
+Interpretation guide:
+  excess < 0 with CI below 0 : the electrostatic map is damaged MORE than geometry error of the same size would predict -> the field carries information RMSD does not.
+  excess ~ 0                 : the map is just a function of RMSD; no added value over RMSD/lDDT.
+  excess > 0                 : predictions are electrostatically better than RMSD suggests.################ BENCH APBS
+chains scored: 0 of 189 (failed: 189)################ MG FULL
+cat: /data/rna_electrostats/mg_full/mg_sensitivity_summary.txt: No such file or directory
+################ LOGS (last lines)
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/home/feynman/projects/codes/rna_mg/predicted_structure_benchmark.py", line 59, in <module>
+    import pandas as pd
+ModuleNotFoundError: No module named 'pandas'
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/home/feynman/projects/codes/rna_mg/mg_sensitivity.py", line 56, in <module>
+    import pandas as pd
+ModuleNotFoundError: No module named 'pandas'

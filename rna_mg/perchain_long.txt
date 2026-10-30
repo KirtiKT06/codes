@@ -1,0 +1,46 @@
+                 target  pdb   chain    n  shared  shared_random  advantage  r2_lm  r2_lm_random  unique_lm
+potential_mean_kT_e_12A 28YE 28YE::B 1023   0.507         -0.100      0.607  0.502        -0.125     -0.005
+potential_mean_kT_e_12A 8A5I 8A5I::A 1023   0.729          0.123      0.606  0.742         0.125      0.012
+potential_mean_kT_e_12A 6YDP 6YDP::A  961   0.314         -0.277      0.591  0.369        -0.184      0.055
+potential_mean_kT_e_12A 7Z20 7Z20::b 1023   0.760          0.294      0.466  0.771         0.289      0.011
+potential_mean_kT_e_12A 8RD8 8RD8::A 1023   0.484          0.025      0.458  0.491         0.029      0.008
+potential_mean_kT_e_12A 6YDP 6YDP::C 1023   0.332         -0.124      0.455  0.387        -0.070      0.055
+potential_mean_kT_e_12A 9NL5 9NL5::A 1023   0.734          0.287      0.447  0.822         0.304      0.088
+potential_mean_kT_e_12A 9NL5 9NL5::C 1023   0.574          0.222      0.352  0.569         0.220     -0.005
+potential_mean_kT_e_12A 9IS7 9IS7::B  581   0.027         -0.194      0.221  0.016        -0.205     -0.011
+potential_mean_kT_e_12A 8RD8 8RD8::N 1023   0.368          0.190      0.179  0.367         0.188     -0.001
+ potential_mean_kT_e_4A 28YE 28YE::B 1023   0.461         -0.063      0.524  0.462        -0.071      0.001
+ potential_mean_kT_e_4A 8A5I 8A5I::A 1023   0.640          0.148      0.492  0.653         0.150      0.012
+ potential_mean_kT_e_4A 7Z20 7Z20::b 1023   0.683          0.192      0.491  0.683         0.187     -0.000
+ potential_mean_kT_e_4A 9NL5 9NL5::A 1023   0.728          0.256      0.472  0.716         0.219     -0.012
+ potential_mean_kT_e_4A 8RD8 8RD8::A 1023   0.458          0.014      0.444  0.466         0.023      0.008
+ potential_mean_kT_e_4A 6YDP 6YDP::A  961   0.230         -0.123      0.354  0.234        -0.118      0.003
+ potential_mean_kT_e_4A 9NL5 9NL5::C 1023   0.466          0.124      0.342  0.467         0.118      0.001
+ potential_mean_kT_e_4A 6YDP 6YDP::C 1023   0.255         -0.033      0.288  0.258        -0.023      0.004
+ potential_mean_kT_e_4A 8RD8 8RD8::N 1023   0.393          0.130      0.263  0.389         0.124     -0.004
+ potential_mean_kT_e_4A 9IS7 9IS7::B  581   0.137         -0.099      0.236  0.120        -0.107     -0.017
+
+wrote /data/rna_electrostats/controls_matched/analysis/perchain_long.csv
+                 target  pdb   chain    n  shared  shared_random  advantage  r2_lm  r2_lm_random  unique_lm
+potential_mean_kT_e_12A 9NL5 9NL5::A 1021   0.794          0.289      0.506  0.760         0.332     -0.034
+potential_mean_kT_e_12A 8A5I 8A5I::A 1021   0.611          0.158      0.452  0.616         0.160      0.005
+potential_mean_kT_e_12A 8RD8 8RD8::A 1021   0.419          0.010      0.409  0.411         0.018     -0.008
+potential_mean_kT_e_12A 9NL5 9NL5::C 1021   0.581          0.186      0.395  0.589         0.177      0.008
+potential_mean_kT_e_12A 7Z20 7Z20::b 1021   0.649          0.270      0.379  0.651         0.270      0.001
+potential_mean_kT_e_12A 8RD8 8RD8::N 1021   0.454          0.120      0.333  0.456         0.123      0.002
+potential_mean_kT_e_12A 6YDP 6YDP::C 1021   0.212         -0.031      0.243  0.225        -0.004      0.013
+potential_mean_kT_e_12A 6YDP 6YDP::A  961   0.172         -0.061      0.234  0.211        -0.037      0.039
+potential_mean_kT_e_12A 28YE 28YE::B 1021   0.193         -0.009      0.202  0.200        -0.016      0.007
+potential_mean_kT_e_12A 9IS7 9IS7::B  581  -0.015         -0.131      0.115 -0.017        -0.143     -0.002
+ potential_mean_kT_e_4A 8RD8 8RD8::A 1021   0.383          0.022      0.362  0.384         0.020      0.001
+ potential_mean_kT_e_4A 9NL5 9NL5::C 1021   0.504          0.150      0.354  0.495         0.145     -0.009
+ potential_mean_kT_e_4A 7Z20 7Z20::b 1021   0.581          0.229      0.352  0.598         0.230      0.017
+ potential_mean_kT_e_4A 9NL5 9NL5::A 1021   0.717          0.366      0.351  0.649         0.288     -0.068
+ potential_mean_kT_e_4A 8RD8 8RD8::N 1021   0.449          0.110      0.340  0.454         0.113      0.005
+ potential_mean_kT_e_4A 8A5I 8A5I::A 1021   0.478          0.188      0.290  0.484         0.189      0.006
+ potential_mean_kT_e_4A 28YE 28YE::B 1021   0.166         -0.001      0.167  0.216         0.026      0.050
+ potential_mean_kT_e_4A 6YDP 6YDP::C 1021   0.103         -0.038      0.141  0.104         0.015      0.002
+ potential_mean_kT_e_4A 6YDP 6YDP::A  961   0.119         -0.020      0.138  0.109         0.009     -0.010
+ potential_mean_kT_e_4A 9IS7 9IS7::B  581   0.100          0.000      0.100  0.103         0.003      0.002
+
+wrote /data/rna_electrostats/controls_matched/analysis/perchain_long.csv

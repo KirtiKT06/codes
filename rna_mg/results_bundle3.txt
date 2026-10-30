@@ -1,0 +1,64 @@
+################ BENCH APBS
+chains scored: 189 of 189 (failed: 0)
+median C1' RMSD 5.11 A, median C1'-lDDT 0.696
+
+[c1p] pred-vs-native within-chain Pearson: median 0.611 (95% CI 0.572..0.638); median W1/sd 0.429
+    vs RMSD-matched 'jitter' null (median 0.570): excess = pred - null median -0.052 (CI -0.155..+0.006); pred worse in 57% of chains; Wilcoxon p=0.000942
+    vs RMSD-matched 'jitterL' null (median 0.835): excess = pred - null median -0.249 (CI -0.264..-0.209); pred worse in 87% of chains; Wilcoxon p=9.27e-25
+    vs RMSD-matched 'smooth' null (median 0.389): excess = pred - null median +0.108 (CI +0.028..+0.162); pred worse in 39% of chains; Wilcoxon p=8.51e-06
+    vs RMSD-matched 'smoothL' null (median 0.685): excess = pred - null median -0.127 (CI -0.151..-0.078); pred worse in 74% of chains; Wilcoxon p=1e-10
+    Spearman(RMSD, pred Pearson) = -0.35; Spearman(lDDT, pred Pearson) = 0.46
+
+[m4] pred-vs-native within-chain Pearson: median 0.406 (95% CI 0.316..0.486); median W1/sd 0.970
+    vs RMSD-matched 'jitter' null (median 0.327): excess = pred - null median +0.018 (CI -0.018..+0.074); pred worse in 44% of chains; Wilcoxon p=0.0813
+    vs RMSD-matched 'jitterL' null (median 0.687): excess = pred - null median -0.222 (CI -0.261..-0.194); pred worse in 96% of chains; Wilcoxon p=2.58e-29
+    vs RMSD-matched 'smooth' null (median 0.298): excess = pred - null median +0.012 (CI -0.023..+0.083); pred worse in 48% of chains; Wilcoxon p=0.0878
+    vs RMSD-matched 'smoothL' null (median 0.580): excess = pred - null median -0.156 (CI -0.189..-0.126); pred worse in 84% of chains; Wilcoxon p=3.05e-21
+    Spearman(RMSD, pred Pearson) = -0.72; Spearman(lDDT, pred Pearson) = 0.71
+
+[m8] pred-vs-native within-chain Pearson: median 0.600 (95% CI 0.466..0.716); median W1/sd 0.725
+    vs RMSD-matched 'jitter' null (median 0.424): excess = pred - null median +0.091 (CI +0.049..+0.122); pred worse in 28% of chains; Wilcoxon p=5.43e-10
+    vs RMSD-matched 'jitterL' null (median 0.821): excess = pred - null median -0.166 (CI -0.205..-0.122); pred worse in 96% of chains; Wilcoxon p=2.11e-30
+    vs RMSD-matched 'smooth' null (median 0.438): excess = pred - null median +0.038 (CI +0.004..+0.088); pred worse in 40% of chains; Wilcoxon p=0.000551
+    vs RMSD-matched 'smoothL' null (median 0.695): excess = pred - null median -0.086 (CI -0.113..-0.067); pred worse in 74% of chains; Wilcoxon p=2.68e-13
+    Spearman(RMSD, pred Pearson) = -0.74; Spearman(lDDT, pred Pearson) = 0.76
+
+[m12] pred-vs-native within-chain Pearson: median 0.758 (95% CI 0.593..0.834); median W1/sd 0.613
+    vs RMSD-matched 'jitter' null (median 0.581): excess = pred - null median +0.054 (CI +0.022..+0.085); pred worse in 32% of chains; Wilcoxon p=8.75e-08
+    vs RMSD-matched 'jitterL' null (median 0.919): excess = pred - null median -0.147 (CI -0.200..-0.107); pred worse in 98% of chains; Wilcoxon p=2.09e-32
+    vs RMSD-matched 'smooth' null (median 0.555): excess = pred - null median +0.046 (CI +0.003..+0.079); pred worse in 41% of chains; Wilcoxon p=0.000135
+    vs RMSD-matched 'smoothL' null (median 0.793): excess = pred - null median -0.058 (CI -0.087..-0.036); pred worse in 70% of chains; Wilcoxon p=1.95e-10
+    Spearman(RMSD, pred Pearson) = -0.76; Spearman(lDDT, pred Pearson) = 0.80
+
+Null kinds: smooth/jitter are matched on C1' RMSD; smoothL/jitterL are matched on C1' lDDT.
+
+Interpretation guide:
+  excess < 0 with CI below 0 : the electrostatic map is damaged MORE than geometry error of the same size would predict -> the field carries information RMSD does not.
+  excess ~ 0                 : the map is just a function of RMSD; no added value over RMSD/lDDT.
+  excess > 0                 : predictions are electrostatically better than RMSD suggests.################ MG FULL
+structures analysed: 84; skipped: 26; failed: 10
+chains: 167; median ions per structure: 5; chains kept after dropping solver-mismatched rows
+
+=== mg_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 0.998 (IQR 0.990..0.999); RMSE of the within-chain change 2.18 kT/e; variance of the label changed 0.5% (median); global offset (mean change) +0.90 kT/e
+  [m4] chain-median Pearson 0.988 (IQR 0.953..0.998); RMSE of the within-chain change 1.59 kT/e; variance of the label changed 2.9% (median); global offset (mean change) +0.90 kT/e
+  [m8] chain-median Pearson 0.977 (IQR 0.914..0.993); RMSE of the within-chain change 1.72 kT/e; variance of the label changed 6.1% (median); global offset (mean change) +1.00 kT/e
+  [m12] chain-median Pearson 0.986 (IQR 0.948..0.994); RMSE of the within-chain change 1.12 kT/e; variance of the label changed 5.0% (median); global offset (mean change) +1.05 kT/e
+
+=== mg0_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 0.999 (IQR 0.999..1.000); RMSE of the within-chain change 1.16 kT/e; variance of the label changed 0.1% (median); global offset (mean change) -0.24 kT/e
+  [m4] chain-median Pearson 0.999 (IQR 0.997..0.999); RMSE of the within-chain change 0.51 kT/e; variance of the label changed 0.3% (median); global offset (mean change) -0.24 kT/e
+  [m8] chain-median Pearson 0.999 (IQR 0.998..1.000); RMSE of the within-chain change 0.33 kT/e; variance of the label changed 0.3% (median); global offset (mean change) -0.25 kT/e
+  [m12] chain-median Pearson 1.000 (IQR 0.999..1.000); RMSE of the within-chain change 0.19 kT/e; variance of the label changed 0.2% (median); global offset (mean change) -0.19 kT/e
+
+=== mg_r0.79: how the change depends on distance to the nearest Mg2+ (within-chain centred) ===
+  [c1p] (0.0, 4.0] A: n=36, rms change 104.03 kT/e (313% of label sd); (4.0, 6.0] A: n=258, rms change 15.78 kT/e (47% of label sd); (6.0, 8.0] A: n=1088, rms change 5.48 kT/e (16% of label sd); (8.0, 12.0] A: n=2369, rms change 3.09 kT/e (9% of label sd); (12.0, 20.0] A: n=2289, rms change 2.68 kT/e (8% of label sd); (20.0, 1000000000.0] A: n=2344, rms change 1.90 kT/e (6% of label sd)
+  [m4] (0.0, 4.0] A: n=36, rms change 66.48 kT/e (496% of label sd); (4.0, 6.0] A: n=258, rms change 16.55 kT/e (124% of label sd); (6.0, 8.0] A: n=1088, rms change 5.37 kT/e (40% of label sd); (8.0, 12.0] A: n=2369, rms change 2.47 kT/e (18% of label sd); (12.0, 20.0] A: n=2289, rms change 2.23 kT/e (17% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.54 kT/e (11% of label sd)
+  [m8] (0.0, 4.0] A: n=36, rms change 23.46 kT/e (230% of label sd); (4.0, 6.0] A: n=258, rms change 11.19 kT/e (110% of label sd); (6.0, 8.0] A: n=1088, rms change 6.32 kT/e (62% of label sd); (8.0, 12.0] A: n=2369, rms change 2.29 kT/e (22% of label sd); (12.0, 20.0] A: n=2289, rms change 1.98 kT/e (19% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.51 kT/e (15% of label sd)
+  [m12] (0.0, 4.0] A: n=36, rms change 8.59 kT/e (112% of label sd); (4.0, 6.0] A: n=258, rms change 5.06 kT/e (66% of label sd); (6.0, 8.0] A: n=1088, rms change 3.77 kT/e (49% of label sd); (8.0, 12.0] A: n=2369, rms change 1.99 kT/e (26% of label sd); (12.0, 20.0] A: n=2289, rms change 1.48 kT/e (19% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.24 kT/e (16% of label sd)
+
+=== control mg0_r0.79 (same cavity, charge 0): this is the NON-charge part of the change ===
+  [m8] (0.0, 4.0] A: rms change 0.65 kT/e; (4.0, 6.0] A: rms change 1.32 kT/e; (6.0, 8.0] A: rms change 1.31 kT/e; (8.0, 12.0] A: rms change 0.63 kT/e; (12.0, 20.0] A: rms change 0.37 kT/e; (20.0, 1000000000.0] A: rms change 0.29 kT/e
+
+PLAIN READING (m8, first radius):
+  Median within-chain correlation 0.977: keeping Mg2+ barely reorders the residues. Ion-free labels are a harmless simplification for the within-chain audit; state it in one sentence.

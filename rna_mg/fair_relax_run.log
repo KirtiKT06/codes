@@ -1,0 +1,199 @@
+[1/4] selecting chains with lDDT >= 0.9
+17:24:05 [INFO] Note: NumExpr detected 24 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 16.
+17:24:05 [INFO] NumExpr defaulting to 16 threads.
+17:24:05 [INFO] 18 chains with lDDT >= 0.90 in /data/rna_electrostats/bench_apbs_v2/chain_metrics.csv
+17:24:06 [INFO] prepared 18 chains in /data/rna_electrostats/fair_relax
+[2/4] relaxing native and predicted chains (1000 steps each), same protocol
+17:24:07 [INFO] Note: NumExpr detected 24 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+17:24:07 [INFO] NumExpr defaulting to 8 threads.
+17:24:08 [WARNING] Warning: importing 'simtk.openmm' is deprecated.  Import 'openmm' instead.
+17:24:08 [INFO]     AmberRelaxation: Using OpenCL
+17:24:08 [INFO] [1/18] relaxing 28JW_y/native
+17:24:08 [WARNING]    FAILED 28JW_y/native: No template found for residue 7 (U).  This might mean your input topology is missing some atoms or bonds, or possibly that you are using the wrong force field.
+17:24:08 [INFO] [1/18] relaxing 28JW_y/pred
+17:24:13 [INFO]     Minimizing ...
+17:24:59 [INFO]     Energy at Minima is -421255.886 kcal/mol
+17:24:59 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/28JW_y/pred_relaxed.pdb
+17:24:59 [INFO] [2/18] relaxing 2QUX_C/native
+17:25:01 [INFO]     Minimizing ...
+17:25:05 [INFO]     Energy at Minima is -78318.356 kcal/mol
+17:25:05 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_C/native_relaxed.pdb
+17:25:05 [INFO] [2/18] relaxing 2QUX_C/pred
+17:25:07 [INFO]     Minimizing ...
+17:25:11 [INFO]     Energy at Minima is -84322.434 kcal/mol
+17:25:12 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_C/pred_relaxed.pdb
+17:25:12 [INFO] [3/18] relaxing 2QUX_F/native
+17:25:14 [INFO]     Minimizing ...
+17:25:23 [INFO]     Energy at Minima is -136268.926 kcal/mol
+17:25:23 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_F/native_relaxed.pdb
+17:25:23 [INFO] [3/18] relaxing 2QUX_F/pred
+17:25:25 [INFO]     Minimizing ...
+17:25:30 [INFO]     Energy at Minima is -84419.403 kcal/mol
+17:25:30 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_F/pred_relaxed.pdb
+17:25:30 [INFO] [4/18] relaxing 2QUX_I/native
+17:25:32 [INFO]     Minimizing ...
+17:25:40 [INFO]     Energy at Minima is -129142.716 kcal/mol
+17:25:40 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_I/native_relaxed.pdb
+17:25:40 [INFO] [4/18] relaxing 2QUX_I/pred
+17:25:42 [INFO]     Minimizing ...
+17:25:47 [INFO]     Energy at Minima is -83839.269 kcal/mol
+17:25:47 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_I/pred_relaxed.pdb
+17:25:47 [INFO] [5/18] relaxing 2QUX_L/native
+17:25:49 [INFO]     Minimizing ...
+17:25:59 [INFO]     Energy at Minima is -140141.820 kcal/mol
+17:25:59 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_L/native_relaxed.pdb
+17:25:59 [INFO] [5/18] relaxing 2QUX_L/pred
+17:26:01 [INFO]     Minimizing ...
+17:26:06 [INFO]     Energy at Minima is -84919.709 kcal/mol
+17:26:06 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_L/pred_relaxed.pdb
+17:26:06 [INFO] [6/18] relaxing 2QUX_O/native
+17:26:07 [INFO]     Minimizing ...
+17:26:11 [INFO]     Energy at Minima is -76233.232 kcal/mol
+17:26:11 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_O/native_relaxed.pdb
+17:26:11 [INFO] [6/18] relaxing 2QUX_O/pred
+17:26:13 [INFO]     Minimizing ...
+17:26:17 [INFO]     Energy at Minima is -84482.986 kcal/mol
+17:26:18 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_O/pred_relaxed.pdb
+17:26:18 [INFO] [7/18] relaxing 2QUX_R/native
+17:26:19 [INFO]     Minimizing ...
+17:26:23 [INFO]     Energy at Minima is -74523.557 kcal/mol
+17:26:23 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_R/native_relaxed.pdb
+17:26:23 [INFO] [7/18] relaxing 2QUX_R/pred
+17:26:25 [INFO]     Minimizing ...
+17:26:31 [INFO]     Energy at Minima is -84294.336 kcal/mol
+17:26:31 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/2QUX_R/pred_relaxed.pdb
+17:26:31 [INFO] [8/18] relaxing 4K50_B/native
+17:26:35 [INFO]     Minimizing ...
+17:27:06 [INFO]     Energy at Minima is -280666.228 kcal/mol
+17:27:06 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/4K50_B/native_relaxed.pdb
+17:27:06 [INFO] [8/18] relaxing 4K50_B/pred
+17:27:09 [INFO]     Minimizing ...
+17:27:24 [INFO]     Energy at Minima is -205991.500 kcal/mol
+17:27:24 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/4K50_B/pred_relaxed.pdb
+17:27:24 [INFO] [9/18] relaxing 4K50_J/native
+17:27:28 [INFO]     Minimizing ...
+17:27:54 [INFO]     Energy at Minima is -282362.512 kcal/mol
+17:27:54 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/4K50_J/native_relaxed.pdb
+17:27:54 [INFO] [9/18] relaxing 4K50_J/pred
+17:27:57 [INFO]     Minimizing ...
+17:28:16 [INFO]     Energy at Minima is -206410.119 kcal/mol
+17:28:16 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/4K50_J/pred_relaxed.pdb
+17:28:16 [INFO] [10/18] relaxing 7QWQ_C/native
+17:28:26 [INFO]     Minimizing ...
+17:31:47 [INFO]     Energy at Minima is -762301.745 kcal/mol
+17:31:47 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7QWQ_C/native_relaxed.pdb
+17:31:47 [INFO] [10/18] relaxing 7QWQ_C/pred
+17:31:59 [INFO]     Minimizing ...
+17:39:31 [INFO]     Energy at Minima is -940182.720 kcal/mol
+17:39:31 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7QWQ_C/pred_relaxed.pdb
+17:39:31 [INFO] [11/18] relaxing 7Y7G_Z/native
+17:39:31 [WARNING]    FAILED 7Y7G_Z/native: No template found for residue 8 (U).  This might mean your input topology is missing some atoms or bonds, or possibly that you are using the wrong force field.
+17:39:31 [INFO] [11/18] relaxing 7Y7G_Z/pred
+17:39:37 [INFO]     Minimizing ...
+17:40:39 [INFO]     Energy at Minima is -406742.830 kcal/mol
+17:40:39 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Y7G_Z/pred_relaxed.pdb
+17:40:39 [INFO] [12/18] relaxing 7Y7G_b/native
+17:40:50 [INFO]     Minimizing ...
+17:45:13 [INFO]     Energy at Minima is -882710.325 kcal/mol
+17:45:13 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Y7G_b/native_relaxed.pdb
+17:45:13 [INFO] [12/18] relaxing 7Y7G_b/pred
+17:45:23 [INFO]     Minimizing ...
+17:49:38 [INFO]     Energy at Minima is -751446.522 kcal/mol
+17:49:38 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Y7G_b/pred_relaxed.pdb
+17:49:38 [INFO] [13/18] relaxing 7Z20_a/native
+17:49:47 [INFO]     Minimizing ...
+17:51:43 [INFO]     Energy at Minima is -575377.271 kcal/mol
+17:51:43 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Z20_a/native_relaxed.pdb
+17:51:43 [INFO] [13/18] relaxing 7Z20_a/pred
+17:51:53 [INFO]     Minimizing ...
+17:55:56 [INFO]     Energy at Minima is -757708.533 kcal/mol
+17:55:56 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Z20_a/pred_relaxed.pdb
+17:55:56 [INFO] [14/18] relaxing 7Z20_v/native
+17:56:04 [INFO]     Minimizing ...
+17:57:36 [INFO]     Energy at Minima is -523518.642 kcal/mol
+17:57:36 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Z20_v/native_relaxed.pdb
+17:57:36 [INFO] [14/18] relaxing 7Z20_v/pred
+17:57:42 [INFO]     Minimizing ...
+17:58:43 [INFO]     Energy at Minima is -402315.069 kcal/mol
+17:58:43 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/7Z20_v/pred_relaxed.pdb
+17:58:43 [INFO] [15/18] relaxing 9KU4_C/native
+17:58:48 [INFO]     Minimizing ...
+17:59:41 [INFO]     Energy at Minima is -300339.030 kcal/mol
+17:59:41 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9KU4_C/native_relaxed.pdb
+17:59:41 [INFO] [15/18] relaxing 9KU4_C/pred
+17:59:44 [INFO]     Minimizing ...
+18:00:06 [INFO]     Energy at Minima is -219340.225 kcal/mol
+18:00:06 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9KU4_C/pred_relaxed.pdb
+18:00:06 [INFO] [16/18] relaxing 9NL5_B/native
+18:00:13 [INFO]     Minimizing ...
+18:01:38 [INFO]     Energy at Minima is -516621.295 kcal/mol
+18:01:38 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9NL5_B/native_relaxed.pdb
+18:01:38 [INFO] [16/18] relaxing 9NL5_B/pred
+18:01:48 [INFO]     Minimizing ...
+18:05:48 [INFO]     Energy at Minima is -752171.188 kcal/mol
+18:05:48 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9NL5_B/pred_relaxed.pdb
+18:05:48 [INFO] [17/18] relaxing 9NO7_B/native
+18:05:58 [INFO]     Minimizing ...
+18:09:14 [INFO]     Energy at Minima is -755129.003 kcal/mol
+18:09:14 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9NO7_B/native_relaxed.pdb
+18:09:14 [INFO] [17/18] relaxing 9NO7_B/pred
+18:09:24 [INFO]     Minimizing ...
+18:12:56 [INFO]     Energy at Minima is -787649.140 kcal/mol
+18:12:56 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9NO7_B/pred_relaxed.pdb
+18:12:56 [INFO] [18/18] relaxing 9ZTL_b/native
+18:13:05 [INFO]     Minimizing ...
+18:14:46 [INFO]     Energy at Minima is -673286.628 kcal/mol
+18:14:46 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9ZTL_b/native_relaxed.pdb
+18:14:46 [INFO] [18/18] relaxing 9ZTL_b/pred
+18:14:56 [INFO]     Minimizing ...
+18:18:06 [INFO]     Energy at Minima is -750459.011 kcal/mol
+18:18:06 [INFO]     Export PDB file to /data/rna_electrostats/fair_relax/9ZTL_b/pred_relaxed.pdb
+18:18:06 [INFO] relax done; 2 failures
+[3/4] scoring with APBS
+18:18:07 [INFO] Note: NumExpr detected 24 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 16.
+18:18:07 [INFO] NumExpr defaulting to 16 threads.
+18:18:07 [INFO] 18 chains to score with APBS (4 solves each)
+18:18:08 [WARNING] 7Y7G_Z failed: FileNotFoundError: missing native_relaxed
+18:19:01 [WARNING] 28JW_y failed: FileNotFoundError: missing native_relaxed
+18:22:31 [INFO] scored: 16 ok, 2 failed -> /data/rna_electrostats/fair_relax/fair_chain_metrics.csv
+[4/4] report
+18:22:32 [INFO] Note: NumExpr detected 24 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 16.
+18:22:32 [INFO] NumExpr defaulting to 16 threads.
+chains scored: 16   median lDDT of the prediction: 0.937   median RMSD: 0.85 A
+
+                                        comparison  median_pearson   q25   q75  median_offset_kTe  median_abs_offset
+              A  pred raw vs native raw (original)           0.687 0.658 0.697            -40.033             40.033
+      B  pred relaxed vs native raw (earlier test)           0.869 0.842 0.925              5.474              5.474
+          C  pred relaxed vs native relaxed (FAIR)           0.902 0.896 0.914              0.560              2.370
+D  native relaxed vs native raw (relaxation alone)           0.952 0.898 0.966              4.043              4.043
+                     E  pred raw vs native relaxed           0.671 0.645 0.693            -47.636             47.636 
+
+                                        comparison  median_pearson   q25   q75  median_offset_kTe  median_abs_offset
+              A  pred raw vs native raw (original)           0.680 0.640 0.716            -18.456             18.456
+      B  pred relaxed vs native raw (earlier test)           0.310 0.226 0.552              6.522              6.522
+          C  pred relaxed vs native relaxed (FAIR)           0.377 0.245 0.514              1.191              1.191
+D  native relaxed vs native raw (relaxation alone)           0.703 0.660 0.825              4.561              4.561
+                     E  pred raw vs native relaxed           0.510 0.426 0.616            -23.017             23.017 
+
+                                        comparison  median_pearson   q25   q75  median_offset_kTe  median_abs_offset
+              A  pred raw vs native raw (original)           0.862 0.837 0.886             -3.393              3.393
+      B  pred relaxed vs native raw (earlier test)           0.700 0.659 0.756              4.423              4.423
+          C  pred relaxed vs native relaxed (FAIR)           0.707 0.609 0.785              0.556              0.644
+D  native relaxed vs native raw (relaxation alone)           0.822 0.714 0.943              2.848              2.848
+                     E  pred raw vs native relaxed           0.774 0.685 0.865             -5.952              5.952 
+
+                                        comparison  median_pearson   q25   q75  median_offset_kTe  median_abs_offset
+              A  pred raw vs native raw (original)           0.916 0.871 0.953             -2.690              2.690
+      B  pred relaxed vs native raw (earlier test)           0.873 0.858 0.894              2.574              2.574
+          C  pred relaxed vs native relaxed (FAIR)           0.852 0.822 0.896              0.336              0.336
+D  native relaxed vs native raw (relaxation alone)           0.902 0.845 0.936              1.883              1.883
+                     E  pred raw vs native relaxed           0.883 0.796 0.907             -4.452              4.452 
+
+C1' geometry, medians: {'geo_A_rmsd': np.float64(0.852), 'geo_A_lddt': np.float64(0.937), 'geo_C_rmsd': np.float64(1.49), 'geo_C_lddt': np.float64(0.796), 'geo_D_rmsd': np.float64(1.147), 'geo_D_lddt': np.float64(0.834), 'geo_pred_move_rmsd': np.float64(1.183), 'geo_pred_move_lddt': np.float64(0.81)}
+paired Wilcoxon, Pearson C minus A, c1p: median change +0.218, p = 3.05e-05
+paired Wilcoxon, Pearson C minus A, m4: median change -0.258, p = 0.00168
+paired Wilcoxon, Pearson C minus A, m8: median change -0.148, p = 0.00629
+paired Wilcoxon, Pearson C minus A, m12: median change -0.041, p = 0.0335
+
+How to read: D poor at C1'/4 A -> relaxation itself perturbs the maps (B was confounded). C high with offsets near 0 -> near-native predictions agree with the native once both are relaxed the same way (the gap was local strain). C still poor -> sub-angstrom placement differs beyond strain.
+report saved to /data/rna_electrostats/fair_relax/fair_report.txt ; per-chain table: /data/rna_electrostats/fair_relax/fair_chain_metrics.csv

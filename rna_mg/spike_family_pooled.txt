@@ -1,0 +1,74 @@
+skip rnabert (no famspike runs)
+=== pooled spike-in power, leave-family-out folds: rnafm
+ spike_type                  target              controls weighting  injected  recovered      lo      hi  n_chains
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.005    -0.0024 -0.0055  0.0009      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.010     0.0033  0.0002  0.0065      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.020     0.0094  0.0058  0.0137      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.050     0.0377  0.0316  0.0449      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.005    -0.0077 -0.0122 -0.0009      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.010    -0.0017 -0.0102  0.0106      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.020     0.0021 -0.0064  0.0124      1260
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.050     0.0188  0.0121  0.0295      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.005    -0.0045 -0.0063 -0.0026      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.010    -0.0015 -0.0033  0.0005      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.020     0.0003 -0.0021  0.0029      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.050     0.0125  0.0098  0.0156      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.005    -0.0014 -0.0059  0.0029      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.010    -0.0001 -0.0039  0.0040      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.020    -0.0039 -0.0099  0.0025      1260
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.050     0.0055 -0.0004  0.0111      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.005     0.0101  0.0071  0.0134      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.010     0.0184  0.0133  0.0244      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.020     0.0460  0.0395  0.0537      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.050     0.1131  0.0991  0.1305      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.005     0.0091  0.0051  0.0141      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.010     0.0037 -0.0090  0.0191      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.020     0.0295  0.0245  0.0363      1260
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.050     0.0585  0.0418  0.0868      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.005    -0.0021 -0.0037 -0.0003      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.010     0.0036  0.0013  0.0063      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.020     0.0129  0.0095  0.0166      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.050     0.0503  0.0433  0.0575      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.005    -0.0010 -0.0042  0.0036      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.010     0.0024 -0.0023  0.0071      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.020     0.0075  0.0015  0.0130      1260
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.050     0.0346  0.0262  0.0425      1260
+
+wrote /data/rna_electrostats/controls_matched/analysis/spike_family_pooled.csv
+skip splicebert (no famspike runs)
+=== pooled spike-in power, leave-family-out folds: ernierna
+ spike_type                  target              controls weighting  injected  recovered      lo      hi  n_chains
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.005     0.0016 -0.0007  0.0038      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.010     0.0026 -0.0001  0.0053      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.020     0.0076  0.0044  0.0109      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     macro     0.050     0.0280  0.0239  0.0324      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.005     0.0019 -0.0042  0.0072      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.010     0.0047 -0.0046  0.0112      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.020     0.0056  0.0014  0.0117      1263
+interaction potential_mean_kT_e_12A controls_geom_coulomb     micro     0.050     0.0191  0.0145  0.0250      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.005    -0.0045 -0.0061 -0.0029      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.010    -0.0042 -0.0062 -0.0022      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.020    -0.0024 -0.0041 -0.0005      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.050     0.0080  0.0056  0.0105      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.005    -0.0057 -0.0074 -0.0037      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.010    -0.0020 -0.0066  0.0019      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.020    -0.0012 -0.0056  0.0028      1263
+interaction  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.050     0.0118  0.0044  0.0207      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.005     0.0086  0.0054  0.0118      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.010     0.0221  0.0175  0.0276      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.020     0.0510  0.0433  0.0597      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     macro     0.050     0.1289  0.1124  0.1478      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.005     0.0091  0.0024  0.0136      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.010     0.0136  0.0076  0.0227      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.020     0.0340  0.0267  0.0438      1263
+     linear potential_mean_kT_e_12A controls_geom_coulomb     micro     0.050     0.0738  0.0538  0.1104      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.005    -0.0037 -0.0056 -0.0018      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.010     0.0039  0.0016  0.0061      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.020     0.0162  0.0132  0.0193      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     macro     0.050     0.0606  0.0535  0.0681      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.005    -0.0028 -0.0065  0.0010      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.010     0.0059  0.0026  0.0086      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.020     0.0146  0.0111  0.0177      1263
+     linear  potential_mean_kT_e_4A controls_geom_coulomb     micro     0.050     0.0482  0.0411  0.0581      1263
+
+wrote /data/rna_electrostats/controls_matched/analysis/spike_family_pooled.csv

@@ -39,6 +39,17 @@ packing, burial) are removed as well. That asks: do the models still agree after
 secondary structure and burial are taken out? --residualizer gbm removes them nonlinearly
 (stricter; slower).
 
+WHAT CHANGED IN v3
+------------------
+  * --control-groups struct dssr ctx coul : choose WHICH controls are removed before comparing models
+    (struct = pairing/packing/burial, dssr = real 3D annotation, ctx = +-2 neighbouring letters,
+    coul = point-charge Coulomb baseline). The old --controls flag still works (= struct).
+  * LABEL-SWAP CONTROL: run centered_latent_manifold.py with --swap-control, then run this script with
+        --variant swap_geom
+    (no controls). The latent axes are then fitted to NON-electrostatic structure (packing, burial,
+    pairing ...). If models agree on those as much as on the electrostatic axes, the agreement is
+    generic structure agreement and says nothing specific about electrostatics.
+
 Everything is fit on train+val residues and reported on TEST residues only. Pairs are
 formed on the residues BOTH models saw (rnabert truncates at 438 nt).
 
@@ -76,9 +87,12 @@ def load_scores(root: Path, model: str, variant: str):
     df = pd.read_csv(path, dtype={"pdb_id": str, "chain": str})
     z_cols = [c for c in df.columns if c.startswith("Z") and c[1:].isdigit()]
     nuis_cols = [c for c in df.columns if c.startswith("nuis_")]
-    ctrl_cols = [c for c in df.columns if c.startswith("ctrl_")]
+    groups = {"struct": [c for c in df.columns if c.startswith("ctrl_")],
+              "dssr": [c for c in df.columns if c.startswith("dssr_")],
+              "ctx": [c for c in df.columns if c.startswith("ctx_")],
+              "coul": [c for c in df.columns if c.startswith("coul_")]}
     df = df.rename(columns={c: f"{model}__{c}" for c in z_cols})
-    return df, [f"{model}__{c}" for c in z_cols], nuis_cols, ctrl_cols
+    return df, [f"{model}__{c}" for c in z_cols], nuis_cols, groups
 
 
 def within_chain_center(M: np.ndarray, chain_ids: np.ndarray) -> np.ndarray:
@@ -152,10 +166,18 @@ def main():
     ap.add_argument("--variant", default="centered_base_resid")
     ap.add_argument("--outdir", type=Path, required=True)
     ap.add_argument("--controls", action="store_true",
-                    help="Also remove the ctrl_* (pairing / packing / burial) columns from the scores")
+                    help="Shortcut for --control-groups struct")
+    ap.add_argument("--control-groups", nargs="+", default=[],
+                    choices=["struct", "dssr", "ctx", "coul"],
+                    help="Also remove these control groups from the scores: struct = pairing/packing/"
+                         "burial, dssr = DSSR features, ctx = +-k neighbouring letters, coul = point-"
+                         "charge Coulomb baseline. (Needs a scores file made WITH those tables.)")
     ap.add_argument("--residualizer", choices=["linear", "gbm"], default="linear")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
+    if args.controls and "struct" not in args.control_groups:
+        args.control_groups = ["struct"] + args.control_groups
+    use_controls = bool(args.control_groups)
     args.outdir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(args.seed)
 
@@ -163,25 +185,27 @@ def main():
 
     rows = []
     for a, b in itertools.combinations(args.models, 2):
-        dfA, zA, nuis_cols, ctrl_cols = data[a]
+        dfA, zA, nuis_cols, groups = data[a]
         dfB, zB, _, _ = data[b]
+        ctrl_cols = [c for g in args.control_groups for c in groups[g]]
         merged = dfA.merge(dfB[KEYS + zB], on=KEYS, how="inner")
         if merged.empty:
             log.warning("%s vs %s: no shared residues, skipping", a, b)
             continue
-        if args.controls and not ctrl_cols:
-            raise SystemExit("--controls given but the scores have no ctrl_* columns; "
-                             "rerun centered_latent_manifold.py with --structure-controls")
+        for g in args.control_groups:
+            if not groups[g]:
+                raise SystemExit(f"--control-groups {g}: the scores have no such columns; rerun "
+                                 "centered_latent_manifold.py with the matching table flag")
         splits = merged["split"].to_numpy()
         chain_ids = (merged["pdb_id"] + "::" + merged["chain"]).to_numpy()
         pdb_ids = merged["pdb_id"].to_numpy()
         k = min(len(zA), len(zB))
         ZA, ZB = merged[zA].to_numpy(), merged[zB].to_numpy()
         F_nuis = merged[nuis_cols].to_numpy()
-        F_all = merged[nuis_cols + (ctrl_cols if args.controls else [])].to_numpy()
+        F_all = merged[nuis_cols + ctrl_cols].to_numpy()
         n_test = int((splits == "test").sum())
         log.info("=== %s vs %s: %d shared residues (%d test), k=%d, controls=%s ===",
-                 a, b, len(merged), n_test, k, args.controls)
+                 a, b, len(merged), n_test, k, args.control_groups)
         if n_test < 100:
             log.warning("too few test residues, skipping pair")
             continue
@@ -217,14 +241,15 @@ def main():
 
         for cond, (A_mat, B_mat) in conditions.items():
             corrs = cca_test_correlations(A_mat, B_mat, splits, k)
-            rows.append({"model_a": a, "model_b": b, "condition": cond, "controls": args.controls,
+            rows.append({"model_a": a, "model_b": b, "condition": cond, "controls": "+".join(args.control_groups) or "none",
                          "residualizer": args.residualizer, "n_shared": len(merged), "n_test": n_test,
                          "mean_canonical_corr": float(np.mean(corrs)), **info,
                          **{f"cc{i + 1}": c for i, c in enumerate(corrs)}})
             log.info("  %-24s canonical corrs: %s", cond, " ".join(f"{c:.2f}" for c in corrs))
 
     summary = pd.DataFrame(rows)
-    suffix = args.variant + ("_ctrl_" + args.residualizer if args.controls else "")
+    suffix = args.variant + (("_ctrl_" + "-".join(args.control_groups) + "_" + args.residualizer)
+                             if use_controls else "")
     summary.to_csv(args.outdir / f"cross_model_agreement_{suffix}.csv", index=False)
     if not summary.empty:
         pivot = summary.pivot_table(index=["model_a", "model_b"], columns="condition",

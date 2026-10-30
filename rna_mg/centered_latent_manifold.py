@@ -35,6 +35,29 @@ CCA c1 0.2-0.3). v2 fixes this: the regressors are centered within each chain to
 zero mean inside every chain. Expected after the fix: the within-chain shuffle control
 is ~0 for all variants. If it is not, something chain-level is still leaking.
 
+WHAT CHANGED IN v3
+------------------
+  * --dssr-controls  : CSV from build_dssr_controls.py (real base pairs, stems, loops, multiplets,
+                       stacking, sugar pucker). Enables centered_dssr_gbm / centered_dssr_ctx_gbm.
+  * --coulomb-table  : CSV from coulomb_residual_test.py (point-charge screened-Coulomb baseline).
+                       Enables centered_coulomb_resid (linear) and centered_dssr_ctx_coulomb_gbm.
+  * centered_ctx_gbm : removes what the +-2 neighbouring LETTERS predict (local sequence context).
+  * --audit          : macro (chain-weighted) R^2, structure-level bootstrap CIs, an apples-to-apples
+                       variance partition (same learner for controls / LM / both), and a nonlinear
+                       LM probe. Writes audit_probe_r2.csv and audit_variance_partition.csv.
+  * --swap-control   : fits PLS axes to NON-electrostatic structural targets and saves them as
+                       variant `swap_geom`, so cross_model_latent_agreement.py can show whether
+                       agreement between models is specific to electrostatics or generic structure.
+
+WHAT CHANGED IN v4
+------------------
+  * --random-init [--random-seed N] : same architecture and tokenizer, RANDOM weights (never pretrained).
+                       Use --layer to match the pretrained run. See latent_controls.py.
+  * --family-table CSV --family-folds K --family-fold i : leave-family-out split. Whole RNA families go
+                       to train or to test; structures that straddle are dropped. Needs a CSV with
+                       pdb_id, chain, family (see build_family_table.py). Writes family_split_*.
+                       Everything downstream (layer choice, PLS, audit) then uses this split.
+
 IMPORTANT LIMITS
   * Linear removal of letter / length / end-distance; longer k-mer context is NOT removed.
   * Chain means are computed over the residues the LM actually saw
@@ -97,10 +120,23 @@ DELTA_NAME = "local_minus_global_4A_12A"
 ALL_TARGETS = BASE_TARGETS + [DELTA_NAME]
 
 LINEAR_VARIANTS = ["raw", "centered", "centered_base_resid", "centered_nuisance_resid"]
-GBM_VARIANTS = ["centered_ss_gbm", "centered_struct_gbm"]
-ALL_VARIANTS = LINEAR_VARIANTS + GBM_VARIANTS
+# variants that need extra inputs: name -> (feature blocks used for removal, tables it needs)
+#   blocks: F=letter/length/ends, ss=predicted pairing, struct=pairing+3D packing, dssr, ctx=+-k letters, coul
+GBM_SPEC = {
+    "centered_ss_gbm": (["F", "ss"], {"struct"}),
+    "centered_struct_gbm": (["F", "struct"], {"struct"}),
+    "centered_ctx_gbm": (["F", "ctx"], set()),
+    "centered_dssr_gbm": (["F", "struct", "dssr"], {"struct", "dssr"}),
+    "centered_dssr_ctx_gbm": (["F", "struct", "dssr", "ctx"], {"struct", "dssr"}),
+    "centered_dssr_ctx_coulomb_gbm": (["F", "struct", "dssr", "ctx", "coul"], {"struct", "dssr", "coul"}),
+}
+GBM_VARIANTS = list(GBM_SPEC)
+COULOMB_LINEAR = "centered_coulomb_resid"      # linear removal of the point-charge baseline (+letters)
+ALL_VARIANTS = LINEAR_VARIANTS + GBM_VARIANTS + [COULOMB_LINEAR]
 DEFAULT_VARIANTS = ["centered", "centered_base_resid", "centered_nuisance_resid"]
 BASES = ["A", "C", "G", "U"]
+SWAP_TARGETS = ["n_neighbors_8A", "burial_proxy", "dist_nearest_P_other", "prob_paired",
+                "n_tertiary_neighbors_5A"]
 
 KEYS = ["pdb_id", "chain", "seq_index"]
 SS_COLS = ["is_paired_mfe", "prob_paired"]
@@ -154,13 +190,24 @@ def build_nuisance_features(pdb_groups, chain_groups, seq_indices, base_ids, lab
     return F, names
 
 
-def load_controls(path: Path, pdb_groups, chain_groups, seq_indices):
-    """Look up the structure-control features for every residue we hold.
-    Returns (C, ok): C is (n, len(CONTROL_COLS)); ok marks rows where ALL controls exist."""
+def load_controls(path: Path, pdb_groups, chain_groups, seq_indices, required=None, prefix=None):
+    """Look up a control table (structure / DSSR / Coulomb) for every residue we hold.
+    required: exact column list the table must contain (structure controls);
+    prefix:   keep only columns that start with this (Coulomb table also holds label columns);
+    neither:  keep every non-key column (DSSR table).
+    Returns (C, ok, cols): C is (n, len(cols)); ok marks rows where ALL columns exist."""
     ctrl = pd.read_csv(path, dtype={"pdb_id": str, "chain": str})
-    missing = [c for c in KEYS + CONTROL_COLS if c not in ctrl.columns]
-    if missing:
-        raise ValueError(f"{path} is missing columns: {missing}")
+    if required is not None:
+        missing = [c for c in KEYS + required if c not in ctrl.columns]
+        if missing:
+            raise ValueError(f"{path} is missing columns: {missing}")
+        cols = list(required)
+    elif prefix is not None:
+        cols = [c for c in ctrl.columns if c.startswith(prefix)]
+        if not cols:
+            raise ValueError(f"{path} has no columns starting with '{prefix}'")
+    else:
+        cols = [c for c in ctrl.columns if c not in KEYS]
     ctrl["seq_index"] = ctrl["seq_index"].astype(int)
     ctrl = ctrl.drop_duplicates(KEYS)
     keys = pd.DataFrame({
@@ -168,10 +215,36 @@ def load_controls(path: Path, pdb_groups, chain_groups, seq_indices):
         "chain": [c.split("::", 1)[1] for c in chain_groups],
         "seq_index": np.asarray(seq_indices).astype(int),
     })
-    merged = keys.merge(ctrl[KEYS + CONTROL_COLS], on=KEYS, how="left")  # left merge keeps row order
-    C = merged[CONTROL_COLS].to_numpy(dtype=float)
+    merged = keys.merge(ctrl[KEYS + cols], on=KEYS, how="left")  # left merge keeps row order
+    C = merged[cols].to_numpy(dtype=float)
     ok = ~np.isnan(C).any(axis=1)
-    return C, ok
+    return C, ok, cols
+
+
+def build_context_features(chain_groups, seq_indices, labels_dir, pdb_groups, window=2):
+    """One-hot letters at offsets -window..-1,+1..+window around each residue (zeros past a chain end).
+    Local SEQUENCE context only -- the thing a language model is built to read. Removing what it
+    predicts tests whether the LM adds anything beyond 'which letters are next door'."""
+    codes = {"A": 0, "C": 1, "G": 2, "U": 3}
+    fasta: dict[str, dict] = {p: load_fasta_by_chain(labels_dir, p) for p in np.unique(pdb_groups)}
+    n = len(seq_indices)
+    offsets = [o for o in range(-window, window + 1) if o != 0]
+    ctx = np.zeros((n, 4 * len(offsets)))
+    names = [f"ctx_{'m' if o < 0 else 'p'}{abs(o)}_{b}" for o in offsets for b in BASES]
+    groups = pd.Series(np.arange(n)).groupby(np.asarray(chain_groups)).indices
+    for cg, idx in groups.items():
+        pdb, chain = cg.split("::", 1)
+        seq = fasta[pdb].get(chain, "").upper().replace("T", "U")
+        arr = np.array([codes.get(ch, 4) for ch in seq], dtype=int)
+        L = len(arr)
+        si = np.asarray(seq_indices)[idx].astype(int)
+        for oi, o in enumerate(offsets):
+            pos = si + o
+            inside = (pos >= 0) & (pos < L)
+            c = np.where(inside, arr[np.clip(pos, 0, max(L - 1, 0))] if L else 4, 4)
+            for b in range(4):
+                ctx[idx, oi * 4 + b] = (c == b)
+    return ctx, names
 
 
 def residualize(Y: np.ndarray, F: np.ndarray, splits: np.ndarray, chain_ids: np.ndarray) -> np.ndarray:
@@ -271,8 +344,201 @@ def save_scores(path: Path, H, pls, meta: dict, F, F_names, Y, targets):
 
 
 # ----------------------------------------------------------------------
+# Audit: macro R^2, bootstrap, variance partition, nonlinear LM probe
+# ----------------------------------------------------------------------
+
+def structure_stats(y, pred, chain_ids, pdb_ids) -> pd.DataFrame:
+    """Per-structure sufficient statistics so R^2 can be bootstrapped cheaply.
+    sse/sst  : micro (every residue counts equally)
+    sse_m/sst_m : each CHAIN contributes its mean squared error/variance (every chain counts equally),
+                  so one 3000-nt rRNA cannot outvote 500 tRNAs."""
+    df = pd.DataFrame({"pdb": pdb_ids, "chain": chain_ids, "se": (y - pred) ** 2, "s2": y ** 2})
+    g = df.groupby(["pdb", "chain"]).agg(sse=("se", "sum"), sst=("s2", "sum"), n=("se", "size")).reset_index()
+    g["sse_m"], g["sst_m"] = g["sse"] / g["n"], g["sst"] / g["n"]
+    return g.groupby("pdb")[["sse", "sst", "sse_m", "sst_m"]].sum().sort_index()
+
+
+def chain_stats(y, pred, chain_ids, pdb_ids) -> pd.DataFrame:
+    """Per-CHAIN sums (pdb, chain, n, sse, sst). Saved by the audit so later analyses (chain-length bins,
+    paired bootstraps between runs) can be done offline without refitting anything."""
+    df = pd.DataFrame({"pdb": pdb_ids, "chain": chain_ids, "se": (y - pred) ** 2, "s2": y ** 2})
+    return df.groupby(["pdb", "chain"]).agg(sse=("se", "sum"), sst=("s2", "sum"), n=("se", "size")).reset_index()
+
+
+def r2_micro_macro(stats: pd.DataFrame, w: np.ndarray):
+    return (1.0 - float(w @ stats["sse"].to_numpy()) / float(w @ stats["sst"].to_numpy()),
+            1.0 - float(w @ stats["sse_m"].to_numpy()) / float(w @ stats["sst_m"].to_numpy()))
+
+
+def run_audit(H, Y_cen, blocks: dict, splits, chain_groups, pdb_groups, targets_all, audit_targets,
+              outdir: Path, seed=0, n_boot=500, pca_dim=64):
+    """Same learner (gradient boosting) for controls, LM and both, so the partition is not
+    biased by 'linear probe vs nonlinear controls'. The linear full-embedding ridge is reported
+    alongside as a separate row."""
+    from sklearn.decomposition import PCA
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.linear_model import RidgeCV
+    from sklearn.preprocessing import StandardScaler
+
+    train, test = splits == "train", splits == "test"
+    rng = np.random.default_rng(seed)
+
+    scaler = StandardScaler().fit(H[train])
+    pca = PCA(n_components=min(pca_dim, H.shape[1]), random_state=seed).fit(scaler.transform(H[train]))
+    Hp = pca.transform(scaler.transform(H))
+    lm_feats = np.column_stack([Hp, within_chain_center(Hp, chain_groups)])
+    log.info("AUDIT: LM reduced to %d PCs (%.1f%% of embedding variance on train)",
+             Hp.shape[1], 100 * pca.explained_variance_ratio_.sum())
+
+    def view(names):
+        M = np.column_stack([blocks[n] for n in names])
+        return np.column_stack([M, within_chain_center(M, chain_groups)])
+
+    ctrl_sets = {"controls_geom": [n for n in ("F", "struct", "dssr", "ctx") if n in blocks]}
+    if "coul" in blocks:
+        ctrl_sets["controls_geom_coulomb"] = ctrl_sets["controls_geom"] + ["coul"]
+
+    def gbm_pred(X, y):
+        m = HistGradientBoostingRegressor(max_iter=150, learning_rate=0.1, max_leaf_nodes=31,
+                                          min_samples_leaf=200, early_stopping=False, random_state=seed)
+        return m.fit(X[train], y[train]).predict(X[test])
+
+    # linear full-embedding ridge (all targets at once)
+    ridge = RidgeCV(alphas=np.logspace(-3, 3, 13)).fit(scaler.transform(H[train]), Y_cen[train])
+    ridge_pred = ridge.predict(scaler.transform(H[test]))
+
+    pdb_t, chain_t = np.asarray(pdb_groups)[test], np.asarray(chain_groups)[test]
+    rows, part_rows, chain_rows = [], [], []
+    for t in audit_targets:
+        j = targets_all.index(t)
+        y = Y_cen[:, j]
+        preds = {"lm_ridge_full": ridge_pred[:, j], "lm_gbm_pca": gbm_pred(lm_feats, y)}
+        for cname, names in ctrl_sets.items():
+            Xc = view(names)
+            preds[cname] = gbm_pred(Xc, y)
+            preds[f"{cname}+lm"] = gbm_pred(np.column_stack([Xc, lm_feats]), y)
+            log.info("  AUDIT %-28s %-24s fitted", t, cname)
+        stats = {k: structure_stats(y[test], p, chain_t, pdb_t) for k, p in preds.items()}
+        for k, p in preds.items():
+            chain_rows.append(chain_stats(y[test], p, chain_t, pdb_t).assign(target=t, predictors=k))
+        S = len(next(iter(stats.values())))
+        boots = [np.bincount(rng.integers(0, S, S), minlength=S).astype(float) for _ in range(n_boot)]
+        ones = np.ones(S)
+
+        def ci(fn):
+            vals = np.array([fn(w) for w in boots])
+            return float(np.percentile(vals, 2.5)), float(np.percentile(vals, 97.5))
+
+        for k, st in stats.items():
+            mi, ma = r2_micro_macro(st, ones)
+            lo_i, hi_i = ci(lambda w: r2_micro_macro(st, w)[0])
+            lo_a, hi_a = ci(lambda w: r2_micro_macro(st, w)[1])
+            rows.append({"target": t, "predictors": k, "micro_r2": mi, "micro_lo": lo_i, "micro_hi": hi_i,
+                         "macro_r2": ma, "macro_lo": lo_a, "macro_hi": hi_a, "n_test_structures": S})
+            log.info("  AUDIT %-26s %-28s micro R2 %.3f [%.3f, %.3f] | macro R2 %.3f [%.3f, %.3f]",
+                     t, k, mi, lo_i, hi_i, ma, lo_a, hi_a)
+
+        # variance partition (paired bootstrap: same resampled structures for every model)
+        for cname in ctrl_sets:
+            for kind, idx in (("micro", 0), ("macro", 1)):
+                def comp(w):
+                    rc = r2_micro_macro(stats[cname], w)[idx]
+                    rl = r2_micro_macro(stats["lm_gbm_pca"], w)[idx]
+                    rb = r2_micro_macro(stats[f"{cname}+lm"], w)[idx]
+                    return np.array([rb - rc, rb - rl, rc + rl - rb, 1.0 - rb])  # unique LM, unique ctrl, shared, unexplained
+                point = comp(ones)
+                bs = np.array([comp(w) for w in boots])
+                for name, v, lo, hi in zip(["unique_lm", "unique_controls", "shared", "unexplained"], point,
+                                           np.percentile(bs, 2.5, axis=0), np.percentile(bs, 97.5, axis=0)):
+                    part_rows.append({"target": t, "controls": cname, "weighting": kind, "component": name,
+                                      "value": float(v), "lo": float(lo), "hi": float(hi)})
+    outdir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(outdir / "audit_probe_r2.csv", index=False)
+    pd.concat(chain_rows, ignore_index=True).to_csv(outdir / "audit_chain_stats.csv.gz", index=False,
+                                                    compression="gzip")
+    pd.DataFrame(part_rows).to_csv(outdir / "audit_variance_partition.csv", index=False)
+    log.info("AUDIT written to %s", outdir)
+
+
+def run_swap_control(H, F, C_struct, chain_groups, splits, meta, F_save, F_save_names, k, outdir: Path):
+    """Label-swap control for the cross-model agreement test. Same embeddings, same PLS machinery,
+    but the targets are NON-electrostatic structural quantities (packing, burial, distance to the
+    nearest other phosphate, predicted pairing, tertiary contacts), centered within chain and
+    stripped of letter identity. If models agree on THESE axes as strongly as on the electrostatic
+    axes, the agreement is generic 'structure' agreement, not something specific to electrostatics."""
+    from sklearn.cross_decomposition import PLSRegression
+    from sklearn.metrics import r2_score
+    j = [CONTROL_COLS.index(c) for c in SWAP_TARGETS]
+    Y = within_chain_center(C_struct[:, j], chain_groups)
+    Y = residualize(Y, F[:, :4], splits, chain_groups)
+    fit, test = splits != "test", splits == "test"
+    pls = PLSRegression(n_components=k, scale=True).fit(H[fit], Y[fit])
+    r2 = r2_score(Y[test], pls.predict(H[test]), multioutput="raw_values")
+    for c, v in zip(SWAP_TARGETS, r2):
+        log.info("  swap target %-26s PLS(k=%d) test R^2 = %.3f", c, k, v)
+    vdir = outdir / "swap_geom"
+    vdir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"target": SWAP_TARGETS, "pls_test_r2": r2}).to_csv(vdir / "swap_pls_test_r2.csv", index=False)
+    save_scores(vdir / "scores.csv.gz", H, pls, meta, F_save, F_save_names, Y, [f"swap_{c}" for c in SWAP_TARGETS])
+
+
+# ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
+
+def run_spike_in(H, Y_cen, blocks, splits, chain_groups, pdb_groups, targets_all, args):
+    """Power analysis. Adds to the label a synthetic signal that (i) is a function of the LM embedding only and
+    (ii) has been made unpredictable from the controls, with a known share f of the final label variance, then
+    reruns the audit and reports how much `unique_lm` it recovers."""
+    from sklearn.decomposition import PCA
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.preprocessing import StandardScaler
+
+    train, test = splits == "train", splits == "test"
+    scaler = StandardScaler().fit(H[train])
+    pca = PCA(n_components=min(args.pca_dim, H.shape[1]), random_state=args.seed).fit(scaler.transform(H[train]))
+    Hp = pca.transform(scaler.transform(H))
+    Hp = Hp / Hp[train].std(0)
+    names = [n for n in ("F", "struct", "dssr", "ctx", "coul") if n in blocks]
+    M = np.column_stack([blocks[n] for n in names])
+    Xc = np.column_stack([M, within_chain_center(M, chain_groups)])
+    k = max(1, min(16, Hp.shape[1] // 2))
+    all_rows = []
+    for stype in args.spike_type:
+        rng = np.random.default_rng(args.seed + 17)
+        w1, w2 = rng.normal(size=k), rng.normal(size=k)
+        if stype == "linear":
+            s = Hp[:, :k] @ w1                                   # a probe that is linear in the PCs can find it
+        else:
+            s = np.tanh(Hp[:, :k] @ w1) * (Hp[:, k:2 * k] @ w2)  # an interaction: needs a nonlinear probe
+        s = within_chain_center(s[:, None], chain_groups)[:, 0]
+        gb = HistGradientBoostingRegressor(max_iter=150, learning_rate=0.1, max_leaf_nodes=31,
+                                           min_samples_leaf=200, early_stopping=False, random_state=args.seed)
+        s_perp = s - gb.fit(Xc[train], s[train]).predict(Xc)    # remove whatever the controls can predict
+        r2_ctrl = 1.0 - float(np.var(s_perp[test]) / max(np.var(s[test]), 1e-12))
+        s_perp = s_perp / s_perp[train].std()
+        log.info("SPIKE-IN (%s): controls explained %.1f%% of the raw synthetic signal before it was removed",
+                 stype, 100 * r2_ctrl)
+        for t in args.spike_targets:
+            j = targets_all.index(t)
+            sd = float(Y_cen[train, j].std())
+            for f in args.spike_fractions:
+                Y_s = Y_cen.copy()
+                Y_s[:, j] = Y_cen[:, j] + sd * np.sqrt(f / (1.0 - f)) * s_perp   # signal = share f of total variance
+                sub = args.outdir / f"spike_{stype}_{t}_f{f:g}"
+                run_audit(H, Y_s, blocks, splits, chain_groups, pdb_groups, targets_all, [t], sub,
+                          seed=args.seed, n_boot=args.spike_n_boot, pca_dim=args.pca_dim)
+                P = pd.read_csv(sub / "audit_variance_partition.csv")
+                P = P[P.component == "unique_lm"].assign(injected=f, spike_type=stype,
+                                                         control_explained_raw_signal=r2_ctrl)
+                all_rows.append(P)
+                for _, r in P.iterrows():
+                    log.info("  spike %-11s %-26s f=%-6g %-24s %-5s recovered unique_lm = %+.4f [%+.4f, %+.4f]",
+                             stype, t, f, r.controls, r.weighting, r.value, r.lo, r.hi)
+    out = pd.concat(all_rows, ignore_index=True)
+    out.to_csv(args.outdir / "spike_in_summary.csv", index=False)
+    log.info("SPIKE-IN written to %s", args.outdir / "spike_in_summary.csv")
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -280,18 +546,41 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--outdir", type=Path, required=True)
     ap.add_argument("--structure-controls", type=Path, default=None,
-                    help="CSV from build_structure_controls.py. Enables the *_gbm variants. "
-                         "ALL variants are then restricted to residues that have every control, "
-                         "so they stay comparable.")
+                    help="CSV from build_structure_controls.py (pairing + packing/burial).")
+    ap.add_argument("--dssr-controls", type=Path, default=None, help="CSV from build_dssr_controls.py")
+    ap.add_argument("--coulomb-table", type=Path, default=None, help="CSV from coulomb_residual_test.py")
+    ap.add_argument("--context-window", type=int, default=2, help="+-k neighbouring letters for *_ctx_* variants")
     ap.add_argument("--variants", nargs="+", default=None, choices=ALL_VARIANTS,
-                    help="Default: centered, centered_base_resid, centered_nuisance_resid "
-                         "(+ the two *_gbm variants when --structure-controls is given)")
+                    help="Default: centered, centered_base_resid, centered_nuisance_resid, plus every "
+                         "extra variant whose tables you supplied.")
     ap.add_argument("--layer", type=int, default=None, help="Skip layer selection and use this layer")
     ap.add_argument("--selection-variant", default="centered_base_resid", choices=ALL_VARIANTS,
                     help="Which target variant decides the layer when --layer is not given")
     ap.add_argument("--pls-components", type=int, nargs="+", default=[1, 2, 3, 5, 8, 10, 15])
     ap.add_argument("--interpret-k", type=int, default=5)
     ap.add_argument("--cca-components", type=int, default=5)
+    ap.add_argument("--audit", action="store_true",
+                    help="Macro R^2 + bootstrap CIs + shared/unique variance partition + nonlinear LM probe")
+    ap.add_argument("--audit-targets", nargs="+",
+                    default=["potential_at_c1prime_kT_e", "potential_mean_kT_e_4A", "potential_mean_kT_e_12A"])
+    ap.add_argument("--n-boot", type=int, default=500)
+    ap.add_argument("--pca-dim", type=int, default=64)
+    ap.add_argument("--spike-fractions", type=float, nargs="*", default=[],
+                    help="Power analysis: inject a synthetic LM-only signal with these shares of the label variance "
+                         "and report how much unique_lm the audit recovers (requires --audit)")
+    ap.add_argument("--spike-type", nargs="+", default=["linear"], choices=["linear", "interaction"])
+    ap.add_argument("--spike-targets", nargs="+", default=["potential_mean_kT_e_12A"])
+    ap.add_argument("--spike-n-boot", type=int, default=100)
+    ap.add_argument("--swap-control", action="store_true",
+                    help="Also save non-electrostatic PLS axes as variant `swap_geom` (needs --structure-controls)")
+    ap.add_argument("--random-init", action="store_true",
+                    help="Control: random (not pretrained) weights, same architecture")
+    ap.add_argument("--random-seed", type=int, default=0)
+    ap.add_argument("--family-table", type=Path, default=None,
+                    help="CSV pdb_id,chain,family -> leave-family-out split (see build_family_table.py)")
+    ap.add_argument("--family-folds", type=int, default=5)
+    ap.add_argument("--family-fold", type=int, default=0, help="which fold is the held-out test set")
+    ap.add_argument("--family-straddle", choices=["drop", "longest"], default="drop")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--max-len", type=int, default=1024)
@@ -300,11 +589,25 @@ def main():
     args = ap.parse_args()
     args.outdir.mkdir(parents=True, exist_ok=True)
 
+    have = {"struct": args.structure_controls is not None, "dssr": args.dssr_controls is not None,
+            "coul": args.coulomb_table is not None}
+    have_set = {k for k, v in have.items() if v}
+
+    def available(v):
+        if v == COULOMB_LINEAR:
+            return "coul" in have_set
+        return v not in GBM_SPEC or GBM_SPEC[v][1] <= have_set
+
     if args.variants is None:
-        args.variants = DEFAULT_VARIANTS + (GBM_VARIANTS if args.structure_controls else [])
-    needs_controls = [v for v in args.variants + [args.selection_variant] if v in GBM_VARIANTS]
-    if needs_controls and args.structure_controls is None:
-        ap.error(f"variant(s) {sorted(set(needs_controls))} need --structure-controls")
+        args.variants = DEFAULT_VARIANTS + ([v for v in GBM_VARIANTS + [COULOMB_LINEAR] if available(v)]
+                                             if have_set else [])
+    unavailable = [v for v in set(args.variants + [args.selection_variant]) if not available(v)]
+    if unavailable:
+        need = {v: sorted(GBM_SPEC[v][1]) if v in GBM_SPEC else ["coul"] for v in unavailable}
+        ap.error(f"these variants need extra tables: {need}  (flags: struct=--structure-controls, "
+                 f"dssr=--dssr-controls, coul=--coulomb-table)")
+    if args.swap_control and not have["struct"]:
+        ap.error("--swap-control needs --structure-controls")
 
     import torch
     device = args.device if torch.cuda.is_available() or args.device == "cpu" else "cpu"
@@ -313,6 +616,11 @@ def main():
                                  low_memory=False)["pdb_id"].unique())
     if args.limit_structures:
         pdb_ids = pdb_ids[: args.limit_structures]
+
+    if args.random_init:
+        from latent_controls import install_random_init_loader
+        install_random_init_loader(args.random_seed)
+        (args.outdir / "RANDOM_INIT.txt").write_text(f"random-initialised weights, seed {args.random_seed}\n")
 
     # ---- 1. embeddings + raw labels (same builder as every earlier run) ----
     X, y_by_col, pdb_groups, chain_groups, splits, base_ids, resnums, seq_indices, eff_max_len = \
@@ -329,22 +637,60 @@ def main():
     delta = y_by_col["potential_mean_kT_e_4A"][valid] - y_by_col["potential_mean_kT_e_12A"][valid]
     Y_raw = np.column_stack([Y_raw, delta])
 
-    # ---- 2b. optional: structure controls (restrict EVERYTHING to rows that have them) ----
-    C = None
-    if args.structure_controls is not None:
-        C_full, ok = load_controls(args.structure_controls, pdb_groups, chain_groups, seq_indices)
-        log.info("Structure controls available for %d of %d residues (dropping %d)",
+    # ---- 2b. optional tables (restrict EVERYTHING to rows that have every table you supplied) ----
+    tables: dict[str, tuple] = {}
+    if have["struct"]:
+        tables["struct"] = load_controls(args.structure_controls, pdb_groups, chain_groups, seq_indices,
+                                         required=CONTROL_COLS)
+    if have["dssr"]:
+        tables["dssr"] = load_controls(args.dssr_controls, pdb_groups, chain_groups, seq_indices)
+    if have["coul"]:
+        tables["coul"] = load_controls(args.coulomb_table, pdb_groups, chain_groups, seq_indices, prefix="dh_")
+    blocks_raw: dict[str, np.ndarray] = {}
+    block_cols: dict[str, list] = {}
+    if tables:
+        ok = np.logical_and.reduce([t[1] for t in tables.values()])
+        for name, (_, okn, cols) in tables.items():
+            log.info("Table '%s' covers %d of %d residues", name, int(okn.sum()), len(okn))
+        log.info("Rows with EVERY supplied table: %d of %d (dropping %d); all variants use these rows",
                  int(ok.sum()), len(ok), int((~ok).sum()))
         if ok.mean() < 0.8:
-            log.warning("Fewer than 80%% of residues have controls -- check the key columns "
-                        "(pdb_id, chain, seq_index) match between the two tables.")
+            log.warning("Fewer than 80%% of residues have all tables -- check that the key columns "
+                        "(pdb_id, chain, seq_index) match.")
         X = {i: arr[ok] for i, arr in X.items()}
         pdb_groups, chain_groups = pdb_groups[ok], chain_groups[ok]
         splits, base_ids, seq_indices = splits[ok], base_ids[ok], seq_indices[ok]
-        Y_raw, C = Y_raw[ok], C_full[ok]
+        Y_raw = Y_raw[ok]
+        for name, (M, _, cols) in tables.items():
+            blocks_raw[name] = M[ok]
+            block_cols[name] = cols
+        if "struct" in blocks_raw:
+            blocks_raw["ss"] = blocks_raw["struct"][:, :len(SS_COLS)]
+
+    # ---- 2c. optional leave-family-out split (replaces the structure-level split) ----
+    if args.family_table is not None:
+        from latent_controls import build_family_split, load_family_table, save_family_split_report
+        new_splits, keep, fsum, finfo = build_family_split(
+            pdb_groups, chain_groups, splits, load_family_table(args.family_table),
+            args.family_folds, args.family_fold, args.family_straddle)
+        save_family_split_report(args.outdir, fsum, finfo)
+        X = {i: arr[keep] for i, arr in X.items()}
+        pdb_groups, chain_groups = pdb_groups[keep], chain_groups[keep]
+        splits, base_ids, seq_indices = new_splits[keep], base_ids[keep], seq_indices[keep]
+        Y_raw = Y_raw[keep]
+        blocks_raw = {k: v[keep] for k, v in blocks_raw.items()}
+        for part in ("train", "val", "test"):
+            if not np.any(splits == part):
+                raise RuntimeError(f"family split left no '{part}' residues; change --family-folds/--family-fold")
 
     # ---- 3. nuisance features + target variants ----
     F, F_names = build_nuisance_features(pdb_groups, chain_groups, seq_indices, base_ids, args.labels_dir)
+    blocks_raw["F"] = F
+    if any(("ctx" in GBM_SPEC.get(v, ([], set()))[0]) for v in args.variants + [args.selection_variant]) \
+            or args.audit:
+        blocks_raw["ctx"], ctx_names = build_context_features(chain_groups, seq_indices, args.labels_dir,
+                                                              pdb_groups, args.context_window)
+        block_cols["ctx"] = ctx_names
     Y_cen = within_chain_center(Y_raw, chain_groups)
     variants = {
         "raw": Y_raw,
@@ -352,22 +698,31 @@ def main():
         "centered_base_resid": residualize(Y_cen, F[:, :4], splits, chain_groups),
         "centered_nuisance_resid": residualize(Y_cen, F, splits, chain_groups),
     }
-    if C is not None:
+    if have_set:
         from sklearn.metrics import r2_score
         wanted = set(args.variants) | {args.selection_variant}
         test = splits == "test"
         ctrl_rows = []
-        for vname, Fv in (("centered_ss_gbm", np.column_stack([F, C[:, :len(SS_COLS)]])),
-                          ("centered_struct_gbm", np.column_stack([F, C]))):
-            if vname not in wanted:
-                continue
-            log.info("=== Nonlinear removal for variant '%s' ===", vname)
-            Y_res, pred = residualize_nonlinear(Y_cen, Fv, splits, chain_groups, pdb_groups, args.seed)
-            variants[vname] = Y_res
+
+        def log_explained(vname, pred):
             for j, t in enumerate(ALL_TARGETS):
                 r2 = float(r2_score(Y_cen[test, j], pred[test, j]))
                 ctrl_rows.append({"variant": vname, "target": t, "controls_only_test_r2": r2})
                 log.info("  [%s] controls alone explain %-30s test R^2 = %.3f", vname, t, r2)
+
+        if COULOMB_LINEAR in wanted:
+            log.info("=== Linear removal of the point-charge baseline: '%s' ===", COULOMB_LINEAR)
+            Fv = np.column_stack([F[:, :4], blocks_raw["coul"]])
+            variants[COULOMB_LINEAR] = residualize(Y_cen, Fv, splits, chain_groups)
+            log_explained(COULOMB_LINEAR, Y_cen - variants[COULOMB_LINEAR])
+        for vname, (names, _) in GBM_SPEC.items():
+            if vname not in wanted:
+                continue
+            log.info("=== Nonlinear removal for variant '%s' (blocks: %s) ===", vname, "+".join(names))
+            Fv = np.column_stack([blocks_raw[n] for n in names])
+            Y_res, pred = residualize_nonlinear(Y_cen, Fv, splits, chain_groups, pdb_groups, args.seed)
+            variants[vname] = Y_res
+            log_explained(vname, pred)
         pd.DataFrame(ctrl_rows).to_csv(args.outdir / "control_explained_r2.csv", index=False)
 
     # ---- 4. one shared layer for every variant (so variants are comparable) ----
@@ -380,8 +735,13 @@ def main():
 
     meta = {"pdb_id": pdb_groups, "chain": [c.split("::", 1)[1] for c in chain_groups],
             "seq_index": seq_indices, "split": splits}
-    F_save = F if C is None else np.column_stack([F, C])
-    F_save_names = F_names if C is None else F_names + [f"ctrl_{c}" for c in CONTROL_COLS]
+    save_blocks, save_names = [F], list(F_names)
+    prefix = {"struct": "ctrl_", "dssr": "dssr_", "ctx": "", "coul": "coul_"}
+    for bname in ("struct", "dssr", "ctx", "coul"):
+        if bname in blocks_raw:
+            save_blocks.append(blocks_raw[bname])
+            save_names += [(c if bname == "ctx" else f"{prefix[bname]}{c}") for c in block_cols[bname]]
+    F_save = np.column_stack(save_blocks)
 
     # ---- 5. run the analysis for each variant ----
     for name in args.variants:
@@ -392,8 +752,8 @@ def main():
 
         # What would the simple features alone get on THIS target? (the bar to clear)
         # Centered variants use within-chain-centered features, matching how they were removed.
-        # (The *_gbm variants report control_explained_r2.csv instead.)
-        if name not in GBM_VARIANTS:
+        # (The nonlinear variants report control_explained_r2.csv instead.)
+        if name in LINEAR_VARIANTS:
             Fb = F if name == "raw" else within_chain_center(F, chain_groups)
             nuisance_baseline(Fb, Y, splits, ALL_TARGETS, vdir, name)
 
@@ -403,7 +763,20 @@ def main():
         negative_controls(H, Y, splits, chain_groups, ALL_TARGETS,
                           args.interpret_k, args.cca_components, vdir, seed=args.seed)
         save_scores(vdir / "scores.csv.gz", H, pls_fitted[args.interpret_k], meta,
-                    F_save, F_save_names, Y, ALL_TARGETS)
+                    F_save, save_names, Y, ALL_TARGETS)
+
+    if args.swap_control:
+        log.info("################ SWAP CONTROL (non-electrostatic PLS axes) ################")
+        run_swap_control(H, F, blocks_raw["struct"], chain_groups, splits, meta, F_save, save_names,
+                         args.interpret_k, args.outdir)
+
+    if args.audit:
+        log.info("################ AUDIT ################")
+        bl = {k: v for k, v in blocks_raw.items() if k in ("F", "struct", "dssr", "ctx", "coul")}
+        run_audit(H, Y_cen, bl, splits, chain_groups, pdb_groups, ALL_TARGETS, args.audit_targets,
+                  args.outdir, seed=args.seed, n_boot=args.n_boot, pca_dim=args.pca_dim)
+        if args.spike_fractions:
+            run_spike_in(H, Y_cen, bl, splits, chain_groups, pdb_groups, ALL_TARGETS, args)
 
     log.info("Done. Outputs in %s", args.outdir)
 

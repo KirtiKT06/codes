@@ -1,0 +1,145 @@
+
+====================================================================================================
+1. CROSS-MODEL AGREEMENT: mean_canonical_corr by pair and condition
+====================================================================================================
+files: ['cross_model_agreement_centered_base_resid.csv', 'cross_model_agreement_centered_dssr_ctx_gbm_ctrl_struct-dssr-ctx_gbm.csv', 'cross_model_agreement_swap_geom.csv']
+
+cross_model_agreement_centered_base_resid.csv   {'controls': 'none', 'residualizer': 'linear'}
+condition            nuisance_removed  raw_scores  shuffle_global  shuffle_within_chain  shuffle_within_chain_v1  within_chain_clean
+pair                                                                                                                                
+rnabert-ernierna                0.064       0.191          -0.001                -0.000                    0.038               0.028
+rnabert-rnafm                   0.092       0.242           0.002                -0.001                    0.063               0.070
+rnabert-splicebert              0.149       0.224          -0.000                 0.004                    0.109               0.083
+rnafm-ernierna                  0.381       0.486           0.000                 0.004                    0.196               0.300
+rnafm-splicebert                0.227       0.318           0.001                 0.001                    0.103               0.190
+splicebert-ernierna             0.256       0.314          -0.000                -0.000                    0.033               0.255
+
+cross_model_agreement_centered_dssr_ctx_gbm_ctrl_struct-dssr-ctx_gbm.csv   {'controls': 'struct+dssr+ctx', 'residualizer': 'gbm'}
+condition            nuisance_removed  raw_scores  shuffle_global  shuffle_within_chain  shuffle_within_chain_v1  within_chain_clean
+pair                                                                                                                                
+rnabert-ernierna                0.075       0.229          -0.001                 0.001                    0.059               0.016
+rnabert-rnafm                   0.110       0.267           0.002                -0.004                    0.077               0.018
+rnabert-splicebert              0.138       0.167          -0.005                 0.000                    0.138               0.015
+rnafm-ernierna                  0.444       0.512           0.003                -0.001                    0.269               0.203
+rnafm-splicebert                0.207       0.283           0.000                 0.004                    0.112               0.107
+splicebert-ernierna             0.204       0.258           0.005                 0.001                    0.081               0.129
+
+cross_model_agreement_swap_geom.csv   {'controls': 'none', 'residualizer': 'linear'}
+condition            nuisance_removed  raw_scores  shuffle_global  shuffle_within_chain  shuffle_within_chain_v1  within_chain_clean
+pair                                                                                                                                
+rnabert-ernierna                0.057       0.140          -0.001                -0.003                    0.044               0.037
+rnabert-rnafm                   0.122       0.177           0.008                -0.006                    0.103               0.037
+rnabert-splicebert              0.137       0.253           0.005                -0.002                    0.117               0.080
+rnafm-ernierna                  0.488       0.562           0.003                -0.002                    0.194               0.397
+rnafm-splicebert                0.376       0.514          -0.003                 0.001                    0.152               0.279
+splicebert-ernierna             0.258       0.353           0.001                -0.003                    0.066               0.259
+
+====================================================================================================
+2. Mg2+ EFFECT BY DISTANCE (mg_full/mg_effect_by_distance.csv)
+====================================================================================================
+columns: ['variant', 'qty', 'bin', 'n', 'mean_change', 'sd_change', 'rms_change', 'label_sd_pooled', 'rms_change_over_label_sd']
+variants: ['mg0_r0.79', 'mg_r0.79']
+
+variant = mg_r0.79
+qty                  bin    n  rms_change  pct_of_label_sd
+c1p           (0.0, 4.0]   36  104.025798            313.0
+c1p           (4.0, 6.0]  258   15.776676             47.0
+c1p           (6.0, 8.0] 1088    5.478120             16.0
+c1p          (8.0, 12.0] 2369    3.086407              9.0
+c1p         (12.0, 20.0] 2289    2.682618              8.0
+c1p (20.0, 1000000000.0] 2344    1.900077              6.0
+m12           (0.0, 4.0]   36    8.587507            112.0
+m12           (4.0, 6.0]  258    5.064466             66.0
+m12           (6.0, 8.0] 1088    3.765705             49.0
+m12          (8.0, 12.0] 2369    1.985792             26.0
+m12         (12.0, 20.0] 2289    1.481297             19.0
+m12 (20.0, 1000000000.0] 2346    1.238283             16.0
+ m4           (0.0, 4.0]   36   66.479321            496.0
+ m4           (4.0, 6.0]  258   16.554913            124.0
+ m4           (6.0, 8.0] 1088    5.369364             40.0
+ m4          (8.0, 12.0] 2369    2.467540             18.0
+ m4         (12.0, 20.0] 2289    2.229098             17.0
+ m4 (20.0, 1000000000.0] 2346    1.535665             11.0
+ m8           (0.0, 4.0]   36   23.457712            230.0
+ m8           (4.0, 6.0]  258   11.190848            110.0
+ m8           (6.0, 8.0] 1088    6.316505             62.0
+ m8          (8.0, 12.0] 2369    2.286831             22.0
+ m8         (12.0, 20.0] 2289    1.984418             19.0
+ m8 (20.0, 1000000000.0] 2346    1.513635             15.0
+
+bin labels in order: ['(0.0, 4.0]', '(4.0, 6.0]', '(6.0, 8.0]', '(8.0, 12.0]', '(12.0, 20.0]', '(20.0, 1000000000.0]']
+
+====================================================================================================
+3. WITHIN-CHAIN SHUFFLE CONTROL (priority results): which label, which R2
+====================================================================================================
+exists: True
+top level: ['ernierna', 'rnabert', 'rnafm', 'splicebert']
+negative-control files: ['ernierna/p5_negative_controls.csv', 'rnabert/p5_negative_controls.csv', 'rnafm/p5_negative_controls.csv', 'splicebert/p5_negative_controls.csv']
+
+--- ernierna/p5_negative_controls.csv
+                  control  best_layer    val_r2   test_r2  test_pearson_r
+                     real           3  0.590399  0.607478        0.780453
+shuffled_within_structure           3  0.274444  0.339581        0.584332
+        shuffled_globally           0 -0.001616 -0.002017       -0.012196
+
+--- rnabert/p5_negative_controls.csv
+                  control  best_layer   val_r2   test_r2  test_pearson_r
+                     real           5 0.562891  0.623857        0.790945
+shuffled_within_structure           5 0.203393  0.302551        0.552170
+        shuffled_globally           4 0.000500 -0.000417       -0.004720
+
+--- rnafm/p5_negative_controls.csv
+                  control  best_layer    val_r2   test_r2  test_pearson_r
+                     real           5  0.598962  0.614268        0.786513
+shuffled_within_structure           2  0.274181  0.349889        0.592862
+        shuffled_globally           1 -0.002404 -0.003188        0.000419
+
+--- splicebert/p5_negative_controls.csv
+                  control  best_layer    val_r2   test_r2  test_pearson_r
+                     real           1  0.569823  0.586189        0.767145
+shuffled_within_structure           1  0.260706  0.339068        0.584062
+        shuffled_globally           0 -0.001303 -0.001465       -0.004051
+
+other priority folder: priority_results ['secondary_structure']
+
+====================================================================================================
+4. PLS test R2 vs ridge ceiling (centered_base_resid), all models
+====================================================================================================
+
+rnabert: single-target ridge ceiling = {'potential_at_c1prime_kT_e': 0.05, 'potential_mean_kT_e_12A': 0.012}
+target        potential_at_c1prime_kT_e  potential_mean_kT_e_12A
+n_components                                                    
+5                                -0.001                    0.002
+8                                 0.002                    0.002
+10                                0.003                    0.003
+15                                0.005                    0.003
+embedding dimension is not stored here; n_components tried: [np.int64(1), np.int64(2), np.int64(3), np.int64(5), np.int64(8), np.int64(10), np.int64(15)]
+
+rnafm: single-target ridge ceiling = {'potential_at_c1prime_kT_e': 0.151, 'potential_mean_kT_e_12A': 0.217}
+target        potential_at_c1prime_kT_e  potential_mean_kT_e_12A
+n_components                                                    
+5                                 0.095                    0.193
+8                                 0.128                    0.207
+10                                0.140                    0.207
+15                                0.147                    0.214
+embedding dimension is not stored here; n_components tried: [np.int64(1), np.int64(2), np.int64(3), np.int64(5), np.int64(8), np.int64(10), np.int64(15)]
+
+splicebert: single-target ridge ceiling = {'potential_at_c1prime_kT_e': 0.076, 'potential_mean_kT_e_12A': 0.104}
+target        potential_at_c1prime_kT_e  potential_mean_kT_e_12A
+n_components                                                    
+5                                 0.040                    0.078
+8                                 0.058                    0.092
+10                                0.064                    0.093
+15                                0.067                    0.097
+embedding dimension is not stored here; n_components tried: [np.int64(1), np.int64(2), np.int64(3), np.int64(5), np.int64(8), np.int64(10), np.int64(15)]
+
+ernierna: single-target ridge ceiling = {'potential_at_c1prime_kT_e': 0.199, 'potential_mean_kT_e_12A': 0.31}
+target        potential_at_c1prime_kT_e  potential_mean_kT_e_12A
+n_components                                                    
+5                                 0.154                    0.252
+8                                 0.165                    0.289
+10                                0.181                    0.298
+15                                0.197                    0.305
+embedding dimension is not stored here; n_components tried: [np.int64(1), np.int64(2), np.int64(3), np.int64(5), np.int64(8), np.int64(10), np.int64(15)]
+
+DONE

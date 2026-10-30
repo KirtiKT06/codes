@@ -1,0 +1,85 @@
+nohup: ignoring input
+12:29:30 [INFO] 280 structures have >= 3 good MG ions and <= 600 residues
+12:29:30 [INFO] running 120 structures x 2 APBS solves each
+12:31:49 [INFO] 10/120 done
+12:34:26 [INFO] 20/120 done
+12:37:02 [INFO] 30/120 done
+12:38:47 [INFO] 40/120 done
+12:42:53 [INFO] 50/120 done
+12:45:52 [INFO] 60/120 done
+12:48:57 [INFO] 70/120 done
+12:51:30 [INFO] 80/120 done
+12:54:05 [INFO] 90/120 done
+12:59:05 [INFO] 100/120 done
+13:01:13 [INFO] 110/120 done
+13:03:22 [INFO] 120/120 done
+13:03:22 [INFO]   skipped 1B23: only 2 qualifying ions
+13:03:22 [INFO]   skipped 24EW: only 0 qualifying ions
+13:03:22 [INFO]   skipped 24ND: only 0 qualifying ions
+13:03:22 [INFO]   failed 11AA: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -342.000, APBS charge = -352.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 30GB: only 0 qualifying ions
+13:03:22 [INFO]   skipped 3BOY: only 0 qualifying ions
+13:03:22 [INFO]   skipped 3ICE: only 0 qualifying ions
+13:03:22 [INFO]   skipped 4K4X: only 0 qualifying ions
+13:03:22 [INFO]   skipped 4OAV: only 0 qualifying ions
+13:03:22 [INFO]   skipped 4PKD: only 2 qualifying ions
+13:03:22 [INFO]   failed 4XCO: RuntimeError: APBS failed:
+s, with or without
+    modification, are permitted provided that the following conditions are met:
+    
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+    
+    * Redistributions in bi
+13:03:22 [INFO]   skipped 5BKL: only 0 qualifying ions
+13:03:22 [INFO]   skipped 5BKN: only 0 qualifying ions
+13:03:22 [INFO]   skipped 6L5N: only 0 qualifying ions
+13:03:22 [INFO]   skipped 6LTU: only 1 qualifying ions
+13:03:22 [INFO]   failed 6ID1: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -358.000, APBS charge = -370.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   failed 6ID0: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -364.000, APBS charge = -376.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 6SZV: only 2 qualifying ions
+13:03:22 [INFO]   skipped 7AAP: only 1 qualifying ions
+13:03:22 [INFO]   failed 7C7A: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -331.000, APBS charge = -337.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 7DOK: only 1 qualifying ions
+13:03:22 [INFO]   skipped 7M2V: only 0 qualifying ions
+13:03:22 [INFO]   failed 7DCO: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -533.000, APBS charge = -541.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 7PLI: only 0 qualifying ions
+13:03:22 [INFO]   skipped 7Y7Q: only 0 qualifying ions
+13:03:22 [INFO]   failed 7QIY: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -430.000, APBS charge = -486.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   failed 8TJX: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -310.000, APBS charge = -364.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 9ASI: only 0 qualifying ions
+13:03:22 [INFO]   skipped 9HRF: only 2 qualifying ions
+13:03:22 [INFO]   skipped 9NYY: only 2 qualifying ions
+13:03:22 [INFO]   failed 9NBH: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -312.000, APBS charge = -348.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   failed 9K2Z: RuntimeError: APBS/PQR charge mismatch detected. PQR charge = -304.000, APBS charge = -312.000. APBS likely mis-parsed the PQR.
+13:03:22 [INFO]   skipped 9UBL: only 0 qualifying ions
+13:03:22 [INFO]   skipped 9RAG: only 2 qualifying ions
+13:03:22 [INFO]   skipped 9W1F: only 0 qualifying ions
+13:03:22 [INFO]   skipped 9W1I: only 0 qualifying ions
+13:03:39 [INFO] wrote /data/rna_electrostats/mg_full/labels_r0.79/all_residue_potentials.csv (84 structures)
+structures analysed: 84; skipped: 26; failed: 10
+chains: 167; median ions per structure: 5; chains kept after dropping solver-mismatched rows
+
+=== mg_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 0.998 (IQR 0.990..0.999); RMSE of the within-chain change 2.18 kT/e; variance of the label changed 0.5% (median); global offset (mean change) +0.90 kT/e
+  [m4] chain-median Pearson 0.988 (IQR 0.953..0.998); RMSE of the within-chain change 1.59 kT/e; variance of the label changed 2.9% (median); global offset (mean change) +0.90 kT/e
+  [m8] chain-median Pearson 0.977 (IQR 0.914..0.993); RMSE of the within-chain change 1.72 kT/e; variance of the label changed 6.1% (median); global offset (mean change) +1.00 kT/e
+  [m12] chain-median Pearson 0.986 (IQR 0.948..0.994); RMSE of the within-chain change 1.12 kT/e; variance of the label changed 5.0% (median); global offset (mean change) +1.05 kT/e
+
+=== mg0_r0.79 vs stored (ion-free) labels, within-chain centred ===
+  [c1p] chain-median Pearson 0.999 (IQR 0.999..1.000); RMSE of the within-chain change 1.16 kT/e; variance of the label changed 0.1% (median); global offset (mean change) -0.24 kT/e
+  [m4] chain-median Pearson 0.999 (IQR 0.997..0.999); RMSE of the within-chain change 0.51 kT/e; variance of the label changed 0.3% (median); global offset (mean change) -0.24 kT/e
+  [m8] chain-median Pearson 0.999 (IQR 0.998..1.000); RMSE of the within-chain change 0.33 kT/e; variance of the label changed 0.3% (median); global offset (mean change) -0.25 kT/e
+  [m12] chain-median Pearson 1.000 (IQR 0.999..1.000); RMSE of the within-chain change 0.19 kT/e; variance of the label changed 0.2% (median); global offset (mean change) -0.19 kT/e
+
+=== mg_r0.79: how the change depends on distance to the nearest Mg2+ (within-chain centred) ===
+  [c1p] (0.0, 4.0] A: n=36, rms change 104.03 kT/e (313% of label sd); (4.0, 6.0] A: n=258, rms change 15.78 kT/e (47% of label sd); (6.0, 8.0] A: n=1088, rms change 5.48 kT/e (16% of label sd); (8.0, 12.0] A: n=2369, rms change 3.09 kT/e (9% of label sd); (12.0, 20.0] A: n=2289, rms change 2.68 kT/e (8% of label sd); (20.0, 1000000000.0] A: n=2344, rms change 1.90 kT/e (6% of label sd)
+  [m4] (0.0, 4.0] A: n=36, rms change 66.48 kT/e (496% of label sd); (4.0, 6.0] A: n=258, rms change 16.55 kT/e (124% of label sd); (6.0, 8.0] A: n=1088, rms change 5.37 kT/e (40% of label sd); (8.0, 12.0] A: n=2369, rms change 2.47 kT/e (18% of label sd); (12.0, 20.0] A: n=2289, rms change 2.23 kT/e (17% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.54 kT/e (11% of label sd)
+  [m8] (0.0, 4.0] A: n=36, rms change 23.46 kT/e (230% of label sd); (4.0, 6.0] A: n=258, rms change 11.19 kT/e (110% of label sd); (6.0, 8.0] A: n=1088, rms change 6.32 kT/e (62% of label sd); (8.0, 12.0] A: n=2369, rms change 2.29 kT/e (22% of label sd); (12.0, 20.0] A: n=2289, rms change 1.98 kT/e (19% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.51 kT/e (15% of label sd)
+  [m12] (0.0, 4.0] A: n=36, rms change 8.59 kT/e (112% of label sd); (4.0, 6.0] A: n=258, rms change 5.06 kT/e (66% of label sd); (6.0, 8.0] A: n=1088, rms change 3.77 kT/e (49% of label sd); (8.0, 12.0] A: n=2369, rms change 1.99 kT/e (26% of label sd); (12.0, 20.0] A: n=2289, rms change 1.48 kT/e (19% of label sd); (20.0, 1000000000.0] A: n=2346, rms change 1.24 kT/e (16% of label sd)
+
+=== control mg0_r0.79 (same cavity, charge 0): this is the NON-charge part of the change ===
+  [m8] (0.0, 4.0] A: rms change 0.65 kT/e; (4.0, 6.0] A: rms change 1.32 kT/e; (6.0, 8.0] A: rms change 1.31 kT/e; (8.0, 12.0] A: rms change 0.63 kT/e; (12.0, 20.0] A: rms change 0.37 kT/e; (20.0, 1000000000.0] A: rms change 0.29 kT/e
+
+PLAIN READING (m8, first radius):
+  Median within-chain correlation 0.977: keeping Mg2+ barely reorders the residues. Ion-free labels are a harmless simplification for the within-chain audit; state it in one sentence.
