@@ -1,0 +1,100 @@
+11:15:51 [INFO] ernierna: 220890 residues, dim 768
+11:15:52 [INFO] ernierna_rand: 220890 residues, dim 768
+11:15:52 [INFO] rnafm: 220734 residues, dim 640
+11:15:53 [INFO] rnafm_rand: 220734 residues, dim 640
+11:15:53 [WARNING] ernierna: restricted to 220734 rows shared by all caches (of 220890)
+11:15:53 [WARNING] ernierna_rand: restricted to 220734 rows shared by all caches (of 220890)
+11:15:55 [INFO] rows with ion labels: 216984 of 220734; Mg positives 5793
+11:16:18 [INFO] FAMILY SPLIT fold 0/5: 1 test families, 112 test structures, 16099 test residues; dropped 78 straddling structures (92163 residues)
+11:16:18 [INFO] fold 0: train 99563, val 9664, test 15927 residues (172 test chains)
+11:16:20 [INFO]   ernierna__ion alpha 1e+00
+11:16:21 [INFO]   ernierna__phos alpha 1e+00
+11:16:22 [INFO]   ernierna_rand__ion alpha 1e-04
+11:16:24 [INFO]   ernierna_rand__phos alpha 1e-04
+11:16:25 [INFO]   rnafm__ion alpha 1e-04
+11:16:26 [INFO]   rnafm__phos alpha 1e+00
+11:16:27 [INFO]   rnafm_rand__ion alpha 1e-01
+11:16:28 [INFO]   rnafm_rand__phos alpha 1e+00
+11:16:30 [INFO] FAMILY SPLIT fold 1/5: 215 test families, 223 test structures, 12820 test residues; dropped 457 straddling structures (80807 residues)
+11:16:30 [INFO] fold 1: train 113019, val 12378, test 12548 residues (272 test chains)
+11:16:31 [INFO]   ernierna__ion alpha 1e+00
+11:16:33 [INFO]   ernierna__phos alpha 1e+00
+11:16:34 [INFO]   ernierna_rand__ion alpha 1e-02
+11:16:35 [INFO]   ernierna_rand__phos alpha 1e-04
+11:16:37 [INFO]   rnafm__ion alpha 1e+00
+11:16:38 [INFO]   rnafm__phos alpha 1e+00
+11:16:39 [INFO]   rnafm_rand__ion alpha 1e+00
+11:16:40 [INFO]   rnafm_rand__phos alpha 1e-04
+11:16:42 [INFO] FAMILY SPLIT fold 2/5: 205 test families, 212 test structures, 20977 test residues; dropped 444 straddling structures (60054 residues)
+11:16:42 [INFO] fold 2: train 126399, val 11574, test 20688 residues (289 test chains)
+11:16:44 [INFO]   ernierna__ion alpha 1e+00
+11:16:46 [INFO]   ernierna__phos alpha 1e+00
+11:16:47 [INFO]   ernierna_rand__ion alpha 1e-03
+11:16:49 [INFO]   ernierna_rand__phos alpha 1e-04
+11:16:50 [INFO]   rnafm__ion alpha 1e+00
+11:16:51 [INFO]   rnafm__phos alpha 1e+00
+11:16:53 [INFO]   rnafm_rand__ion alpha 1e-01
+11:16:55 [INFO]   rnafm_rand__phos alpha 1e-04
+11:16:57 [INFO] FAMILY SPLIT fold 3/5: 199 test families, 199 test structures, 18214 test residues; dropped 462 straddling structures (65955 residues)
+11:16:57 [INFO] fold 3: train 121332, val 13545, test 17948 residues (266 test chains)
+11:16:58 [INFO]   ernierna__ion alpha 1e+00
+11:17:00 [INFO]   ernierna__phos alpha 1e+00
+11:17:01 [INFO]   ernierna_rand__ion alpha 1e-03
+11:17:03 [INFO]   ernierna_rand__phos alpha 1e-03
+11:17:04 [INFO]   rnafm__ion alpha 1e+00
+11:17:06 [INFO]   rnafm__phos alpha 1e+00
+11:17:07 [INFO]   rnafm_rand__ion alpha 1e+00
+11:17:08 [INFO]   rnafm_rand__phos alpha 1e+00
+11:17:10 [INFO] FAMILY SPLIT fold 4/5: 199 test families, 204 test structures, 18385 test residues; dropped 473 straddling structures (92293 residues)
+11:17:10 [INFO] fold 4: train 94817, val 13566, test 18120 residues (265 test chains)
+11:17:11 [INFO]   ernierna__ion alpha 1e+00
+11:17:13 [INFO]   ernierna__phos alpha 1e+00
+11:17:14 [INFO]   ernierna_rand__ion alpha 1e-03
+11:17:15 [INFO]   ernierna_rand__phos alpha 1e-03
+11:17:16 [INFO]   rnafm__ion alpha 1e+00
+11:17:17 [INFO]   rnafm__phos alpha 1e+00
+11:17:18 [INFO]   rnafm_rand__ion alpha 1e-01
+11:17:19 [INFO]   rnafm_rand__phos alpha 1e-02
+11:17:21 [INFO] evaluating 85231 held-out residues in 1264 chains
+ION-SITE PROBE: Mg2+ positives, leave-family-out folds (the audit's), held-out chains only
+chains evaluated: 300   structures: 223
+
+score                     AUROC (structure mean) [95% CI]     enrichment    ion hit@10% 
+ernierna__ion             0.627 [0.600, 0.653] (n=223 )  2.85          0.30
+ernierna__phos            0.587 [0.558, 0.616] (n=223 )  1.23          0.22
+ernierna_rand__ion        0.607 [0.579, 0.637] (n=223 )  2.43          0.29
+ernierna_rand__phos       0.571 [0.540, 0.603] (n=223 )  2.46          0.22
+rnafm__ion                0.582 [0.555, 0.609] (n=223 )  1.74          0.27
+rnafm__phos               0.566 [0.535, 0.594] (n=223 )  1.84          0.25
+rnafm_rand__ion           0.572 [0.544, 0.601] (n=223 )  1.23          0.25
+rnafm_rand__phos          0.547 [0.516, 0.577] (n=223 )  1.29          0.22
+seq_ctx                   0.651 [0.623, 0.679] (n=223 )  2.26          0.33
+seq_vienna                0.650 [0.624, 0.677] (n=223 )  2.23          0.30
+oracle_struct             0.778 [0.753, 0.804] (n=223 )  6.89          0.48
+phos_screened_raw         0.730 [0.693, 0.765] (n=223 )  5.48          0.45
+pb_m12_neg                0.658 [0.624, 0.691] (n=223 )  3.49          0.35
+
+DECISIVE PAIRED COMPARISONS (AUROC difference over structures, 95% bootstrap CI)
+  ernierna__ion          - seq_vienna             -0.023 [-0.057, +0.011]  (n=223)  no clear difference
+  ernierna__ion          - seq_ctx                -0.025 [-0.058, +0.012]  (n=223)  no clear difference
+  ernierna__ion          - ernierna_rand__ion     +0.019 [-0.016, +0.053]  (n=223)  no clear difference
+  ernierna__ion          - ernierna__phos         +0.040 [+0.007, +0.073]  (n=223)  ernierna__ion better
+  ernierna__phos         - seq_vienna             -0.063 [-0.103, -0.026]  (n=223)  seq_vienna better
+  ernierna__ion          - oracle_struct          -0.152 [-0.183, -0.121]  (n=223)  oracle_struct better
+  rnafm__ion             - seq_vienna             -0.068 [-0.102, -0.034]  (n=223)  seq_vienna better
+  rnafm__ion             - seq_ctx                -0.069 [-0.104, -0.037]  (n=223)  seq_ctx better
+  rnafm__ion             - rnafm_rand__ion        +0.010 [-0.021, +0.041]  (n=223)  no clear difference
+  rnafm__ion             - rnafm__phos            +0.016 [-0.017, +0.046]  (n=223)  no clear difference
+  rnafm__phos            - seq_vienna             -0.084 [-0.122, -0.047]  (n=223)  seq_vienna better
+  rnafm__ion             - oracle_struct          -0.196 [-0.229, -0.164]  (n=223)  oracle_struct better
+  seq_vienna             - seq_ctx                -0.001 [-0.027, +0.024]  (n=223)  no clear difference
+  oracle_struct          - phos_screened_raw      +0.048 [+0.017, +0.083]  (n=223)  oracle_struct better
+
+SUBGROUPS (structure-mean AUROC)
+  length_bin = 101-300              (n structures   27)  ernierna__ion 0.638  rnafm__ion 0.619  seq_vienna 0.615  oracle_struct 0.758
+  length_bin = <=100                (n structures  183)  ernierna__ion 0.625  rnafm__ion 0.578  seq_vienna 0.659  oracle_struct 0.772
+  length_bin = >300                 (n structures   15)  ernierna__ion 0.611  rnafm__ion 0.565  seq_vienna 0.597  oracle_struct 0.861
+  method = ELECTRON MICROSCOPY  (n structures   55)  ernierna__ion 0.595  rnafm__ion 0.562  seq_vienna 0.604  oracle_struct 0.788
+  method = X-RAY DIFFRACTION    (n structures  168)  ernierna__ion 0.637  rnafm__ion 0.589  seq_vienna 0.665  oracle_struct 0.775
+
+files in /data/rna_electrostats/ion_probe: ion_probe_summary.txt, ion_probe_chain_metrics.csv, ion_probe_predictions.csv.gz, fig_ion_probe.png

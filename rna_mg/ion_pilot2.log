@@ -1,0 +1,186 @@
+10:51:50 [INFO] 1873 structures
+/home/feynman/projects/codes/rna_mg/ion_site_pilot.py:165: RuntimeWarning: divide by zero encountered in divide
+  scr[i] = np.sum(np.exp(-d / DEBYE_A) / d)
+10:51:50 [INFO] 200 / 1873
+10:51:50 [INFO] 400 / 1873
+10:51:51 [INFO] 600 / 1873
+10:51:51 [INFO] 800 / 1873
+10:51:51 [INFO] 1000 / 1873
+10:51:52 [INFO] 1200 / 1873
+10:51:53 [INFO] 1400 / 1873
+10:51:54 [INFO] 1600 / 1873
+10:51:56 [INFO] 1800 / 1873
+ION-SITE PILOT (Step 0)
+structures processed: 1873   failed: 0
+
+RESOLUTION AND ION AUDIT (what the labels are built on)
+  ions in ions.csv: 38157; removed for low-resolution flag: 0; removed for occupancy < 0.5: 168
+  MG: 29815 ions kept in 723 structures
+  K: 3764 ions kept in 178 structures
+  resolution of structures (A): median 2.50; share > 3.0 A: 0%; share > 3.5 A: 0%
+  experimental methods: X-RAY DIFFRACTION 1315; ELECTRON MICROSCOPY 558
+
+residues: 691871 phosphate-bearing; positives within 5 A: MG 34758 (5.0%), K 3123 (0.5%), any 37150
+
+=== POSITIVES = residues whose P is within the cutoff of a MG ion ===
+chains: 773, structures: 441
+score         AUROC (structure mean) [95% CI]     enrichment (R-precision / base rate)    
+pb_c1p        0.585 [0.566, 0.603] (n=441 )       2.59 [2.05, 3.29]
+pb_m4         0.650 [0.627, 0.670] (n=441 )       2.64 [2.12, 3.35]
+pb_m8         0.685 [0.663, 0.706] (n=441 )       3.41 [2.84, 4.14]
+pb_m12        0.688 [0.666, 0.710] (n=441 )       3.87 [3.24, 4.65]
+pb_ppoint     0.567 [0.549, 0.585] (n=441 )       2.45 [1.96, 3.02]
+phos_n8       0.700 [0.679, 0.720] (n=441 )       4.59 [3.86, 5.41]
+phos_n12      0.702 [0.681, 0.724] (n=441 )       3.76 [3.12, 4.53]
+phos_screened 0.739 [0.716, 0.762] (n=441 )       5.53 [4.77, 6.36]
+c1_n4         0.500 [0.499, 0.502] (n=441 )       0.97 [0.64, 1.52]
+c1_n8         0.588 [0.570, 0.605] (n=441 )       2.17 [1.77, 2.60]
+c1_n12        0.662 [0.641, 0.683] (n=441 )       2.96 [2.29, 3.98]
+c1_screened   0.675 [0.652, 0.696] (n=441 )       3.88 [3.21, 4.72]
+random        0.502 [0.486, 0.518] (n=441 )       1.05 [0.74, 1.47]
+
+  paired differences in AUROC, structure mean, 95% bootstrap CI (positive = first score better):
+  -- matched centre AND radius (the fair like-for-like comparison):
+    pb_m4      - c1_n4         +0.149 [+0.127, +0.170]  PB better
+    pb_m8      - c1_n8         +0.097 [+0.080, +0.113]  PB better
+    pb_m12     - c1_n12        +0.026 [+0.016, +0.037]  PB better
+    pb_c1p     - c1_screened   -0.090 [-0.113, -0.066]  baseline better
+    pb_m4      - c1_screened   -0.025 [-0.044, -0.007]  baseline better
+    pb_m8      - c1_screened   +0.010 [-0.003, +0.024]  no clear difference
+    pb_m12     - c1_screened   +0.013 [+0.003, +0.024]  PB better
+    pb_ppoint  - c1_screened   -0.107 [-0.134, -0.079]  baseline better
+  -- against the phosphorus-centred baselines:
+    pb_c1p     - phos_n8       -0.114 [-0.137, -0.091]  baseline better
+    pb_c1p     - phos_n12      -0.117 [-0.140, -0.094]  baseline better
+    pb_c1p     - phos_screened -0.154 [-0.180, -0.129]  baseline better
+    pb_m4      - phos_n8       -0.050 [-0.069, -0.031]  baseline better
+    pb_m4      - phos_n12      -0.053 [-0.071, -0.035]  baseline better
+    pb_m4      - phos_screened -0.090 [-0.110, -0.070]  baseline better
+    pb_m8      - phos_n8       -0.014 [-0.030, +0.001]  no clear difference
+    pb_m8      - phos_n12      -0.017 [-0.033, -0.001]  baseline better
+    pb_m8      - phos_screened -0.054 [-0.070, -0.038]  baseline better
+    pb_m12     - phos_n8       -0.011 [-0.027, +0.004]  no clear difference
+    pb_m12     - phos_n12      -0.014 [-0.028, +0.001]  no clear difference
+    pb_m12     - phos_screened -0.051 [-0.064, -0.038]  baseline better
+    pb_ppoint  - phos_n8       -0.132 [-0.156, -0.106]  baseline better
+    pb_ppoint  - phos_n12      -0.135 [-0.160, -0.108]  baseline better
+    pb_ppoint  - phos_screened -0.172 [-0.200, -0.142]  baseline better
+
+  subgroups, AUROC of the best PB score vs phos_screened (structure means):
+    best PB score overall: pb_m12
+      length_bin = 101-300                n structures  106   pb_m12 0.719   phos_screened 0.769
+      length_bin = <=100                  n structures  298   pb_m12 0.644   phos_screened 0.701
+      length_bin = >300                   n structures  155   pb_m12 0.807   phos_screened 0.834
+      method = ELECTRON MICROSCOPY    n structures  208   pb_m12 0.737   phos_screened 0.773
+      method = X-RAY DIFFRACTION      n structures  233   pb_m12 0.645   phos_screened 0.709
+
+=== POSITIVES = residues whose P is within the cutoff of a K ion ===
+chains: 168, structures: 111
+score         AUROC (structure mean) [95% CI]     enrichment (R-precision / base rate)    
+pb_c1p        0.643 [0.600, 0.681] (n=111 )       4.10 [2.58, 6.15]
+pb_m4         0.728 [0.693, 0.760] (n=111 )       4.61 [3.00, 6.59]
+pb_m8         0.749 [0.713, 0.784] (n=111 )       5.44 [3.60, 7.71]
+pb_m12        0.741 [0.701, 0.779] (n=111 )       6.15 [3.98, 8.84]
+pb_ppoint     0.596 [0.557, 0.633] (n=111 )       2.77 [1.81, 3.91]
+phos_n8       0.707 [0.674, 0.740] (n=111 )       5.63 [4.02, 7.65]
+phos_n12      0.740 [0.700, 0.776] (n=111 )       6.08 [4.14, 8.24]
+phos_screened 0.765 [0.725, 0.802] (n=111 )       7.33 [5.31, 9.53]
+c1_n4         0.502 [0.499, 0.505] (n=111 )       1.09 [0.54, 1.91]
+c1_n8         0.604 [0.569, 0.636] (n=111 )       2.86 [1.86, 4.07]
+c1_n12        0.717 [0.677, 0.752] (n=111 )       6.15 [4.49, 8.10]
+c1_screened   0.740 [0.705, 0.773] (n=111 )       5.87 [4.23, 7.76]
+random        0.484 [0.456, 0.511] (n=111 )       0.40 [0.26, 0.57]
+
+  paired differences in AUROC, structure mean, 95% bootstrap CI (positive = first score better):
+  -- matched centre AND radius (the fair like-for-like comparison):
+    pb_m4      - c1_n4         +0.227 [+0.191, +0.259]  PB better
+    pb_m8      - c1_n8         +0.145 [+0.108, +0.184]  PB better
+    pb_m12     - c1_n12        +0.024 [-0.001, +0.052]  no clear difference
+    pb_c1p     - c1_screened   -0.098 [-0.135, -0.058]  baseline better
+    pb_m4      - c1_screened   -0.012 [-0.037, +0.015]  no clear difference
+    pb_m8      - c1_screened   +0.009 [-0.011, +0.030]  no clear difference
+    pb_m12     - c1_screened   +0.001 [-0.017, +0.020]  no clear difference
+    pb_ppoint  - c1_screened   -0.144 [-0.181, -0.109]  baseline better
+  -- against the phosphorus-centred baselines:
+    pb_c1p     - phos_n8       -0.064 [-0.104, -0.023]  baseline better
+    pb_c1p     - phos_n12      -0.097 [-0.132, -0.062]  baseline better
+    pb_c1p     - phos_screened -0.122 [-0.162, -0.084]  baseline better
+    pb_m4      - phos_n8       +0.021 [-0.009, +0.050]  no clear difference
+    pb_m4      - phos_n12      -0.011 [-0.046, +0.022]  no clear difference
+    pb_m4      - phos_screened -0.036 [-0.073, +0.001]  no clear difference
+    pb_m8      - phos_n8       +0.042 [+0.013, +0.071]  PB better
+    pb_m8      - phos_n12      +0.010 [-0.022, +0.042]  no clear difference
+    pb_m8      - phos_screened -0.015 [-0.047, +0.018]  no clear difference
+    pb_m12     - phos_n8       +0.034 [+0.005, +0.065]  PB better
+    pb_m12     - phos_n12      +0.002 [-0.028, +0.033]  no clear difference
+    pb_m12     - phos_screened -0.023 [-0.053, +0.008]  no clear difference
+    pb_ppoint  - phos_n8       -0.111 [-0.146, -0.076]  baseline better
+    pb_ppoint  - phos_n12      -0.144 [-0.185, -0.100]  baseline better
+    pb_ppoint  - phos_screened -0.169 [-0.210, -0.126]  baseline better
+
+  subgroups, AUROC of the best PB score vs phos_screened (structure means):
+    best PB score overall: pb_m8
+      length_bin = 101-300                n structures   17   pb_m8 0.903   phos_screened 0.898
+      length_bin = <=100                  n structures   43   pb_m8 0.622   phos_screened 0.664
+      length_bin = >300                   n structures   66   pb_m8 0.805   phos_screened 0.806
+      method = ELECTRON MICROSCOPY    n structures   60   pb_m8 0.818   phos_screened 0.826
+      method = X-RAY DIFFRACTION      n structures   51   pb_m8 0.668   phos_screened 0.692
+
+=== POSITIVES = residues whose P is within the cutoff of a Mg or K ion ===
+chains: 798, structures: 458
+score         AUROC (structure mean) [95% CI]     enrichment (R-precision / base rate)    
+pb_c1p        0.588 [0.570, 0.607] (n=458 )       2.64 [2.10, 3.37]
+pb_m4         0.655 [0.634, 0.674] (n=458 )       2.66 [2.15, 3.34]
+pb_m8         0.683 [0.662, 0.704] (n=458 )       3.34 [2.80, 4.06]
+pb_m12        0.684 [0.662, 0.706] (n=458 )       3.85 [3.23, 4.61]
+pb_ppoint     0.562 [0.544, 0.580] (n=458 )       2.34 [1.86, 2.87]
+phos_n8       0.690 [0.671, 0.710] (n=458 )       4.13 [3.56, 4.79]
+phos_n12      0.699 [0.677, 0.719] (n=458 )       4.07 [3.33, 4.95]
+phos_screened 0.734 [0.710, 0.754] (n=458 )       5.14 [4.47, 5.82]
+c1_n4         0.500 [0.499, 0.502] (n=458 )       0.98 [0.73, 1.33]
+c1_n8         0.583 [0.565, 0.599] (n=458 )       2.24 [1.83, 2.68]
+c1_n12        0.659 [0.638, 0.680] (n=458 )       2.95 [2.29, 3.96]
+c1_screened   0.673 [0.651, 0.695] (n=458 )       3.93 [3.27, 4.73]
+random        0.500 [0.484, 0.515] (n=458 )       0.99 [0.69, 1.40]
+
+  paired differences in AUROC, structure mean, 95% bootstrap CI (positive = first score better):
+  -- matched centre AND radius (the fair like-for-like comparison):
+    pb_m4      - c1_n4         +0.154 [+0.133, +0.174]  PB better
+    pb_m8      - c1_n8         +0.101 [+0.085, +0.116]  PB better
+    pb_m12     - c1_n12        +0.025 [+0.014, +0.036]  PB better
+    pb_c1p     - c1_screened   -0.086 [-0.108, -0.063]  baseline better
+    pb_m4      - c1_screened   -0.019 [-0.036, -0.001]  baseline better
+    pb_m8      - c1_screened   +0.010 [-0.003, +0.022]  no clear difference
+    pb_m12     - c1_screened   +0.011 [+0.001, +0.021]  PB better
+    pb_ppoint  - c1_screened   -0.111 [-0.137, -0.083]  baseline better
+  -- against the phosphorus-centred baselines:
+    pb_c1p     - phos_n8       -0.103 [-0.125, -0.079]  baseline better
+    pb_c1p     - phos_n12      -0.112 [-0.133, -0.089]  baseline better
+    pb_c1p     - phos_screened -0.146 [-0.169, -0.120]  baseline better
+    pb_m4      - phos_n8       -0.036 [-0.054, -0.019]  baseline better
+    pb_m4      - phos_n12      -0.045 [-0.062, -0.027]  baseline better
+    pb_m4      - phos_screened -0.079 [-0.098, -0.059]  baseline better
+    pb_m8      - phos_n8       -0.007 [-0.023, +0.008]  no clear difference
+    pb_m8      - phos_n12      -0.016 [-0.033, +0.000]  no clear difference
+    pb_m8      - phos_screened -0.050 [-0.066, -0.034]  baseline better
+    pb_m12     - phos_n8       -0.006 [-0.021, +0.009]  no clear difference
+    pb_m12     - phos_n12      -0.015 [-0.029, +0.000]  no clear difference
+    pb_m12     - phos_screened -0.050 [-0.063, -0.035]  baseline better
+    pb_ppoint  - phos_n8       -0.128 [-0.151, -0.102]  baseline better
+    pb_ppoint  - phos_n12      -0.137 [-0.161, -0.110]  baseline better
+    pb_ppoint  - phos_screened -0.172 [-0.197, -0.142]  baseline better
+
+  subgroups, AUROC of the best PB score vs phos_screened (structure means):
+    best PB score overall: pb_m12
+      length_bin = 101-300                n structures  109   pb_m12 0.733   phos_screened 0.776
+      length_bin = <=100                  n structures  315   pb_m12 0.639   phos_screened 0.695
+      length_bin = >300                   n structures  155   pb_m12 0.807   phos_screened 0.833
+      method = ELECTRON MICROSCOPY    n structures  209   pb_m12 0.739   phos_screened 0.774
+      method = X-RAY DIFFRACTION      n structures  249   pb_m12 0.638   phos_screened 0.700
+
+=== GATE SUMMARY (best PB label vs best phosphate-only baseline, paired over structures) ===
+  MG   best PB pb_m12 vs best baseline phos_screened: AUROC difference -0.051 [-0.064, -0.038] over 441 structures -> FAIL: the baseline is better (CI below 0)
+  K    best PB pb_m8 vs best baseline phos_screened: AUROC difference -0.015 [-0.047, +0.018] over 111 structures -> NOT SHOWN: no clear advantage over the baseline (CI includes 0)
+  any  best PB pb_m12 vs best baseline phos_screened: AUROC difference -0.050 [-0.063, -0.035] over 458 structures -> FAIL: the baseline is better (CI below 0)
+
+files in /data/rna_electrostats/ion_pilot: ion_labels_5A.csv.gz, pilot_chain_metrics.csv, pilot_summary.txt, fig_ion_pilot.png/.pdf

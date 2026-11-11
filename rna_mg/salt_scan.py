@@ -38,6 +38,7 @@ import dataclasses
 import importlib.util
 import logging
 import pickle
+import re
 import shutil
 import sys
 import tempfile
@@ -106,6 +107,37 @@ def accessible_masks(origin, delta, dims, heavy_xyz, heavy_radius, dmin: float, 
     return solvent, tight
 
 
+def set_ion_radius(apbs_in: Path, radius: float) -> None:
+    """Rewrite the 'ion charge +-1 conc X radius R' lines of an APBS input (the pipeline hard-codes R = 2.0)."""
+    t = apbs_in.read_text()
+    t2 = re.sub(r"(ion charge -?1 conc \S+ radius )\S+", lambda m: m.group(1) + f"{radius:g}", t)
+    if t2 == t and abs(radius - 2.0) > 1e-9:
+        raise RuntimeError("ion radius line not found in apbs.in")
+    apbs_in.write_text(t2)
+
+
+def inner_shell(values, matched, origin, delta, dims, centers, rad):
+    """Mean, minimum and count of the potential over MATCHED grid points within `rad` of any of `centers`."""
+    flat = set()
+    for c in centers:
+        lo = np.clip(np.floor((c - rad - origin) / delta).astype(int), 0, dims)
+        hi = np.clip(np.ceil((c + rad - origin) / delta).astype(int) + 1, 0, dims)
+        if np.any(hi <= lo):
+            continue
+        xs = origin[0] + np.arange(lo[0], hi[0]) * delta[0]
+        ys = origin[1] + np.arange(lo[1], hi[1]) * delta[1]
+        zs = origin[2] + np.arange(lo[2], hi[2]) * delta[2]
+        gx, gy, gz = np.meshgrid(xs, ys, zs, indexing="ij")
+        ok = (((gx - c[0]) ** 2 + (gy - c[1]) ** 2 + (gz - c[2]) ** 2) <= rad * rad) & matched[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]]
+        loc = np.argwhere(ok) + lo
+        if len(loc):
+            flat.update(np.ravel_multi_index(loc.T, tuple(dims)).tolist())
+    if not flat:
+        return np.nan, np.nan, 0
+    v = values.ravel()[np.fromiter(flat, dtype=np.int64)]
+    return float(v.mean()), float(v.min()), int(v.size)
+
+
 def sphere_stats(values, origin, delta, dims, center, radii, acc=None):
     """Per radius: mean, std, n inside the sphere; mean and n of the shell between this radius and the previous one;
     log mean exp(-2 phi) over accessible points inside the sphere. Returns list of dicts (radius 0 = point value is
@@ -167,7 +199,7 @@ def find_sites(values, acc, origin, delta, n_sites: int, sep: float, size: int =
 # ----------------------------------------------------------------------------------------------------------------
 def solve_salt(job: dict) -> dict:
     salt_M = job["salt_mM"] / 1000.0
-    out = {"salt_M": salt_M, "status": "ok", "error": "", "solver": "", "res_rows": [], "site_rows": [], "ion_rows": []}
+    out = {"salt_M": salt_M, "status": "ok", "error": "", "solver": "", "res_rows": [], "site_rows": [], "ion_rows": [], "inner_rows": []}
     try:
         pipe = load_module(job["pipeline_module"])
         settings = dataclasses.replace(pipe.ApbsSettings(), ionic_strength_M=salt_M)
@@ -180,14 +212,19 @@ def solve_salt(job: dict) -> dict:
             pqr = td / "x.pqr"
             shutil.copy(job["pqr"], pqr)
             solver = "nonlinear"
+            def _input():
+                f = pipe.build_apbs_input(pqr, td, settings)
+                if job.get("ion_radius") is not None:
+                    set_ion_radius(f, float(job["ion_radius"]))
+                return f
             try:
-                dx = pipe.run_apbs(pipe.build_apbs_input(pqr, td, settings), pqr)
+                dx = pipe.run_apbs(_input(), pqr)
             except RuntimeError as e:
                 if not any(w in str(e).lower() for w in ("overflow", "large potential", "converge", "unphysical")):
                     raise
                 solver = "linearized_fallback"
                 settings = dataclasses.replace(settings, nonlinear=False)
-                dx = pipe.run_apbs(pipe.build_apbs_input(pqr, td, settings), pqr)
+                dx = pipe.run_apbs(_input(), pqr)
             out["solver"] = solver
             values, origin, delta = read_grid(dx)
             dims = np.array(values.shape)
@@ -201,6 +238,11 @@ def solve_salt(job: dict) -> dict:
                                           heavy["radius"].to_numpy(float), job["min_atom_dist"],
                                           job["max_atom_dist"], job["probe"])
             acc_vals, acc_t_vals = values[acc], values[acc_t]
+            op_names = {"OP1", "OP2", "O1P", "O2P"}
+            ops = atoms[atoms["atom_name"].isin(op_names)]
+            op_mask = stamp(origin, delta, dims, ops[["x", "y", "z"]].to_numpy(float), job["inner_radius"]) if len(ops) else np.zeros(tuple(dims), bool)
+            matched = acc_t & op_mask                      # tight-accessible points within inner_radius of a phosphate oxygen
+            matched_vals = values[matched]
             omap = job["orig_map"]
             p_xyz, p_orig = [], []
             for (chain, resnum, resname), g in atoms.groupby(["chain", "resnum", "resname"], sort=False):
@@ -214,6 +256,13 @@ def solve_salt(job: dict) -> dict:
                     p_orig.append((oc, orn, resname))
                 if len(c1):
                     centers["C1p"] = c1[["x", "y", "z"]].iloc[0].to_numpy(float)
+                opg = g[g["atom_name"].isin(op_names)]
+                if len(opg):
+                    im, imin, inn = inner_shell(values, matched, origin, delta, dims,
+                                                opg[["x", "y", "z"]].to_numpy(float), job["inner_radius"])
+                    out["inner_rows"].append({"salt_M": salt_M, "chain": chain, "resnum": int(resnum), "original_chain": oc,
+                                              "original_resnum": int(orn), "resname": resname, "n_points": inn,
+                                              "phi_mean": im, "phi_min": imin})
                 for cname, c in centers.items():
                     base = {"salt_M": salt_M, "chain": chain, "resnum": int(resnum), "original_chain": oc,
                             "original_resnum": int(orn), "resname": resname, "center": cname}
@@ -244,7 +293,8 @@ def solve_salt(job: dict) -> dict:
                 row = {"salt_M": salt_M, "ion": k, "resname": ion["resname"], "x": q[0], "y": q[1], "z": q[2],
                        "phi_at_ion": phi,
                        "pct_more_negative_tight": float((acc_t_vals < phi).mean()) if np.isfinite(phi) and acc_t_vals.size else np.nan,
-                       "pct_more_negative_solvent": float((acc_vals < phi).mean()) if np.isfinite(phi) and acc_vals.size else np.nan}
+                       "pct_more_negative_solvent": float((acc_vals < phi).mean()) if np.isfinite(phi) and acc_vals.size else np.nan,
+                       "pct_more_negative_matched": float((matched_vals < phi).mean()) if np.isfinite(phi) and matched_vals.size else np.nan}
                 if ptree is not None:
                     d, i = ptree.query(q, k=1)
                     row.update({"nearest_P_chain": p_orig[i][0], "nearest_P_resnum": p_orig[i][1],
@@ -426,7 +476,8 @@ def analyze(outdir: Path, critical: list[int], work: Path, chain: str | None) ->
             say(f"   salt = {salt:g} M")
             for r in sub.itertuples():
                 near = f"{short(r.nearest_P_resname)}{int(r.nearest_P_resnum)} ({r.nearest_P_dist:.1f} A)" if hasattr(r, "nearest_P_resnum") else "?"
-                say(f"      {r.resname} #{r.ion} (nearest P {near}): phi = {r.phi_at_ion:8.2f} kT/e, tight percentile {100 * r.pct_more_negative_tight:5.1f} %, "
+                mpct = f"{100 * r.pct_more_negative_matched:5.1f} %" if hasattr(r, "pct_more_negative_matched") and np.isfinite(r.pct_more_negative_matched) else "n/a"
+                say(f"      {r.resname} #{r.ion} (nearest P {near}): phi = {r.phi_at_ion:8.2f} kT/e, tight percentile {100 * r.pct_more_negative_tight:5.1f} %, matched-shell percentile {mpct}, "
                     f"nearest tight-region site {r.dist_to_nearest_site_tight:.1f} A (rank {int(r.nearest_site_rank_tight) if np.isfinite(r.nearest_site_rank_tight) else -1}), "
                     f"nearest solvent site {r.dist_to_nearest_site_solvent:.1f} A")
         say("")
@@ -437,6 +488,24 @@ def analyze(outdir: Path, critical: list[int], work: Path, chain: str | None) ->
             for salt in sorted({rs, hi_salt}):
                 sub = Z[(Z["mask"] == mname) & np.isclose(Z["salt_M"], salt)].head(8)
                 say(f"   {lab}, salt = {salt:g} M: " + "; ".join(f"#{int(r.rank)} {r.phi:.1f} kT/e near {short(r.nearest_P_resname)}{int(r.nearest_P_resnum)} ({r.nearest_P_dist:.1f} A)" for r in sub.itertuples()))
+        say("")
+    inner_f = outdir / "salt_scan_inner.csv"
+    if inner_f.exists() and inner_f.stat().st_size > 10:
+        Q = pd.read_csv(inner_f)
+        if chain:
+            Q = Q[Q["original_chain"] == chain]
+        Q["critical"] = Q["original_resnum"].isin(critical)
+        say("7. INNER-SHELL POTENTIAL: mean potential at tight-accessible points within the inner radius of each phosphate's own oxygens")
+        say("   (where an inner-sphere cation would sit); the matched-geometry comparison, free of the 5 A averaging")
+        for salt in sorted({rs, hi_salt}):
+            q = Q[np.isclose(Q["salt_M"], salt)].dropna(subset=["phi_mean"]).copy()
+            if q.empty:
+                continue
+            q["rank"] = q["phi_mean"].rank(method="min")
+            q = q.sort_values("rank")
+            say(f"   salt = {salt:g} M: top 10: " + ", ".join(f"{tag(r)}({r.phi_mean:.1f})" for r in q.head(10).itertuples()))
+            say("      critical ranks: " + ", ".join(f"{tag(r)}={int(r.rank)}" for r in q[q['critical']].itertuples())
+                + f"   (others: median {q[~q['critical']]['phi_mean'].median():.1f} kT/e)")
         say("")
     text = "\n".join(lines)
     (outdir / "salt_scan_summary.txt").write_text(text + "\n")
@@ -548,7 +617,12 @@ def main():
     ap.add_argument("--raw-pdb", type=Path, default=None, help="optional raw PDB with HETATM ions, e.g. to add F (use with --ion-resnames MG F)")
     ap.add_argument("--min-atom-dist", type=float, default=1.8, help="closest approach (A) of a cation to a heavy RNA atom")
     ap.add_argument("--max-atom-dist", type=float, default=8.0)
-    ap.add_argument("--probe", type=float, default=2.0, help="ion radius (A) for the solvent-accessible region: outside r_atom + probe (the pipeline's APBS ion radius is 2.0)")
+    ap.add_argument("--ion-radius", type=float, default=None,
+                    help="rewrite the APBS ion radius (pipeline: 2.0 A); smaller values let screening ions closer to the RNA. "
+                         "Also sets --probe unless --probe is given")
+    ap.add_argument("--inner-radius", type=float, default=2.4,
+                    help="matched shell: tight-accessible points within this distance of a phosphate oxygen (where an inner-sphere cation sits)")
+    ap.add_argument("--probe", type=float, default=None, help="ion radius (A) for the solvent-accessible region: outside r_atom + probe (the pipeline's APBS ion radius is 2.0)")
     ap.add_argument("--n-sites", type=int, default=15)
     ap.add_argument("--site-sep", type=float, default=3.0)
     ap.add_argument("--fine-padding", type=float, default=None,
@@ -567,6 +641,7 @@ def main():
     cache = outdir / "per_salt"
     cache.mkdir(exist_ok=True)
     salts = [int(s) if float(s).is_integer() else s for s in (a.salts_mM or DEFAULT_SALTS_MM)]
+    probe = a.probe if a.probe is not None else (a.ion_radius if a.ion_radius is not None else 2.0)
 
     if not a.analyze_only:
         pqr = work / f"{pid.lower()}.pqr"
@@ -581,7 +656,8 @@ def main():
                 continue
             jobs.append({"salt_mM": s, "pqr": str(pqr), "pipeline_module": a.pipeline_module, "radii": a.radii,
                          "orig_map": read_orig_map(work), "ions": ions, "min_atom_dist": a.min_atom_dist,
-                         "max_atom_dist": a.max_atom_dist, "probe": a.probe, "n_sites": a.n_sites, "site_sep": a.site_sep,
+                         "max_atom_dist": a.max_atom_dist, "probe": probe, "ion_radius": a.ion_radius,
+                         "inner_radius": a.inner_radius, "n_sites": a.n_sites, "site_sep": a.site_sep,
                          "outdir": str(outdir), "tmp_dir": a.tmp_dir, "keep_dx": a.keep_dx,
                          "fine_padding": a.fine_padding, "coarse_padding": a.coarse_padding})
         log.info("%d solves to run (%d cached)", len(jobs), len(salts) - len(jobs))
@@ -594,18 +670,20 @@ def main():
                         (cache / f"salt_{futs[f]:g}mM.pkl").write_bytes(pickle.dumps(r))
                     log.info("[%d/%d] %g mM: %s %s", n, len(jobs), futs[f], r["status"], r["solver"] or r["error"])
 
-    res, sites, ions_rows, solvers = [], [], [], {}
+    res, sites, ions_rows, solvers, inner_rows = [], [], [], {}, []
     for f in sorted(cache.glob("salt_*mM.pkl")):
         r = pickle.loads(f.read_bytes())
         res += r["res_rows"]
         sites += r["site_rows"]
         ions_rows += r["ion_rows"]
+        inner_rows += r.get("inner_rows", [])
         solvers[r["salt_M"]] = r["solver"]
     if not res:
         raise SystemExit("no results: check the log above")
     pd.DataFrame(res).sort_values(["salt_M", "chain", "resnum", "center", "radius"]).to_csv(outdir / "salt_scan_residues.csv.gz", index=False)
     pd.DataFrame(sites).to_csv(outdir / "salt_scan_sites.csv", index=False)
     pd.DataFrame(ions_rows).to_csv(outdir / "salt_scan_ions.csv", index=False)
+    pd.DataFrame(inner_rows).to_csv(outdir / "salt_scan_inner.csv", index=False)
     fb = [s for s, v in solvers.items() if v != "nonlinear"]
     if fb:
         log.warning("linearised fallback was used at salts (M): %s", sorted(fb))
